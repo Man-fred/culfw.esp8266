@@ -16,6 +16,11 @@ SRC =           COC.c\
 		../../clib/rf_receive.c                              \
 		../../clib/rf_router.c                               \
 		../../clib/rf_asksin.c                               \
+		../../clib/rf_mbus.c                                 \
+		../../clib/mbus/manchester.c                         \
+		../../clib/mbus/3outof6.c                            \
+		../../clib/mbus/mbus_packet.c                        \
+		../../clib/mbus/crc.c                                \
 		../../clib/rf_moritz.c                               \
 		../../clib/rf_rwe.c                                  \
 		../../clib/intertechno.c                             \
@@ -155,7 +160,7 @@ do_program:
 
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
 
-	if test -e /sys/bus/i2c/devices/0-0050/eeprom; then echo COC V1.1 $(COCVERS) `date +%F` > /sys/bus/i2c/devices/0-0050/eeprom; fi
+	if test -e /sys/bus/i2c/devices/0-0050/eeprom; then echo COC V1.2 $(COCVERS) `date +%F` > /sys/bus/i2c/devices/0-0050/eeprom; fi
 
 %.hex: %.elf
 	@echo $(MSG_FLASH) $@

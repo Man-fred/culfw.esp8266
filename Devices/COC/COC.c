@@ -94,6 +94,9 @@ const PROGMEM t_fntab fntab[] = {
   { 'M', em_send },
   { 'K', ks_send },
 #endif
+#ifdef HAS_MBUS
+  { 'b', rf_mbus_func },
+#endif
   { 'R', read_eeprom },
   { 'T', fhtsend },
   { 'V', version },
@@ -122,6 +125,13 @@ main(void)
 
   led_init();
   LED_ON();
+
+#ifdef MARK433_PORT
+  MARK433_PORT |= _BV( MARK433_BIT ); // Pull 433MHz marker
+#endif
+#ifdef MARK915_PORT
+  MARK915_PORT |= _BV( MARK915_BIT ); // Pull 915MHz marker
+#endif
 
   spi_init();
 
