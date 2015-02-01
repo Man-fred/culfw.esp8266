@@ -20,10 +20,11 @@ SRC =           CCD.c\
 		../../clib/rf_moritz.c                               \
 		../../clib/rf_rwe.c                                  \
 		../../clib/intertechno.c                             \
+		../../clib/kopp-fc.c				   				 \
 		../../clib/fht.c                                     \
 		../../clib/fastrf.c                                  \
 		../../clib/ttydata.c                                 \
-                ../../clib/serial.c                                  \
+        ../../clib/serial.c                                  \
 		../../clib/spi.c                                     \
 		../../clib/memory.c                                  \
                 ../../clib/rf_mbus.c                                 \

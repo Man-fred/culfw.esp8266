@@ -59,6 +59,10 @@
 #include "rf_mbus.h"
 #endif
 
+#ifdef HAS_KOPP_FC
+#include "kopp-fc.h"
+#endif
+
 const PROGMEM t_fntab fntab[] = {
 
   { 'm', getfreemem },
@@ -85,6 +89,9 @@ const PROGMEM t_fntab fntab[] = {
 #endif
 #ifdef HAS_DOGM
   { 'D', dogm_func },
+#endif
+#ifdef HAS_KOPP_FC
+  { 'k', kopp_fc_func },
 #endif
 #ifdef HAS_ONEWIRE
   { 'O', onewire_func },
@@ -196,6 +203,10 @@ main(void)
 #ifdef HAS_MBUS
     rf_mbus_task();
 #endif
+//#ifdef HAS_KOPP_FC
+//    kopp_fc_task();
+// #endif
+
   }
 
 }
