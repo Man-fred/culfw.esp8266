@@ -30,6 +30,7 @@ SRC = $(TARGET).c                                            \
 		../../clib/somfy_rts.c                               \
 		../../clib/fastrf.c                               \
 		../../clib/intertechno.c                             \
+		../../clib/kopp-fc.c                                 \
 		../../clib/memory.c                                  \
 		../../clib/serial.c                                  \
 		../../clib/ttydata.c                                 \

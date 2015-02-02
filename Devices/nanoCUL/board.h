@@ -98,14 +98,20 @@ extern const uint8_t mark433_pin;
 */
 //#define HAS_MBUS
 
-#  define HAS_ASKSIN_FUP
-#  define HAS_MORITZ
-#  define HAS_RWE
-#  define HAS_ESA
-#  define HAS_TX3
-#  define HAS_UNIROLL
-#  define HAS_HOERMANN
-#  define HAS_MEMFN
-#  define HAS_SOMFY_RTS
+#define HAS_ASKSIN_FUP
+#define HAS_MORITZ
+#define HAS_RWE
+#define HAS_ESA
+#define HAS_TX3
+#define HAS_UNIROLL
+#define HAS_HOERMANN
+#define HAS_MEMFN
+#define HAS_SOMFY_RTS
+#define HAS_FHT_80b                     // PROGMEM: 1374b, RAM: 90b
+#define HAS_FHT_8v                    // PROGMEM:  586b  RAM: 23b
+#define HAS_FHT_TF
+#define FHTBUF_SIZE          174      //                 RAM: 174b
+#define HAS_KOPP_FC
+
 
 #endif
