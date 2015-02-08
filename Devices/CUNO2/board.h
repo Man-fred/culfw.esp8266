@@ -72,6 +72,7 @@
 #define HAS_ESA
 #define HAS_TX3
 #define HAS_INTERTECHNO
+#define HAS_TCM97001
 #define HAS_HOERMANN
 #define HAS_MORITZ
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT

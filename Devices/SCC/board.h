@@ -55,6 +55,7 @@
 #define HAS_MORITZ
 #define HAS_ESA
 #define HAS_INTERTECHNO
+#define HAS_TCM97001
 #define HAS_SOMFY_RTS
 #define HAS_MBUS
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT

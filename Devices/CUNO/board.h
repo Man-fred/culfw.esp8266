@@ -73,6 +73,7 @@
 #define HAS_ESA
 #define HAS_TX3
 #define HAS_INTERTECHNO
+#define HAS_TCM97001
 #define HAS_HOERMANN
 #define HAS_SOMFY_RTS
 

@@ -86,6 +86,7 @@ extern const uint8_t mark433_pin;
 #define HAS_ASKSIN
 /* Intertechno Senden einschalten */
 #define HAS_INTERTECHNO
+#define HAS_TCM97001
 /* Intertechno Empfang einschalten */
 #define HAS_IT
 #define HAS_REVOLT
