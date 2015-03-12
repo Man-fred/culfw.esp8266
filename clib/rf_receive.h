@@ -50,7 +50,6 @@
 #endif
 #endif
 
-
 void set_txreport(char *in);
 void set_txrestore(void);
 void tx_init(void);

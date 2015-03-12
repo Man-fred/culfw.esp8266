@@ -73,6 +73,15 @@ typedef struct {
   wave_t zero, one; 
 } bucket_t;
 
+// This struct has the bits for receive check
+struct {
+   uint8_t isrep:1; // 1 Bit for is repeated
+   uint8_t isnotrep:1; // 1 Bit for is repeated value
+   uint8_t packageOK:1; // Received packet is ok
+   // 5 bits free
+} packetCheckValues;
+
+
 static bucket_t bucket_array[RCV_BUCKETS];
 static uint8_t bucket_in;                 // Pointer to the in(terrupt) queue
 static uint8_t bucket_out;                // Pointer to the out (analyze) queue
@@ -85,9 +94,7 @@ static uint16_t hightime, lowtime;
 #else
 static uint8_t hightime, lowtime;
 #endif
-#ifdef HAS_IT
-static uint8_t isnotitrep;
-#endif
+
 static void addbit(bucket_t *b, uint8_t bit);
 static void delbit(bucket_t *b);
 
@@ -314,7 +321,6 @@ analyze_esa(bucket_t *b)
   in.bit = 7;
   in.data = b->data;
 
-  oby = 0;
 
   if (b->state != STATE_ESA)
        return 0;
@@ -390,13 +396,8 @@ uint8_t analyze_it(bucket_t *b)
     && (b->state != STATE_ITV3 || b->byteidx != 8 || b->bitidx != 7)) {
         return 0;
     }
-  if (b->state == STATE_IT) {
-    for (oby=0;oby<3;oby++)
+  for (oby=0;oby<b->byteidx;oby++)
       obuf[oby]=b->data[oby];
-  } else {
-    for (oby=0;oby<8;oby++)
-      obuf[oby]=b->data[oby];
-    }
   return 1;
 }
 #endif
@@ -428,6 +429,31 @@ uint8_t analyze_revolt(bucket_t *b)
   return 1;
 }
 #endif
+
+/*
+ * Check for repeted message.
+ * When Package is for e.g. IT or TCM, than there must be received two packages
+ * with the same message. Otherwise the package are ignored.
+ */
+void checkForRepeatedPackage(uint8_t *datatype, bucket_t *b) {
+#if defined (HAS_IT) || defined (HAS_TCM97001)
+  if (*datatype == TYPE_IT || (*datatype == TYPE_TCM97001)) {
+      if (packetCheckValues.isrep == 1 && packetCheckValues.isnotrep == 0) { 
+        packetCheckValues.isnotrep = 1;
+        packetCheckValues.packageOK = 1;
+      } else if (packetCheckValues.isrep == 1) {
+        packetCheckValues.packageOK = 0;
+      }
+  } else {
+#endif
+      if (!packetCheckValues.isrep) {
+        packetCheckValues.packageOK = 1;
+      }
+#if defined (HAS_IT) || defined (HAS_TCM97001)
+  }
+#endif
+}
+
 //////////////////////////////////////////////////////////////////////
 void
 RfAnalyze_Task(void)
@@ -485,10 +511,9 @@ RfAnalyze_Task(void)
   if(b->state != STATE_REVOLT && b->state != STATE_IT && b->state != STATE_TCM97001) {
 #endif
 #ifdef HAS_ESA
-  if(analyze_esa(b))
+  if(!datatype && analyze_esa(b))
     datatype = TYPE_ESA;
 #endif
-
   if(!datatype && analyze(b, TYPE_FS20)) { // Can be FS10 (433Mhz) or FS20 (868MHz)
     oby--;                                  // Separate the checksum byte
     uint8_t fs_csum = cksum1(6,obuf,oby);
@@ -546,20 +571,23 @@ RfAnalyze_Task(void)
 #ifdef LONG_PULSE
   }
 #endif
+
   if(datatype && (tx_report & REP_KNOWN)) {
 
-    uint8_t isrep = 0;
-    uint8_t packageOK = 0;
+    packetCheckValues.isrep = 0;
+    packetCheckValues.packageOK = 0;
     if(!(tx_report & REP_REPEATED)) {      // Filter repeated messages
       
       // compare the data
       if(roby == oby) {
         for(roby = 0; roby < oby; roby++)
-          if(robuf[roby] != obuf[roby])
+          if(robuf[roby] != obuf[roby]) {
+            packetCheckValues.isnotrep = 0;
             break;
+          }
 
         if(roby == oby && (ticks - reptime < REPTIME)) // 38/125 = 0.3 sec
-          isrep = 1;
+          packetCheckValues.isrep = 1;
       }
 
       // save the data
@@ -575,12 +603,11 @@ RfAnalyze_Task(void)
         obuf[2] == FHT_CAN_XMIT   || obuf[2] == FHT_CAN_RCV ||
         obuf[2] == FHT_START_XMIT || obuf[2] == FHT_END_XMIT ||
         (obuf[3] & 0x70) == 0x70))
-      isrep = 1;
+      packetCheckValues.isrep = 1;
 
-    if(!isrep)
-      packageOK = 1;
+    checkForRepeatedPackage(&datatype, b);
 
-    if(packageOK) {
+    if(packetCheckValues.packageOK) {
       DC(datatype);
       if(nibble)
         oby--;
@@ -640,8 +667,8 @@ reset_input(void)
 {
   TIMSK1 = 0;
   bucket_array[bucket_in].state = STATE_RESET;
-#ifdef HAS_IT
-  isnotitrep = 0;
+#if defined (HAS_IT) || defined (HAS_TCM97001)
+  packetCheckValues.isnotrep = 0;
 #endif
 }
 
