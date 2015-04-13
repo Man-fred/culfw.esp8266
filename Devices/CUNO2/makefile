@@ -60,6 +60,7 @@ SRC = $(TARGET).c                                                    \
                 ../../clib/mbus/3outof6.c                            \
                 ../../clib/mbus/mbus_packet.c                        \
                 ../../clib/mbus/crc.c                                \
+		../../clib/somfy_rts.c					\
 		
 OPT = s
 DEBUG = dwarf-2

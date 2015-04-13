@@ -1,3 +1,4 @@
+- CUNO2: added SOMFY RTS support to board definition (thdankert)
 - completed wireless m-bus RX/TX support (for T or S mode)
 - IT fixes from bjoern
 

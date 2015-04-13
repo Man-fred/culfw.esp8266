@@ -68,6 +68,10 @@
 #include "rf_mbus.h"
 #endif
 
+#ifdef HAS_SOMFY_RTS
+#include "somfy_rts.h"
+#endif
+
 const PROGMEM t_fntab fntab[] = {
 
   { 'm', getfreemem },
@@ -123,6 +127,9 @@ const PROGMEM t_fntab fntab[] = {
 #endif
 #ifdef HAS_HELIOS
   { 'h', helios_func },
+#endif
+#ifdef HAS_SOMFY_RTS
+  { 'Y', somfy_rts_func },
 #endif
   { 'x', ccsetpa },
   { 'E', eth_func },
