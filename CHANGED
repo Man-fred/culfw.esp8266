@@ -1,3 +1,5 @@
+- CUL: due to mem space issues: disabled by default: RF_RWE / MBUS_TX
+- added LaCrosse datagram reception, use "Er"
 - add Bff to test the watchdog (Forum #36215)
 - CUNO2: added SOMFY RTS support to board definition (thdankert)
 - completed wireless m-bus RX/TX support (for T or S mode)
