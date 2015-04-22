@@ -31,9 +31,9 @@
 #  define HAS_ASKSIN_FUP
 #  define HAS_MORITZ
 #  define HAS_KOPP_FC
-#  define HAS_RWE
 #  define HAS_ESA
 #  define HAS_TX3
+#  define HAS_ITPLUS
 #  define HAS_INTERTECHNO
 #  define HAS_TCM97001
 #  define HAS_UNIROLL
@@ -49,9 +49,8 @@
 #if defined(CUL_V3)
 #  define TTY_BUFSIZE          128      // RAM: TTY_BUFSIZE*4
 #  define HAS_MBUS
+#  define OFF_HAS_MBUS_TX               // MBUS TX eats up lots of memory, OFF_ by default
 #endif
-
-
 
 #ifdef CUL_V2
 #  define TTY_BUFSIZE           48
