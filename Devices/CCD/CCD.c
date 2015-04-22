@@ -200,13 +200,12 @@ main(void)
 #ifdef HAS_MORITZ
     rf_moritz_task();
 #endif
+#ifdef HAS_KOPP_FC
+	kopp_fc_task();
+#endif
 #ifdef HAS_MBUS
     rf_mbus_task();
 #endif
-//#ifdef HAS_KOPP_FC
-//    kopp_fc_task();
-// #endif
-
   }
 
 }
