@@ -43,8 +43,8 @@
 #ifdef HAS_RWE
 #include "rf_rwe.h"
 #endif
-#ifdef HAS_ITPLUS
-#include "rf_itplus.h"
+#ifdef HAS_RFNATIVE
+#include "rf_native.h"
 #endif
 #ifdef HAS_INTERTECHNO
 #include "intertechno.h"
@@ -76,12 +76,11 @@ const PROGMEM t_fntab fntab[] = {
 #ifdef HAS_MORITZ
   { 'Z', moritz_func },
 #endif
-#ifdef HAS_ITPLUS
-  { 'E', itplus_func },
-#else
+#ifdef HAS_RFNATIVE
+  { 'N', native_func },
+#endif
 #ifdef HAS_RWE
   { 'E', rwe_func },
-#endif
 #endif
 #ifdef HAS_KOPP_FC
   { 'k', kopp_fc_func },
@@ -203,8 +202,8 @@ main(void)
 #ifdef HAS_RWE
     rf_rwe_task();
 #endif
-#ifdef HAS_ITPLUS
-    itplus_task();
+#ifdef HAS_RFNATIVE
+    native_task();
 #endif
 #ifdef HAS_KOPP_FC
     kopp_fc_task();

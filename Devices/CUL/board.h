@@ -33,7 +33,7 @@
 #  define HAS_KOPP_FC
 #  define HAS_ESA
 #  define HAS_TX3
-#  define HAS_ITPLUS
+#  define HAS_RFNATIVE
 #  define HAS_INTERTECHNO
 #  define HAS_TCM97001
 #  define HAS_UNIROLL
