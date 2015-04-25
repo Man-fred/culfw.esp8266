@@ -50,6 +50,7 @@
 #  define TTY_BUFSIZE          128      // RAM: TTY_BUFSIZE*4
 #  define HAS_MBUS
 #  define OFF_HAS_MBUS_TX               // MBUS TX eats up lots of memory, OFF_ by default
+#  define OFF_LACROSSE_HMS_EMU          // if you like HMS emulation for LaCrosse temp devices
 #endif
 
 #ifdef CUL_V2

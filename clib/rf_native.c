@@ -22,6 +22,11 @@
 
 static uint8_t native_on = 0;
 
+#ifdef LACROSSE_HMS_EMU
+uint8_t payload[5];
+#include "lacrosse.h"
+#endif
+
 // This is the default - equals Mode 1
 const uint8_t PROGMEM NATIVE_CFG[46] = {
   
@@ -140,7 +145,7 @@ void native_init(uint8_t mode) {
 }
 
 void native_task(void) {
-  uint8_t len;
+  uint8_t len, byte, i;
 
   if(!native_on)
     return;
@@ -161,14 +166,25 @@ void native_task(void) {
       DC( 'N' );
       DH2(native_on);
 
-      for (uint8_t i=0; i<len; i++) {
-	DH2( cc1100_sendbyte( 0 ) );
+      for (i=0; i<len; i++) {
+	byte = cc1100_sendbyte( 0 );
+
+#if defined(LACROSSE_HMS_EMU)
+	if (i<sizeof(payload))
+	  payload[i] = byte;
+#endif
+	DH2( byte );
       }
       
       CC1100_DEASSERT;
       
       DNL();
-      
+
+#ifdef LACROSSE_HMS_EMU
+      if ((native_on == 1) && (len>=5))
+	dec2hms_lacrosse(payload);
+#endif
+
     }
 
     return;

@@ -28,6 +28,7 @@ SRC =           CUL.c\
 		../../clib/ttydata.c                                 \
 		../../clib/spi.c                                     \
 		../../clib/memory.c                                  \
+		../../clib/lacrosse.c                                \
 		../../lufa/Drivers/USB/LowLevel/DevChapter9.c        \
 		../../lufa/Drivers/USB/LowLevel/Endpoint.c           \
 		../../lufa/Drivers/USB/LowLevel/Host.c               \
