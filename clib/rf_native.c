@@ -181,7 +181,7 @@ void native_task(void) {
       DNL();
 
 #ifdef LACROSSE_HMS_EMU
-      if ((native_on == 1) && (len>=5))
+      if (len>=5)
 	dec2hms_lacrosse(payload);
 #endif
 
