@@ -336,7 +336,7 @@ void rf_mbus_task(void) {
   rf_mbus_on( FALSE );
 }
 
-#ifdef HAS_MBUS_TX
+#ifndef MBUS_NO_TX
 
 uint16 txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {  
   uint16  bytesToWrite;
@@ -495,7 +495,7 @@ void rf_mbus_func(char *in) {
     
   } else if(in[1] == 's') {         // Send
 
-#ifdef HAS_MBUS_TX
+#ifndef MBUS_NO_TX
 
     uint8_t i = 0;
     while (in[2*i+3] && in [2*i+4]) {
