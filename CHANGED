@@ -1,5 +1,8 @@
+Version 1.64 (2015-04-30)
+- CUN*: retransmit patches from doubh (Forum #36529)
 - CUL: due to mem space issues: disabled by default: RF_RWE / MBUS_TX
-- added RF-Native Mode for RFM12 based protocols i.e. LaCrosse/IT+/PCA302, ie. use "Nr1" 
+- added RF-Native Mode for RFM12 based protocols i.e. LaCrosse/IT+/PCA302,
+  ie.  use "Nr1" 
 - add Bff to test the watchdog (Forum #36215)
 - CUNO2: added SOMFY RTS support to board definition (thdankert)
 - completed wireless m-bus RX/TX support (for T or S mode)
