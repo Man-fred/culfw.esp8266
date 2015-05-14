@@ -40,6 +40,7 @@
 #  define HAS_HOERMANN
 #  define HAS_MEMFN
 #  define HAS_SOMFY_RTS
+#  define HAS_BELFOX
 #endif
 
 #if defined(CUL_V4)
