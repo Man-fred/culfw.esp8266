@@ -1,7 +1,7 @@
 #ifndef _RF_ASKSIN_H
 #define _RF_ASKSIN_H
 
-#define ASKSIN_WAIT_TICKS_CCA	250	//125 Hz
+#define ASKSIN_WAIT_TICKS_CCA	188	//125 Hz
 
 #ifndef HAS_ASKSIN_FUP
 #define MAX_ASKSIN_MSG 30
