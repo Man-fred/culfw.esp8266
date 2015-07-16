@@ -226,7 +226,6 @@ asksin_send(char *in)
   msg[l] = msg[l] ^ ctl;
 
   // enable TX, wait for CCA
-  ccStrobe(CC1100_STX);
   get_timestamp(&ts1);
   do {
     if (bit_is_set( CC1100_IN_PORT, CC1100_IN_PIN )) {
@@ -235,7 +234,11 @@ asksin_send(char *in)
       // do _not_ change cc1101-config inbetween.
       DS_P(PSTR("ERR:TXDROP\r\n"));
       return;
-    } else if (cc1100_readReg(CC1100_MARCSTATE) != MARCSTATE_TX) {
+    }
+
+    //strobe TX
+    ccStrobe(CC1100_STX);
+    if (cc1100_readReg(CC1100_MARCSTATE) != MARCSTATE_TX) {
       get_timestamp(&ts2);
       if (((ts2 > ts1) && (ts2 - ts1 > ASKSIN_WAIT_TICKS_CCA)) ||
           ((ts2 < ts1) && (ts1 + ASKSIN_WAIT_TICKS_CCA < ts2))) {
