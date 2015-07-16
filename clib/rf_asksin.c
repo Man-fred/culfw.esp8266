@@ -228,15 +228,6 @@ asksin_send(char *in)
   // enable TX, wait for CCA
   get_timestamp(&ts1);
   do {
-    if (bit_is_set( CC1100_IN_PORT, CC1100_IN_PIN )) {
-      // valid data received while waiting to send, drop our packet.
-      // received data will be collected by rf_asksin_task.
-      // do _not_ change cc1101-config inbetween.
-      DS_P(PSTR("ERR:TXDROP\r\n"));
-      return;
-    }
-
-    //strobe TX
     ccStrobe(CC1100_STX);
     if (cc1100_readReg(CC1100_MARCSTATE) != MARCSTATE_TX) {
       get_timestamp(&ts2);
