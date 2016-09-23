@@ -33,17 +33,12 @@
 #define LED_PORT                PORTA
 #define LED_PIN                 1
 
-#define LED_ON_DDR              DDRA
-#define LED_ON_PORT             PORTA
-#define LED_ON_PIN              0
-
 #define HAS_IRRX
 #define HAS_IRTX
 #define F_INTERRUPTS            15625   // interrupts per second, min: 10000, max: 20000
 #define IRSND_OCx               IRSND_OC2B          // use OC2B/PIN 15
 
 #define BOARD_ID_STR            "RPIAddOn_CSM" // must contain CSM or OWX.pm won't detect it
-
 
 #define HAS_UART
 #define UART_BAUD_RATE          38400
@@ -65,23 +60,34 @@
 #define HAS_RAWSEND                   //
 #define HAS_FASTRF                    // PROGMEM:  468b  RAM:  1b
 #define HAS_ASKSIN
+#define HAS_ASKSIN_FUP
 #define HAS_MORITZ
 #define HAS_RWE
 #define HAS_ESA
+#define HAS_KOPP_FC
 #define HAS_TX3
 #define HAS_INTERTECHNO
-#define HAS_TCM97001
+#define HAS_UNIROLL
 #define HAS_REVOLT
 #define HAS_HOERMANN
-#define HAS_UNIROLL
+#define HAS_MEMFN
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW
-#define HAS_MBUS
-#define HAS_ASKSIN_FUP
 #define HAS_SOMFY_RTS
+#define HAS_TCM97001
+#define HAS_HOMEEASY
+#define HAS_HMS
+#define HAS_BELFOX
+#define HAS_RFNATIVE
+#define LACROSSE_HMS_EMU
+#define HAS_MBUS
+#define MBUS_NO_TX                    // MBUS TX eats up lots of memory, OFF by default
+#define HAS_ZWAVE
 
 /* a maximum of 8 onewire devices is supported */
-#define HAS_ONEWIRE         8      // OneWire Device Buffer, RAM: 10 * 8 Byte
+#define HAS_ONEWIRE         8         // OneWire Device Buffer, RAM: 10 * 8 Byte
+
+#define RPI_TTY_FIX
 
 #endif

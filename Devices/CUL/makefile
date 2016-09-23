@@ -21,6 +21,7 @@ SRC =           CUL.c\
 		../../clib/rf_moritz.c                               \
 		../../clib/rf_rwe.c                                  \
 		../../clib/rf_native.c                               \
+		../../clib/rf_zwave.c                                \
 		../../clib/intertechno.c                             \
 		../../clib/somfy_rts.c    			     \
 		../../clib/kopp-fc.c				     \
@@ -108,6 +109,7 @@ all:
 	make TARGET=CUL_V2_MAX MCU=at90usb162 mostly_clean build size
 	make TARGET=CUL_V3 MCU=atmega32u4 mostly_clean build size
 	make TARGET=CUL_V4 MCU=atmega32u2 mostly_clean build size
+	make TARGET=CUL_V3_ZWAVE MCU=atmega32u4 mostly_clean build size
 
 build: elf hex eep lss sym
 

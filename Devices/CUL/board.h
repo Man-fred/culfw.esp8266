@@ -18,6 +18,10 @@
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG		// PROGMEM:  22b
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW	// PROGMEM:  22b
 
+#if defined(CUL_V3_ZWAVE)
+#  define CUL_V3
+#endif
+
 #if defined(CUL_V3) || defined(CUL_V4)
 #  define HAS_FHT_8v                    // PROGMEM:  586b  RAM: 23b
 #  define HAS_FHT_TF
@@ -27,32 +31,41 @@
 #  define FULL_CC1100_PA                // PROGMEM:  108b
 #  define HAS_RAWSEND                   //
 #  define HAS_FASTRF                    // PROGMEM:  468b  RAM:  1b
-#  define HAS_ASKSIN
-#  define HAS_ASKSIN_FUP
-#  define HAS_MORITZ
-#  define HAS_KOPP_FC
-#  define HAS_ESA
-#  define HAS_TX3
-#  define HAS_RFNATIVE
-#  define HAS_INTERTECHNO
-#  define HAS_TCM97001
-#  define HAS_UNIROLL
+#  define HAS_ASKSIN                    // PROGMEM: 1314
+#  define HAS_ASKSIN_FUP                // PROGMEM:   78
+#  define HAS_MORITZ                    // PROGMEM: 1696
+#  define HAS_ESA                       // PROGMEM:  286
+#  define HAS_TX3                       // PROGMEM:  168
+#  define HAS_INTERTECHNO               // PROGMEM: 1352
+#  define HAS_TCM97001                  // PROGMEM:  264
+#  define HAS_UNIROLL                   // PROGMEM:   92
 #  define HAS_HOERMANN
-#  define HAS_MEMFN
-#  define HAS_SOMFY_RTS
-#  define HAS_BELFOX
+#  define HAS_MEMFN                     // PROGMEM:  168
+#  define HAS_SOMFY_RTS                 // PROGMEM: 1716
+#  define HAS_BELFOX                    // PROGMEM:  214
 #endif
 
 #if defined(CUL_V4)
+#  define HAS_ZWAVE                     // PROGMEM:  882
 #  define TTY_BUFSIZE           64      // RAM: TTY_BUFSIZE*4
 #endif
 
 #if defined(CUL_V3)
 #  define TTY_BUFSIZE          128      // RAM: TTY_BUFSIZE*4
-#  define HAS_MBUS
-#  define MBUS_NO_TX                    // MBUS TX eats up lots of memory, OFF by default
-#  define OFF_LACROSSE_HMS_EMU          // if you like HMS emulation for LaCrosse temp devices
+#  define HAS_MBUS                      // PROGMEM: 2536
+#  define MBUS_NO_TX                       // PROGMEM:  962
+#  define HAS_RFNATIVE                  // PROGMEM:  580
+//#  define LACROSSE_HMS_EMU              // PROGMEM: 2206
+#  define HAS_KOPP_FC                   // PROGMEM: 3370
 #endif
+
+#if defined(CUL_V3_ZWAVE)
+#  define HAS_ZWAVE                     // PROGMEM:  882
+#  undef HAS_MBUS
+#  undef HAS_KOPP_FC
+#  undef HAS_RFNATIVE
+#endif
+
 
 #ifdef CUL_V2
 #  define TTY_BUFSIZE           48

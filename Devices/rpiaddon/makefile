@@ -1,13 +1,8 @@
 MCU = atmega644p
-BOARD  =
 F_CPU = 8000000
 FORMAT = ihex
 TARGET = rpiaddon
 OBJDIR = .
-
-VERS=1.61
-DATE=$(shell date +%Y-%m-%d)
-DESTDIR=culfw-rpiaddon.$(VERS)
 
 SRC = $(TARGET).c                                                    \
 		../../clib/cc1100.c                                  \
@@ -24,7 +19,9 @@ SRC = $(TARGET).c                                                    \
 		../../clib/rf_receive.c                              \
 		../../clib/rf_router.c                               \
 		../../clib/rf_rwe.c                                  \
+                ../../clib/rf_zwave.c                                \
 		../../clib/somfy_rts.c                               \
+                ../../clib/kopp-fc.c                                 \
 		../../clib/intertechno.c                             \
 		../../clib/fht.c                                     \
 		../../clib/fastrf.c                                  \
@@ -34,6 +31,9 @@ SRC = $(TARGET).c                                                    \
 		../../clib/twimaster.c                               \
 		../../clib/onewire.c                                 \
 		../../clib/spi.c                                     \
+                ../../clib/rf_native.c                               \
+                ../../clib/lacrosse.c                                \
+                ../../clib/belfox.c                                  \
 		../../clib/ir.c                                      \
 		../../clib/irmp.c                                    \
 		../../clib/irsnd.c                                   \
@@ -234,8 +234,7 @@ deb: $(TARGET).hex
 	cp -r DEBIAN .f/
 	rm -fr .f/DEBIAN/CVS
 	cp $(TARGET).hex .f/tmp/CSM-rpiaddon.hex	
-	find .f -type f -print |\
-		xargs perl -pi -e 's/=VERS=/$(VERS)/g;s/=DATE=/$(DATE)/g'
+	find .f -type f -print | xargs perl -pi -e 's/=VERS=/$(VERS)/g;s/=DATE=/$(DATE)/g'
 	chown -R root:root .f
 	mv .f $(DESTDIR)
 	dpkg-deb --build $(DESTDIR)

@@ -19,6 +19,7 @@ SRC = $(TARGET).c                                                    \
 		../../clib/rf_moritz.c                               \
 		../../clib/rf_receive.c                              \
 		../../clib/rf_router.c                               \
+		../../clib/rf_zwave.c                                \
 		../../clib/intertechno.c                             \
 		../../clib/somfy_rts.c				     \
 		../../clib/fht.c                                     \
