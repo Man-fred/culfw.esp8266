@@ -36,6 +36,8 @@ typedef struct RXinfoDescr {
     uint8 start;                // Start of Packet
     uint8 complete;             // Packet received complete
     uint8 mode;                 // S-mode or T-mode
+    uint8 framemode;            // C-mode or T-mode frame
+    uint8 frametype;            // Frame type A or B when in C-mode
     uint8 state;
 } RXinfoDescr;
 

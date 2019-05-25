@@ -14,9 +14,15 @@
 #define USB_MAX_POWER	       100
 #define HAS_FHT_80b                     // PROGMEM: 1374b, RAM: 90b
 #define HAS_RF_ROUTER                   // PROGMEM: 1248b  RAM: 44b
+#define RFR_FILTER                      // PROGMEM:   90b  RAM:  4b
+#define HAS_HOERMANN
+#define HAS_HOERMANN_SEND               // PROGMEM:  220
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT	// PROGMEM: 118b
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG		// PROGMEM:  22b
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW	// PROGMEM:  22b
+
+#undef  RFR_DEBUG                       // PROGMEM:  354b  RAM: 14b
+#undef  HAS_FASTRF                      // PROGMEM:  468b  RAM:  1b
 
 #if defined(CUL_V3_ZWAVE)
 #  define CUL_V3
@@ -27,10 +33,8 @@
 #  define HAS_FHT_TF
 #  define FHTBUF_SIZE          174      //                 RAM: 174b
 #  define RCV_BUCKETS            4      //                 RAM: 25b * bucket
-#  define RFR_DEBUG                     // PROGMEM:  354b  RAM: 14b
 #  define FULL_CC1100_PA                // PROGMEM:  108b
 #  define HAS_RAWSEND                   //
-#  define HAS_FASTRF                    // PROGMEM:  468b  RAM:  1b
 #  define HAS_ASKSIN                    // PROGMEM: 1314
 #  define HAS_ASKSIN_FUP                // PROGMEM:   78
 #  define HAS_MORITZ                    // PROGMEM: 1696
@@ -39,7 +43,6 @@
 #  define HAS_INTERTECHNO               // PROGMEM: 1352
 #  define HAS_TCM97001                  // PROGMEM:  264
 #  define HAS_UNIROLL                   // PROGMEM:   92
-#  define HAS_HOERMANN
 #  define HAS_MEMFN                     // PROGMEM:  168
 #  define HAS_SOMFY_RTS                 // PROGMEM: 1716
 #  define HAS_BELFOX                    // PROGMEM:  214
@@ -52,10 +55,11 @@
 
 #if defined(CUL_V3)
 #  define TTY_BUFSIZE          128      // RAM: TTY_BUFSIZE*4
-#  define HAS_MBUS                      // PROGMEM: 2536
-#  define MBUS_NO_TX                       // PROGMEM:  962
+#  undef HAS_MBUS                       // PROGMEM: 4255
+#if defined(HAS_MBUS)
+#  define MBUS_NO_TX                    // PROGMEM:  962
+#endif
 #  define HAS_RFNATIVE                  // PROGMEM:  580
-//#  define LACROSSE_HMS_EMU              // PROGMEM: 2206
 #  define HAS_KOPP_FC                   // PROGMEM: 3370
 #endif
 
@@ -64,6 +68,8 @@
 #  undef HAS_MBUS
 #  undef HAS_KOPP_FC
 #  undef HAS_RFNATIVE
+#  define LACROSSE_HMS_EMU              // PROGMEM: 2206
+#  define HAS_EVOHOME
 #endif
 
 
@@ -73,7 +79,7 @@
 #  define RCV_BUCKETS            2 
 #  define RFR_SHADOW                    // PROGMEM: 10b    RAM: -(TTY_BUFSIZE+3)
 #  define HAS_TX3
-#  define HAS_HOERMANN
+#  define NO_RF_DEBUG                   // squeeze out some bytes for hoermann_send
 #  undef  HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT
 #endif
 

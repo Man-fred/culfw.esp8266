@@ -236,7 +236,7 @@ bool USB_GetDescriptor (const uint16_t wValue,
           break;
         case 0x02:
 #ifdef MULTI_FREQ_DEVICE
-          if (!bit_is_set(PINB, PB6))
+          if (!bit_is_set(MARK433_PIN, MARK433_BIT))
             Address = DESCRIPTOR_ADDRESS(ProductString433);
           else
 #endif

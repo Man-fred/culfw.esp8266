@@ -85,9 +85,10 @@
 #define HAS_UART                1
 #define UART_BAUD_RATE          38400
 
-#define TTY_BUFSIZE             128
+#define TTY_BUFSIZE             512  /* EnOcean needs 2*sizeof(mycmd[])) */
 
 #define HAS_STACKING
+#define HAS_STACK_ENOCEAN
 
 #define BUSWARE_CSM
 #define BUSWARE_SCC
