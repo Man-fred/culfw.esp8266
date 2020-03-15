@@ -137,6 +137,10 @@
 #define HELIOS_EMU_HC          "2823" // This is the house code used to address HELIOS space while using F... commands
 #undef  HAS_HELIOS
 
+#ifndef HAS_HELIOS
+#define HAS_HOERMANN_SEND               // Both helios and hoermann use 'h'
+#endif
+
 #ifdef HAS_DMX
 #undef  HAS_IRTX
 #undef  HAS_IRRX

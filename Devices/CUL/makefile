@@ -18,6 +18,7 @@ SRC =           CUL.c\
 		../../clib/rf_receive.c                              \
 		../../clib/rf_router.c                               \
 		../../clib/rf_asksin.c                               \
+                ../../clib/rf_evohome.c                              \
 		../../clib/rf_moritz.c                               \
 		../../clib/rf_rwe.c                                  \
 		../../clib/rf_native.c                               \
