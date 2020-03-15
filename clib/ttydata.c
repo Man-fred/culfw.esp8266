@@ -32,7 +32,7 @@ callfn(char *buf)
 void
 analyze_ttydata(uint8_t channel)
 {
-  static uint8_t cmdlen;
+  static int cmdlen;  /* we need int because TTY_BUFSIZE may be >255 */
   uint8_t ucCommand;
   uint8_t odc = display_channel;
   display_channel = channel;

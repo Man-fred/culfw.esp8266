@@ -428,6 +428,7 @@ uint8_t RfReceiveClass::analyze_TX3(bucket_t *b)
   return 1;
 }
 #endif
+
 #ifdef HAS_IT
 uint8_t RfReceiveClass::analyze_it(bucket_t *b)
 {
@@ -440,6 +441,7 @@ uint8_t RfReceiveClass::analyze_it(bucket_t *b)
   return 1;
 }
 #endif
+
 #ifdef HAS_TCM97001
 uint8_t RfReceiveClass::analyze_tcm97001(bucket_t *b)
 {
@@ -453,6 +455,7 @@ uint8_t RfReceiveClass::analyze_tcm97001(bucket_t *b)
   return 1;
 }
 #endif
+
 #ifdef HAS_REVOLT
 uint8_t RfReceiveClass::analyze_revolt(bucket_t *b)
 {
@@ -500,6 +503,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
   bucket_t *b;
 
   if(lowtime) {
+#ifndef NO_RF_DEBUG
     if(tx_report & REP_LCDMON) {
 #ifdef HAS_LCD
       lcd_txmon(hightime, lowtime);
@@ -530,6 +534,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
 		DNL();
 		overflow = 0;
 	}
+#endif // NO_RF_DEBUG
     lowtime = 0;
   }
 
@@ -680,6 +685,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
 
   }
 
+#ifndef NO_RF_DEBUG
   if(tx_report & REP_BITS) {
 
     DNL();
@@ -705,6 +711,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
     DNL();
 
   }
+#endif
 
   b->state = STATE_RESET;
   bucket_nrused--;
@@ -752,6 +759,10 @@ void RfReceiveClass::IsrTimer1(void)
   if(!silence) {
 	silence = 1;
   }
+#ifndef NO_RF_DEBUG
+  if(tx_report & REP_MONITOR)
+    DC('.');
+#endif
 
   if(bucket_array[bucket_in].state < STATE_COLLECT ||
      bucket_array[bucket_in].byteidx < 2) {    // false alarm
@@ -761,6 +772,11 @@ void RfReceiveClass::IsrTimer1(void)
   }
 
   if(bucket_nrused+1 == RCV_BUCKETS) {   // each bucket is full: reuse the last
+
+#ifndef NO_RF_DEBUG
+    if(tx_report & REP_BITS)
+      DS_P(PSTR("BOVF\r\n"));            // Bucket overflow
+#endif
 
 	overflow = 1; // Bucket overflow
 	reset_input();
