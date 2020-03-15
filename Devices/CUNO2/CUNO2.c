@@ -128,6 +128,9 @@ const PROGMEM t_fntab fntab[] = {
 #ifdef HAS_HELIOS
   { 'h', helios_func },
 #endif
+#ifdef HAS_HOERMANN_SEND
+  { 'h', hm_send },
+#endif
 #ifdef HAS_SOMFY_RTS
   { 'Y', somfy_rts_func },
 #endif
