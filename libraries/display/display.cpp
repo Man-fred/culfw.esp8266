@@ -22,7 +22,7 @@
 //#include "private_channel.h"
 #endif
 #ifdef HAS_ETHERNET
-//#include "tcplink.h"
+#include "ethernet.h"
 #endif
 #ifdef HAS_DOGM
 //#include "dogm16x.h"
@@ -53,7 +53,7 @@ void DisplayClass::chr(char data)
 
 #ifdef HAS_ETHERNET
   if(channel & DISPLAY_TCP)
-    tcp_putchar( data );
+    Ethernet.putchar( data );
 #endif
 
 #ifdef HAS_PRIVATE_CHANNEL

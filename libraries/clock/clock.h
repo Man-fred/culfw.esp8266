@@ -4,6 +4,9 @@
 #include <stdint.h>
 
 //volatile extern uint32_t ticks;  // 1/125 sec resolution
+#ifdef HAS_ETHERNET
+	typedef uint16_t clock_time_t;
+#endif
 
 class CLOCKClass {
 public:
@@ -14,12 +17,11 @@ public:
 	void Minute_Task(void);
 
 	volatile uint32_t ticks; // 1/125 sec resolution
-private:
-	
 #ifdef HAS_ETHERNET
-	typedef uint16_t clock_time_t;
 	clock_time_t clock_time(void);
 #endif
+private:
+	
     uint8_t last_tick;
 	volatile uint8_t  clock_hsec;
 #if defined (HAS_IRRX) || defined (HAS_IRTX)

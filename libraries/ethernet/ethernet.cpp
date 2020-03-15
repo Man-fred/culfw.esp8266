@@ -1,19 +1,19 @@
-#include <avr/pgmspace.h>
-#include <avr/boot.h>
+#include <pgmspace.h>
+//#include <avr/boot.h>
 #include "board.h"
 #include "ethernet.h"
 #include "fncollection.h"
 #include "stringfunc.h"
-#include "timer.h"
+//#include "timer.h"
 #include "display.h"
 #include "delay.h"
-#include "ntp.h"
-#include "mdns_sd.h"
+//#include "ntp.h"
+//#include "mdns_sd.h"
 #include "led.h"
 
-#include "uip_arp.h"
-#include "drivers/interfaces/network.h"
-#include "apps/dhcpc/dhcpc.h"
+//#include "uip_arp.h"
+//#include "drivers/interfaces/network.h"
+//#include "apps/dhcpc/dhcpc.h"
 #include "delay.h"
 
 struct timer periodic_timer, arp_timer;
@@ -25,26 +25,25 @@ static uint8_t dhcp_state;
 static void set_eeprom_addr(void);
 static void ip_initialized(void);
 
-void
-ethernet_init(void)
+void EthernetClass::init(void)
 {
 
   // reset Ethernet
   ENC28J60_RESET_DDR  |= _BV( ENC28J60_RESET_BIT );
   ENC28J60_RESET_PORT &= ~_BV( ENC28J60_RESET_BIT );
 
-  my_delay_ms( 200 );
+  MYDELAY.my_delay_ms( 200 );
   // unreset Ethernet
   ENC28J60_RESET_PORT |= _BV( ENC28J60_RESET_BIT );
 
-  my_delay_ms( 200 );
+  MYDELAY.my_delay_ms( 200 );
   network_init();
-  mac.addr[0] = erb(EE_MAC_ADDR+0);
-  mac.addr[1] = erb(EE_MAC_ADDR+1);
-  mac.addr[2] = erb(EE_MAC_ADDR+2);
-  mac.addr[3] = erb(EE_MAC_ADDR+3);
-  mac.addr[4] = erb(EE_MAC_ADDR+4);
-  mac.addr[5] = erb(EE_MAC_ADDR+5);
+  mac.addr[0] = EEPROM.erb(EE_MAC_ADDR+0);
+  mac.addr[1] = EEPROM.erb(EE_MAC_ADDR+1);
+  mac.addr[2] = EEPROM.erb(EE_MAC_ADDR+2);
+  mac.addr[3] = EEPROM.erb(EE_MAC_ADDR+3);
+  mac.addr[4] = EEPROM.erb(EE_MAC_ADDR+4);
+  mac.addr[5] = EEPROM.erb(EE_MAC_ADDR+5);
   network_set_MAC(mac.addr);
 
   uip_setethaddr(mac);
@@ -55,7 +54,7 @@ ethernet_init(void)
   timer_set(&periodic_timer, CLOCK_SECOND / 4);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
 
-  if(erb(EE_USE_DHCP)) {
+  if(EEPROM.erb(EE_USE_DHCP)) {
     network_set_led(0x4A6);// LED A: Link Status  LED B: Blink slow
     dhcpc_init(&mac);
     dhcp_state = PT_WAITING;
@@ -67,8 +66,11 @@ ethernet_init(void)
   }
 }
 
-void
-ethernet_reset(void)
+void EthernetClass::close(char *in)
+{
+}
+
+void EthernetClass::reset(void)
 {
   char buf[21];
   uint16_t serial = 0;
@@ -85,13 +87,13 @@ ethernet_reset(void)
 #ifdef EE_DUDETTE_MAC
   // check for mac stored during manufacture
   uint8_t *ee = EE_DUDETTE_MAC;
-  if (erb( ee++ ) == 0xa4)
-    if (erb( ee++ ) == 0x50)
-      if (erb( ee++ ) == 0x55) {
+  if (EEPROM.erb( ee++ ) == 0xa4)
+    if (EEPROM.erb( ee++ ) == 0x50)
+      if (EEPROM.erb( ee++ ) == 0x55) {
         buf[2] = 'm'; strcpy_P(buf+3, PSTR("A45055"));        // busware.de OUI range
-        tohex(erb( ee++ ), (uint8_t*)buf+9);
-        tohex(erb( ee++ ), (uint8_t*)buf+11);
-        tohex(erb( ee++ ), (uint8_t*)buf+13);
+        tohex(EEPROM.erb( ee++ ), (uint8_t*)buf+9);
+        tohex(EEPROM.erb( ee++ ), (uint8_t*)buf+11);
+        tohex(EEPROM.erb( ee++ ), (uint8_t*)buf+13);
         buf[15] = 0;
         write_eeprom(buf);
         return;
@@ -117,8 +119,12 @@ ethernet_reset(void)
   write_eeprom(buf);
 }
 
-static void
-display_mac(uint8_t *a)
+// 1 char senden
+void EthernetClass::putchar(char data)
+{
+}
+
+void EthernetClass::display_mac(uint8_t *a)
 {
   uint8_t cnt = 6;
   while(cnt--) {
@@ -128,8 +134,7 @@ display_mac(uint8_t *a)
   }
 }
 
-static void
-display_ip4(uint8_t *a)
+static void EthernetClass::display_ip4(uint8_t *a)
 {
   uint8_t cnt = 4;
   while(cnt--) {
@@ -139,8 +144,7 @@ display_ip4(uint8_t *a)
   }
 }
 
-void
-eth_func(char *in)
+void EthernetClass::func(char *in)
 {
   if(in[1] == 'i') {
     ethernet_init();
@@ -161,8 +165,7 @@ eth_func(char *in)
   }
 }
 
-void
-dumppkt(void)
+void EthernetClass::dumppkt(void)
 {
   uint8_t *a = uip_buf;
 
@@ -183,8 +186,7 @@ dumppkt(void)
   log_enabled = ole;
 }
 
-void
-Ethernet_Task(void) {
+void EthernetClass::Task(void) {
      int i;
 
      ethernet_process();
@@ -221,14 +223,14 @@ Ethernet_Task(void) {
      
 }
 
-void                             // EEPROM Read IP
-erip(void *ip, uint8_t *addr)
+// EEPROM Read IP
+void EthernetClass::erip(void *ip, uint8_t *addr)
 {
-  uip_ipaddr(ip, erb(addr), erb(addr+1), erb(addr+2), erb(addr+3));
+  uip_ipaddr(ip, EEPROM.erb(addr), EEPROM.erb(addr+1), EEPROM.erb(addr+2), EEPROM.erb(addr+3));
 }
 
-static void                             // EEPROM Write IP
-ewip(const u16_t ip[2], uint8_t *addr)
+// EEPROM Write IP
+static void EthernetClass::ewip(const u16_t ip[2], uint8_t *addr)
 {
   uint16_t ip0 = HTONS(ip[0]);
   uint16_t ip1 = HTONS(ip[1]);
@@ -238,8 +240,7 @@ ewip(const u16_t ip[2], uint8_t *addr)
   ewb(addr+3, ip1&0xff);
 }
 
-static void
-ip_initialized(void)
+static void EthernetClass::ip_initialized(void)
 {
   network_set_led(0x476);// LED A: Link Status  LED B: TX/RX
   tcplink_init();
@@ -249,8 +250,7 @@ ip_initialized(void)
 #endif
 }
 
-void
-dhcpc_configured(const struct dhcpc_state *s)
+void EthernetClass::dhcpc_configured(const struct dhcpc_state *s)
 {
   if(s == 0) {
     set_eeprom_addr();
@@ -264,8 +264,7 @@ dhcpc_configured(const struct dhcpc_state *s)
   ip_initialized();
 }
 
-static void
-set_eeprom_addr()
+static void EthernetClass::set_eeprom_addr()
 {
   uip_ipaddr_t ipaddr;
   erip(ipaddr, EE_IP4_ADDR);    uip_sethostaddr(ipaddr);
@@ -274,15 +273,13 @@ set_eeprom_addr()
   ip_initialized();
 }
 
-void
-tcp_appcall()
+void EthernetClass::tcp_appcall()
 {
   if(uip_conn->lport == tcplink_port)
     tcplink_appcall();
 }
 
-void
-udp_appcall()
+void EthernetClass::udp_appcall()
 {
   if(dhcp_state != PT_ENDED) {
     dhcp_state = handle_dhcp();
@@ -301,3 +298,8 @@ udp_appcall()
 #endif
   } 
 }
+
+#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_Ethernet)
+extern EthernetClass Ethernet;
+#endif
+

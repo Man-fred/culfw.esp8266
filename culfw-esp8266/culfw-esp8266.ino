@@ -92,6 +92,9 @@ byte CheckGDO(void)
 //#include "fastrf.h"   // fastrf_func
 #include "rf_router.h"    // rf_router_func
 
+#ifdef HAS_ETHERNET
+#  include "ethernet.h"
+#endif
 #ifdef HAS_MEMFN
 #  include "memory.h"   // getfreemem
 #endif
@@ -227,6 +230,7 @@ void ccreg(char *data)                {CC1100.ccreg(data); };
 void ccsetpa(char *data)              { CC1100.ccsetpa(data); };
 void eeprom_factory_reset(char *data) { FNcol.eeprom_factory_reset(data); };
 void em_send(char *data)              { RfSend.em_send(data); };
+void eth_func(char *data)             { Ethernet.func(data); }
 void fhtsend(char *data)              { FHT.fhtsend(data); };
 void fs20send(char *data)             { RfSend.fs20send(data); };
 void ftz_send(char *data)             { RfSend.ftz_send(data); };
@@ -240,6 +244,7 @@ void read_eeprom(char *data)          { FNcol.read_eeprom(data); };
 void rf_mbus_func(char *data)         { Serial.println("rf_mbus_func"); };
 void rf_router_func(char *data)       { RfRouter.func(data); }
 void set_txreport(char *data)         { RfReceive.set_txreport(data); };
+void tcplink_close(char *data)        { Ethernet.close(data); }
 void version(char *data)              { FNcol.version(data); };
 void write_eeprom(char *data)         { FNcol.write_eeprom(data); };
 
@@ -292,6 +297,9 @@ void setup() {
   #ifdef HAS_RFNATIVE
     TTYdata.fntab[i++] = { 'N', native_func };
   #endif
+  #ifdef HAS_ETHERNET
+    TTYdata.fntab[i++] = { 'q', tcplink_close };
+  #endif
   TTYdata.fntab[i++] = { 'R', read_eeprom };
   TTYdata.fntab[i++] = { 'T', fhtsend };
   TTYdata.fntab[i++] = { 't', gettime };
@@ -317,6 +325,13 @@ void setup() {
   #endif
   #ifdef HAS_ZWAVE
     { 'z', zwave_func },
+  #endif
+  //doppelt, eigene Kuerzel!
+  #ifdef HAS_ETHERNET
+    TTYdata.fntab[i++] = { '1', eth_func }; //'E'
+  #endif
+  #ifdef HAS_NTP
+    TTYdata.fntab[i++] = { '2', ntp_func }; // 'c'
   #endif
   TTYdata.fntab[i++] = { 0, 0 };
 
@@ -380,6 +395,9 @@ void setup() {
 #ifdef HAS_RF_ROUTER
   RfRouter.init();
 #endif
+#ifdef HAS_ETHERNET
+  Ethernet.init();
+#endif
   Serial.print("CC1100_PARTNUM 0x00: "); Serial.println(CC1100.readStatus(0x30), HEX);
   Serial.print("CC1100_VERSION 0x14: "); Serial.println(CC1100.readStatus(0x31), HEX);
 
@@ -438,6 +456,9 @@ void loop() {
 #endif
 #ifdef HAS_EVOHOME
     rf_evohome_task();
+#endif
+#ifdef HAS_ETHERNET
+    Ethernet.Task();
 #endif
 
 }
