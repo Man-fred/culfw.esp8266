@@ -1,40 +1,33 @@
-MCU = atmega328p
+MCU = atmega1284p
 BOARD  =
 F_CPU = 8000000
 FORMAT = ihex
-TARGET = nanoCUL
+TARGET = PCM
 OBJDIR = .
 
-VERS=1.61
-DATE=$(shell date +%Y-%m-%d)
-DESTDIR=culfw-nanoCUL.$(VERS)
-
-#		../../clib/adcw.c                                    \
-#		../../clib/cctemp.c                                  \
-
-SRC = $(TARGET).c                                            \
+SRC = ../SCC/SCC.c                                                    \
 		../../clib/cc1100.c                                  \
-		../../clib/cc1101_pllcheck.c                                  \
+		../../clib/cc1101_pllcheck.c                         \
 		../../clib/clock.c                                   \
 		../../clib/delay.c                                   \
 		../../clib/display.c                                 \
 		../../clib/stringfunc.c                              \
 		../../clib/fncollection.c                            \
 		../../clib/ringbuffer.c                              \
-		../../clib/fht.c                                     \
 		../../clib/rf_send.c                                 \
-		../../clib/rf_receive.c                              \
 		../../clib/rf_asksin.c                               \
 		../../clib/rf_moritz.c                               \
-		../../clib/rf_rwe.c                               \
-		../../clib/somfy_rts.c                               \
-		../../clib/fastrf.c                               \
+		../../clib/rf_receive.c                              \
+		../../clib/rf_router.c                               \
 		../../clib/rf_zwave.c                                \
 		../../clib/intertechno.c                             \
-		../../clib/kopp-fc.c                                 \
+		../../clib/somfy_rts.c				     \
+		../../clib/fht.c                                     \
+		../../clib/fastrf.c                                  \
 		../../clib/memory.c                                  \
 		../../clib/serial.c                                  \
 		../../clib/ttydata.c                                 \
+		../../clib/stacking.c                                \
 		../../clib/spi.c                                     \
                 ../../clib/rf_mbus.c                                 \
                 ../../clib/mbus/manchester.c                         \
@@ -91,28 +84,31 @@ ASFLAGS = $(ADEFS) -Wa,-adhlns=$(<:%.S=$(OBJDIR)/%.lst),-gstabs,--listing-cont-l
 
 PRINTF_LIB_MIN = -Wl,-u,vfprintf -lprintf_min
 PRINTF_LIB_FLOAT = -Wl,-u,vfprintf -lprintf_flt
-PRINTF_LIB = 
+PRINTF_LIB =
 SCANF_LIB_MIN = -Wl,-u,vfscanf -lscanf_min
 SCANF_LIB_FLOAT = -Wl,-u,vfscanf -lscanf_flt
-SCANF_LIB = 
+SCANF_LIB =
 MATH_LIB = -lm
-EXTRALIBDIRS = 
+EXTRALIBDIRS =
 EXTMEMOPTS =
 
 
 LDFLAGS = -Wl,-Map=$(TARGET).map,--cref
-LDFLAGS += -Wl,--relax 
+LDFLAGS += -Wl,--relax
 LDFLAGS += -Wl,--gc-sections
 LDFLAGS += $(EXTMEMOPTS)
 LDFLAGS += $(patsubst %,-L%,$(EXTRALIBDIRS))
 LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 
-#AVRDUDE_NO_VERIFY = -V
-#AVRDUDE_PROGRAMMER = avr109
-AVRDUDE_PROGRAMMER = arduino
-AVRDUDE_PORT = /dev/ttyUSB0 -b 57600
+AVRDUDE_NO_VERIFY = -V
+
+#AVRDUDE_PROGRAMMER = jtagmkII
+#AVRDUDE_PORT = usb
+#AVRDUDE_PROGRAMMER = stk500v2
+AVRDUDE_PROGRAMMER = avr109 -b 38400
+AVRDUDE_PORT = /dev/ttyAMA0
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
-AVRDUDE_FLAGS = -D -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
+AVRDUDE_FLAGS = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
 AVRDUDE_FLAGS += $(AVRDUDE_NO_VERIFY)
 AVRDUDE_FLAGS += $(AVRDUDE_VERBOSE)
 AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
@@ -143,7 +139,7 @@ WINSHELL = cmd
 MSG_ERRORS_NONE = Errors: none
 MSG_BEGIN = -------- begin --------
 MSG_END = --------  end  --------
-MSG_SIZE_BEFORE = Size before: 
+MSG_SIZE_BEFORE = Size before:
 MSG_SIZE_AFTER = Size after:
 MSG_COFF = Converting to AVR COFF:
 MSG_EXTENDED_COFF = Converting to AVR Extended COFF:
@@ -161,9 +157,9 @@ MSG_CREATING_LIBRARY = Creating library:
 
 
 
-OBJ = $(SRC:%.c=$(OBJDIR)/%.o) $(CPPSRC:%.cpp=$(OBJDIR)/%.o) $(ASRC:%.S=$(OBJDIR)/%.o) 
+OBJ = $(SRC:%.c=$(OBJDIR)/%.o) $(CPPSRC:%.cpp=$(OBJDIR)/%.o) $(ASRC:%.S=$(OBJDIR)/%.o)
 
-LST = $(SRC:%.c=$(OBJDIR)/%.lst) $(CPPSRC:%.cpp=$(OBJDIR)/%.lst) $(ASRC:%.S=$(OBJDIR)/%.lst) 
+LST = $(SRC:%.c=$(OBJDIR)/%.lst) $(CPPSRC:%.cpp=$(OBJDIR)/%.lst) $(ASRC:%.S=$(OBJDIR)/%.lst)
 
 
 GENDEPFLAGS = -MMD -MP -MF .dep/$(@F).d
@@ -210,37 +206,87 @@ sizeafter:
 	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_AFTER); $(ELFSIZE); \
 	2>/dev/null; echo; fi
 
-gccversion : 
+checkhooks: build
+	@echo
+	@echo ------- Unhooked MyUSB Events -------
+	@$(shell) (grep -s '^Event.*MyUSB/.*\\.o' $(TARGET).map | \
+	           cut -d' ' -f1 | cut -d'_' -f2- | grep ".*") || \
+			   echo "(None)"
+	@echo ----- End Unhooked MyUSB Events -----
+
+checklibmode:
+	@echo
+	@echo ----------- Library Mode -----------
+	@$(shell) ($(CC) $(ALL_CFLAGS) -E -dM - < /dev/null \
+	          | grep 'USB_\(DEVICE\|HOST\)_ONLY' | cut -d' ' -f2 | grep ".*") \
+	          || echo "No specific mode (both device and host mode allowable)."
+	@echo ------------------------------------
+
+gccversion :
 	@$(CC) --version
 
+start:
+	@echo
+	@echo starting ...
+	@echo
+	if test ! -d /sys/class/gpio/gpio102; then echo 102 > /sys/class/gpio/export; fi
+	echo out > /sys/class/gpio/gpio102/direction
+	echo 1 > /sys/class/gpio/gpio102/value
+
+iprogram:
+	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
+
 program: $(TARGET).hex
-	#@if test ! -d /sys/class/gpio/gpio17; then echo 17 > /sys/class/gpio/export; fi
-	#@if test ! -d /sys/class/gpio/gpio18; then echo 18 > /sys/class/gpio/export; fi
-	#echo out > /sys/class/gpio/gpio17/direction
-	#echo out > /sys/class/gpio/gpio18/direction
-	#echo 0 > /sys/class/gpio/gpio17/value
-	#echo 0 > /sys/class/gpio/gpio18/value
-	#sleep 1
-	#echo 1 > /sys/class/gpio/gpio17/value
-	#sleep 1
-	#echo 1 > /sys/class/gpio/gpio18/value
+	@echo
+	@echo calling radio frontends bootloader on RPi PIGATOR OW / POD ...
+	@echo
+	if test ! -d /sys/class/gpio/gpio22; then echo 22 > /sys/class/gpio/export; fi
+	echo out > /sys/class/gpio/gpio22/direction
+	echo 0 > /sys/class/gpio/gpio22/value
+
+	if test ! -d /sys/class/gpio/gpio27; then echo 27 > /sys/class/gpio/export; fi
+	echo out > /sys/class/gpio/gpio27/direction
+	echo 0 > /sys/class/gpio/gpio27/value
+
+	echo 1 > /sys/class/gpio/gpio22/value
+	sleep 1
+	echo 1 > /sys/class/gpio/gpio22/value
+	echo in > /sys/class/gpio/gpio27/direction
+	echo 27 > /sys/class/gpio/unexport
+
+	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
+
+	echo 0 > /sys/class/gpio/gpio22/value
+	sleep 1
+	echo 1 > /sys/class/gpio/gpio22/value
+
+program_isp: $(TARGET).hex $(TARGET).eep
+	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM) -U lfuse:w:0xc2:m -U hfuse:w:0x99:m
+
+erase:
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -e
+
+
+usbprogram: $(TARGET).hex
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
 
 deb: $(TARGET).hex
 	echo $(PWD)
 	rm -rf .f $(DESTDIR) *.deb
-	mkdir -p .f/tmp
+	mkdir -p .f/boot
 	cp -r DEBIAN .f/
 	rm -fr .f/DEBIAN/CVS
-	cp $(TARGET).hex .f/tmp/CSM-nanoCUL.hex	
-	find .f -type f -print |\
-		xargs perl -pi -e 's/=VERS=/$(VERS)/g;s/=DATE=/$(DATE)/g'
+	cp $(TARGET).hex .f/boot/culfw-s0logger.hex
+	find .f -type f -print | xargs perl -pi -e 's/=VERS=/$(VERS)/g;s/=DATE=/$(DATE)/g'
 	chown -R root:root .f
 	mv .f $(DESTDIR)
 	dpkg-deb --build $(DESTDIR)
 	rm -rf $(DESTDIR)
+	scp $(DESTDIR).deb busware.de:/srv/ftp/debian/dists/tuxrail2/main/
+	@echo run /root/update_apt.sh
 
-gdb-config: 
+
+gdb-config:
 	@$(REMOVE) $(GDBINIT_FILE)
 	@echo define reset >> $(GDBINIT_FILE)
 	@echo SIGNAL SIGHUP >> $(GDBINIT_FILE)
@@ -325,13 +371,13 @@ extcoff: $(TARGET).elf
 
 $(OBJDIR)/%.o : %.c
 	@echo $(MSG_COMPILING) $<
-	@$(CC) -c $(ALL_CFLAGS) $< -o $@ 
+	@$(CC) -c $(ALL_CFLAGS) $< -o $@
 
 
 $(OBJDIR)/%.o : %.cpp
 	@echo
 	@echo $(MSG_COMPILING_CPP) $<
-	$(CC) -c $(ALL_CPPFLAGS) $< -o $@ 
+	$(CC) -c $(ALL_CPPFLAGS) $< -o $@
 
 
 %.s : %.c
@@ -349,7 +395,7 @@ $(OBJDIR)/%.o : %.S
 
 
 %.i : %.c
-	$(CC) -E -mmcu=$(MCU) -I. $(CFLAGS) $< -o $@ 
+	$(CC) -E -mmcu=$(MCU) -I. $(CFLAGS) $< -o $@
 
 clean: clean_list clean_binary
 
@@ -378,7 +424,7 @@ $(shell mkdir $(OBJDIR) 2>/dev/null)
 -include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
 
 
-.PHONY : all begin  \
+.PHONY : all checkhooks checklibmode begin  \
 finish end sizebefore sizeafter gccversion  \
 build elf hex eep lss sym coff extcoff      \
 clean clean_list clean_binary program debug \
