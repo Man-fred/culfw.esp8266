@@ -114,10 +114,7 @@ void RfSendClass::send_bit(uint8_t bit, uint8_t edge = 0)
 
 // msg is with parity/checksum already added
 void RfSendClass::sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bitoff,
-                uint8_t repeat, uint8_t pause, uint8_t edge = 0, uint8_t addH, uint8_t addL)
-        //ToDo: neu in 1.67: 
-        //     -uint8_t repeat, uint8_t pause)
-		//     +uint8_t repeat, uint8_t pause, uint8_t addH, uint8_t addL)
+                uint8_t repeat, uint8_t pause, uint8_t edge, uint8_t addH, uint8_t addL)
 {
   // 12*800+1200+nbyte*(8*1000)+(bits*1000)+800+10000 
   // message len is < (nbyte+2)*repeat in 10ms units.
@@ -169,10 +166,10 @@ void RfSendClass::sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bit
  
     if(addH>0 || addL>0) {
       CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);        // High
-      my_delay_us(TMUL(addH));
+      MYDELAY.my_delay_us(TMUL(addH));
 
       CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
-      my_delay_us(TMUL(addL));
+      MYDELAY.my_delay_us(TMUL(addL));
     }
 
    for(i = 0; i < sync; i++)                   // sync

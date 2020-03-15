@@ -24,7 +24,7 @@ public:
 private:
 	void send_bit(uint8_t bit, uint8_t edge);
 	void sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bitoff, 
-                uint8_t repeat, uint8_t pause, uint8_t edge);
+                uint8_t repeat, uint8_t pause, uint8_t edge, uint8_t addH, uint8_t addL);
 	int abit(uint8_t b, uint8_t *obuf, uint8_t *obyp, uint8_t obi);
 
 
