@@ -125,6 +125,9 @@ byte CheckGDO(void)
 #ifdef HAS_ZWAVE
 #  include "rf_zwave.h"
 #endif
+#ifdef HAS_EVOHOME
+#  include "rf_evohome.h"
+#endif
 
 void start_bootloader(void)
 {
@@ -245,64 +248,73 @@ void setup() {
   Serial.begin(9600);
 
   int i = 0;
+#ifdef HAS_ASKSIN
+  TTYdata.fntab[i++] = { 'A', asksin_func };
+#endif
   TTYdata.fntab[i++] = { 'B', prepare_boot };
   #ifdef HAS_MBUS
     TTYdata.fntab[i++] = { 'b', rf_mbus_func };
   #endif
   TTYdata.fntab[i++] = { 'C', ccreg };
-  TTYdata.fntab[i++] = { 'F', fs20send };
-  TTYdata.fntab[i++] = { 'Z', ftz_send };
-  #ifdef HAS_INTERTECHNO
-    { 'i', it_func },
-  #endif
-  #ifdef HAS_ASKSIN
-    { 'A', asksin_func },
-  #endif
-  #ifdef HAS_MORITZ
-    { 'Z', moritz_func },
-  #endif
-  #ifdef HAS_RFNATIVE
-    TTYdata.fntab[i++] = { 'N', native_func };
-  #endif
   #ifdef HAS_RWE
     { 'E', rwe_func },
   #endif
-  #ifdef HAS_KOPP_FC
-    { 'k', kopp_fc_func },
-  #endif
-  #ifdef HAS_RAWSEND
-    TTYdata.fntab[i++] = { 'G', rawsend };
-    TTYdata.fntab[i++] = { 'M', em_send };
-    TTYdata.fntab[i++] = { 'K', ks_send };
-  #endif
-  #ifdef HAS_UNIROLL
-    { 'U', ur_send },
-  #endif
-  #ifdef HAS_SOMFY_RTS
-    { 'Y', somfy_rts_func },
-  #endif
-  TTYdata.fntab[i++] = { 'R', read_eeprom };
-  TTYdata.fntab[i++] = { 'T', fhtsend };
-  TTYdata.fntab[i++] = { 'V', version };
-  TTYdata.fntab[i++] = { 'W', write_eeprom };
-  TTYdata.fntab[i++] = { 'X', set_txreport };
-  
   TTYdata.fntab[i++] = { 'e', eeprom_factory_reset };
+  TTYdata.fntab[i++] = { 'F', fs20send };
   #ifdef HAS_FASTRF
     { 'f', fastrf_func },
   #endif
-  #ifdef HAS_MEMFN
-    { 'm', getfreemem },
+  #ifdef HAS_RAWSEND
+    TTYdata.fntab[i++] = { 'G', rawsend };
+  #endif
+  #ifdef HAS_HOERMANN_SEND
+    { 'h', hm_send },
+  #endif
+  #ifdef HAS_INTERTECHNO
+    { 'i', it_func },
+  #endif
+  #ifdef HAS_RAWSEND
+    TTYdata.fntab[i++] = { 'K', ks_send };
+  #endif
+  #ifdef HAS_KOPP_FC
+    { 'k', kopp_fc_func },
   #endif
   #ifdef HAS_BELFOX
     { 'L', send_belfox },
   #endif
   TTYdata.fntab[i++] = { 'l', ledfunc };
+  #ifdef HAS_RAWSEND
+    TTYdata.fntab[i++] = { 'M', em_send };
+  #endif
+  #ifdef HAS_MEMFN
+    { 'm', getfreemem },
+  #endif
+  #ifdef HAS_RFNATIVE
+    TTYdata.fntab[i++] = { 'N', native_func };
+  #endif
+  TTYdata.fntab[i++] = { 'R', read_eeprom };
+  TTYdata.fntab[i++] = { 'T', fhtsend };
   TTYdata.fntab[i++] = { 't', gettime };
+  #ifdef HAS_UNIROLL
+    { 'U', ur_send },
+  #endif
   #ifdef HAS_RF_ROUTER
     TTYdata.fntab[i++] = { 'u', rf_router_func };
   #endif
+  TTYdata.fntab[i++] = { 'V', version };
+  #ifdef HAS_EVOHOME
+    { 'v', rf_evohome_func },
+  #endif
+  TTYdata.fntab[i++] = { 'W', write_eeprom };
+  TTYdata.fntab[i++] = { 'X', set_txreport };
   TTYdata.fntab[i++] = { 'x', ccsetpa };
+  #ifdef HAS_SOMFY_RTS
+    { 'Y', somfy_rts_func },
+  #endif
+  TTYdata.fntab[i++] = { 'Z', ftz_send };
+  #ifdef HAS_MORITZ
+    { 'Z', moritz_func },
+  #endif
   #ifdef HAS_ZWAVE
     { 'z', zwave_func },
   #endif
@@ -424,4 +436,8 @@ void loop() {
 #ifdef HAS_ZWAVE
     rf_zwave_task();
 #endif
+#ifdef HAS_EVOHOME
+    rf_evohome_task();
+#endif
+
 }

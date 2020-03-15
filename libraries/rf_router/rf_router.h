@@ -22,6 +22,10 @@ public:
 #ifdef RFR_DEBUG
 	uint16_t nr_t, nr_f, nr_e, nr_k, nr_h, nr_r, nr_plus;
 #endif
+#ifdef RFR_FILTER
+    uint8_t filter[6];
+#endif
+#undef RFR_USBECHO  // 1. mal gesehen in 1.67 !?
 private:
 	void send(uint8_t);
 	void usbMsg(char *s);
