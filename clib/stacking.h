@@ -10,5 +10,6 @@
 void stacking_initialize(void);
 void stacking_task(void);
 void stacking_func(char*);
+void stacking_func_eno(char*);
 
 #endif

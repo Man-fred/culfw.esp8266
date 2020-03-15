@@ -578,6 +578,107 @@ uint16 decodeRXBytesTmode(uint8* pByte, uint8* pPacket, uint16 packetSize)
   return (PACKET_OK);
 }
 
+uint16 verifyCrcBytesCmodeA(uint8* pByte, uint8* pPacket, uint16 packetSize)
+{
+  uint16 crc = 0;
+  uint16 i = 0;
+
+  while (i < 10) {
+    crc = crcCalc(crc, pByte[i]);
+    pPacket[i] = pByte[i];
+    ++i;
+  }
+
+  if ((~crc) != (pByte[i] << 8 | pByte[i + 1])) {
+    return (PACKET_CRC_ERROR);
+  }
+
+  pPacket[i] = pByte[i];
+  ++i;
+  pPacket[i] = pByte[i];
+  ++i;
+  crc = 0;
+
+  int cycles = (packetSize - 12) / 18;
+  while (cycles > 0) {
+    for (int j = 0; j < 16; ++j) {
+      crc = crcCalc(crc, pByte[i]);
+      pPacket[i] = pByte[i];
+      ++i;
+    }
+
+    if ((~crc) != (pByte[i] << 8 | pByte[i + 1])) {
+      return (PACKET_CRC_ERROR);
+    }
+
+    pPacket[i] = pByte[i];
+    ++i;
+    pPacket[i] = pByte[i];
+    ++i;
+    crc = 0;
+
+    --cycles;
+  }
+
+  if (i == packetSize) {
+    return (PACKET_OK);
+  }
+
+  while (i < packetSize - 2) {
+    crc = crcCalc(crc, pByte[i]);
+    pPacket[i] = pByte[i];
+    ++i;
+  }
+
+  if ((~crc) != (pByte[i] << 8 | pByte[i + 1])) {
+    return (PACKET_CRC_ERROR);
+  }
+
+  pPacket[i] = pByte[i];
+  ++i;
+  pPacket[i] = pByte[i];
+  ++i;
+
+  return (PACKET_OK);
+}
+
+uint16 verifyCrcBytesCmodeB(uint8* pByte, uint8* pPacket, uint16 packetSize)
+{
+  uint16 crc = 0;
+  uint16 i = 0;
+  if (packetSize > 128) {
+    while (i < 126) {
+      crc = crcCalc(crc, pByte[i]);
+      pPacket[i] = pByte[i];
+      ++i;
+    }
+
+    if ((~crc) != (pByte[i] << 8 | pByte[i + 1])) {
+      return (PACKET_CRC_ERROR);
+    }
+
+    pPacket[i] = pByte[i];
+    ++i;
+    pPacket[i] = pByte[i];
+    ++i;
+    crc = 0;
+  }
+
+  while (i < packetSize - 2) {
+    crc = crcCalc(crc, pByte[i]);
+    pPacket[i] = pByte[i];
+    ++i;
+  }
+
+  if ((~crc) != (pByte[packetSize - 2] << 8 | pByte[packetSize - 1])) {
+    return (PACKET_CRC_ERROR);
+  }
+
+  pPacket[packetSize - 2] = pByte[packetSize - 2];
+  pPacket[packetSize - 1] = pByte[packetSize - 1];
+
+  return (PACKET_OK);
+}
 
 /***********************************************************************************
   Copyright 2008 Texas Instruments Incorporated. All rights reserved.
