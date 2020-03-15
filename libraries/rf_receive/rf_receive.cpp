@@ -908,7 +908,7 @@ void RfReceiveClass::IsrHandler()
     if(c < TSCALE(750))
     {
 		pulseTooShort++;
-		shortMax = max(shortMax, c);
+		shortMax = max(shortMax, (uint32_t)c);
 		return;
 	}
     if(c > TSCALE(1250)) {
@@ -919,7 +919,7 @@ void RfReceiveClass::IsrHandler()
 	if (longMin == 0) {
 		longMin = c;
 	} else {
-		longMin = min(longMin, c);
+		longMin = min(longMin, (uint32_t)c);
 	}
   }
 #endif
