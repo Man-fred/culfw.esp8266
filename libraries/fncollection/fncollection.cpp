@@ -54,6 +54,14 @@ uint8_t FNCOLLECTIONClass::erb(uint8_t p)
   return EEPROM.read(p);
 }
 
+// eeprom_read_word
+__attribute__((__noinline__)) 
+uint16_t FNCOLLECTIONClass::erw(uint8_t p)
+{
+  //return eeprom_read_word((uint16_t *)p);
+  return EEPROM.read(p++) << 8 + EEPROM.read(p);
+}
+
 void FNCOLLECTIONClass::display_ee_bytes(uint8_t a, uint8_t cnt)
 {
   while(cnt--) {
@@ -70,7 +78,7 @@ void FNCOLLECTIONClass::display_ee_mac(uint8_t a)
 }
 
 #ifdef HAS_ETHERNET
-static void FNCOLLECTIONClass::display_ee_ip4(uint8_t a)
+void FNCOLLECTIONClass::display_ee_ip4(uint8_t a)
 {
   uint8_t cnt = 4;
   while(cnt--) {
@@ -97,7 +105,7 @@ void FNCOLLECTIONClass::read_eeprom(char *in)
     } else if(in[2] == 'N') { display_ee_ip4(EE_IP4_NTPSERVER);
     } else if(in[2] == 'o') { DH2(erb(EE_IP4_NTPOFFSET));
     } else if(in[2] == 'p') {
-      DU(eeprom_read_word((uint16_t *)EE_IP4_TCPLINK_PORT), 0);
+      DU(erw(EE_IP4_TCPLINK_PORT), 0);
     }
   } else 
 #endif
@@ -259,7 +267,7 @@ DS("B");DNL();
   ewb(EE_SLEEPTIME, 30);
 #endif
 #ifdef HAS_ETHERNET
-  ethernet_reset();
+  Ethernet.reset();
 #endif
 #ifdef HAS_FS
   ewb(EE_LOGENABLED, 0x00);

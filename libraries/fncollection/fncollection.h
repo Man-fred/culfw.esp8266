@@ -12,7 +12,7 @@ public:
 	void eeprom_factory_reset(char *unused);
 	void ewb(uint8_t p, uint8_t v);
 	uint8_t erb(uint8_t p);
-
+    uint16_t erw(uint8_t p);
 	void ledfunc(char *);
 	void prepare_boot(char *);
 	void version(char *);
@@ -21,6 +21,9 @@ private:
 	void dumpmem(uint8_t *addr, uint16_t len);
     void display_ee_bytes(uint8_t a, uint8_t cnt);
 	void display_ee_mac(uint8_t);
+#ifdef HAS_ETHERNET
+      void display_ee_ip4(uint8_t a);
+#endif
 	};
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_FNCOLLECTION)

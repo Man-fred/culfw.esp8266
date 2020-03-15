@@ -8,8 +8,8 @@
 #endif
 
 #define VERSION_1               1
-#define VERSION_2               66
-#define VERSION                 "1.66"
+#define VERSION_2               67
+#define VERSION                 "1.67"
 #define CUL_V3
 
 // Feature definitions
@@ -260,5 +260,13 @@ extern unsigned char OCIE1A;
 #define MARK915_PORT            SPI_PORT
 #define MARK915_PIN             PINB
 #define MARK915_BIT             5
+
+// Ergaenzung wegen WLAN
+#define BUSWARE_CUNO2
+#define HAS_ETHERNET            1   
+#define HAS_ETHERNET_KEEPALIVE  1
+#define ETHERNET_KEEPALIVE_TIME 30
+//#define HAS_NTP                 1   
+
 
 #endif // __BOARD_H__

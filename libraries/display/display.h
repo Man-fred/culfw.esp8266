@@ -40,7 +40,7 @@
 //#include "stringfunc.h"
 
 #define DC display.chr
-#define DS(a) display.string(a)
+#define DS(a) display.string((char*)a)
 #define DS_P display.string_P
 #define DU(a,b) display.udec(a,b,' ')
 #define DH(a,b) display.hex(a,b,'0')

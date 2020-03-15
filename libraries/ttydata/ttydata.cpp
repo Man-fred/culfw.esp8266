@@ -56,10 +56,10 @@ void TTYdataClass::analyze_ttydata(uint8_t channel)
       cmdbuf[cmdlen] = 0;
       if(!callfn(cmdbuf)) {
         //display.string_P(PSTR("? ("));
-        display.string("? (");
+        DS("? (");
         display.string(cmdbuf);
         //display.string_P(PSTR(" is unknown) Use one of"));
-        display.string(" is unknown) Use one of");
+        DS(" is unknown) Use one of");
         callfn(0);
         display.nl();
       }
