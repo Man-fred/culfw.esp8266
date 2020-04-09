@@ -45,7 +45,7 @@
 #define DU(a,b) display.udec(a,b,' ')
 #define DH(a,b) display.hex(a,b,'0')
 #define DH2(a) display.hex2(a)
-#define DNL display.nl
+#define DNL display.nL
 
 #define DISPLAY_USB      (1<<0)
 #define DISPLAY_LCD      (1<<1)
@@ -63,8 +63,8 @@ public:
 	void udec(uint16_t d, int8_t pad, uint8_t padc);
 	void hex(uint16_t h, int8_t pad, uint8_t padc);
 	void hex2(uint8_t h);
-	void nl(void);
-	uint8_t channel=0;
+	void nL(void);
+	uint8_t channel;
 	uint8_t log_enabled;
 };
 

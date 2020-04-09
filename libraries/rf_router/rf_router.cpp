@@ -22,10 +22,11 @@
 
 void RfRouterClass::usbMsg(char *s)
 {
+  uint8_t odc = display.channel;
   display.channel = DISPLAY_USB;
   display.string(s);
   DNL();
-  display.channel = 0xff;
+  display.channel = odc;
 }
 
 void RfRouterClass::init()

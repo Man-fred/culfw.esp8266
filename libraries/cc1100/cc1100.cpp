@@ -292,31 +292,32 @@ void CC1100Class::cc_set_pa(uint8_t idx){
 
 
 //--------------------------------------------------------------------
-void CC1100Class::cc_factory_reset(void){
+void CC1100Class::cc_factory_reset(bool commit = true){
   uint8_t t = EE_CC1100_CFG;
   for(uint8_t i = 0; i < sizeof(CC1100_CFG); i++)
-    FNcol.ewb(t++, __LPM(CC1100_CFG+i));
+    FNcol.ewb(t++, __LPM(CC1100_CFG+i), false);
 #if defined(HAS_FASTRF) || defined(HAS_RF_ROUTER)
   t = EE_FASTRF_CFG;
   for(uint8_t i = 0; i < sizeof(FASTRF_CFG); i++)
-    FNcol.ewb(t++, __LPM(FASTRF_CFG+i));
+    FNcol.ewb(t++, __LPM(FASTRF_CFG+i), false);
 #endif
 
 #ifdef MULTI_FREQ_DEVICE
   // check 433MHz version marker and patch default frequency
   if (!bit_is_set(MARK433_PIN, MARK433_BIT)) {
     t = EE_CC1100_CFG + 0x0d;
-    FNcol.ewb(t++, 0x10);
-    FNcol.ewb(t++, 0xb0);
-    FNcol.ewb(t++, 0x71);
+    FNcol.ewb(t++, 0x10, false);
+    FNcol.ewb(t++, 0xb0, false);
+    FNcol.ewb(t++, 0x71, false);
 #if defined(HAS_FASTRF) || defined(HAS_RF_ROUTER)
     t = EE_FASTRF_CFG + 0x0d;
-    FNcol.ewb(t++, 0x10);
-    FNcol.ewb(t++, 0xb0);
-    FNcol.ewb(t++, 0x71);
+    FNcol.ewb(t++, 0x10, false);
+    FNcol.ewb(t++, 0xb0, false);
+    FNcol.ewb(t++, 0x71, false);
 #endif   
   }
 #endif   
+  FNcol.ewc(commit);
   cc_set_pa(8);
 }
 

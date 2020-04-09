@@ -34,8 +34,9 @@ void TTYdataClass::analyze_ttydata(uint8_t channel)
   static char cmdbuf[TTY_BUFSIZE+1];
   static int cmdlen;
   uint8_t ucCommand;
-  uint8_t odc = display.channel;
+  uint8_t odc;
   
+  odc = display.channel;
   display.channel = channel;
     
   while(rxBuffer.getNbytes()) {
@@ -61,7 +62,7 @@ void TTYdataClass::analyze_ttydata(uint8_t channel)
         //display.string_P(PSTR(" is unknown) Use one of"));
         DS(" is unknown) Use one of");
         callfn(0);
-        display.nl();
+        display.nL();
       }
       cmdlen = 0;
 

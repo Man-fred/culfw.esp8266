@@ -51,9 +51,19 @@ void DisplayClass::chr(char data)
 # define buffer_used()
 #endif
 
+/*ifdef HAS_RF_ROUTER
+  channel = (DISPLAY_USB|DISPLAY_RFROUTER);
+////#else
+  channel = DISPLAY_USB;
+//#endif
+//#ifdef HAS_ETHERNET
+  channel |= DISPLAY_TCP;
+//#endif
+*/
+
 #ifdef HAS_ETHERNET
   if(channel & DISPLAY_TCP)
-    Ethernet.putchar( data );
+    Ethernet.putChar( data );
 #endif
 
 #ifdef HAS_PRIVATE_CHANNEL
@@ -164,7 +174,7 @@ void DisplayClass::string(char *s)
     chr(*s++);
 }
 
-void string_P(const __FlashStringHelper *s) {
+void DisplayClass::string_P(const __FlashStringHelper *s) {
 	Serial.print(s);
 }
 
@@ -181,7 +191,7 @@ void DisplayClass::string_P(const char *s)
   // */
 }
 
-void DisplayClass::nl()
+void DisplayClass::nL()
 {
   chr('\r');
   chr('\n');
