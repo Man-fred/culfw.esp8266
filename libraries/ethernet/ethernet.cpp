@@ -5,8 +5,8 @@
 #include "fncollection.h"
 #include "stringfunc.h"
 #include "display.h"
-#include "delay.h"
 #ifndef ESP8266
+#  include "delay.h"
 #  include "timer.h"
 #  include "ntp.h"
 #  include "mdns_sd.h"
@@ -15,13 +15,15 @@
 #  include "drivers/interfaces/network.h"
 #  include "apps/dhcpc/dhcpc.h"
 #  include "delay.h"
-#else
-#  include <ESP8266WiFi.h>
 #endif
 
 uint8_t eth_debug = 0;
 
 static uint8_t dhcp_state;
+
+EthernetClass::EthernetClass() {
+	ReplyPos = 0;
+}
 
 void EthernetClass::init(void)
 {
@@ -75,29 +77,34 @@ void EthernetClass::init(void)
   }
   //Serial.println();
 
-  //Serial.print("Connected, IP address: ");
-  //Serial.println(WiFi.localIP());
-  WiFiServer server(2323);
+  eth_initialized = Udp.begin(2323);
+  server.begin(2323);
+  IPAddress localIP = WiFi.localIP();
+  uip_hostaddr[0] = localIP[0]<<8 | localIP[1];
+  uip_hostaddr[1] = localIP[2]<<8 | localIP[3];
+  WiFi.macAddress(uip_ethaddr.addr);
+  Serial.printf("\nUDP %d, TCP %d on %s:%d\n", eth_initialized, tcp_initialized, WiFi.localIP().toString().c_str(), 2323);
 #endif
 }
 
 void EthernetClass::close(char *in)
 {
+    Serial.println("[Client disonnected]");
 }
 
-void EthernetClass::reset(void)
+void EthernetClass::reset(bool commit = true)
 {
   char buf[21];
   uint16_t serial = 0;
 
   buf[1] = 'i';
-  buf[2] = 'd'; strcpy_P(buf+3, PSTR("1"));             FNcol.write_eeprom(buf);//DHCP
-  buf[2] = 'a'; strcpy_P(buf+3, PSTR("192.168.178.244")); FNcol.write_eeprom(buf);//IP
-  buf[2] = 'n'; strcpy_P(buf+3, PSTR("255.255.255.0")); FNcol.write_eeprom(buf);
-  buf[2] = 'g'; strcpy_P(buf+3, PSTR("192.168.178.1"));   FNcol.write_eeprom(buf);//GW
-  buf[2] = 'p'; strcpy_P(buf+3, PSTR("2323"));          FNcol.write_eeprom(buf);
-  buf[2] = 'N'; strcpy_P(buf+3, PSTR("0.0.0.0"));       FNcol.write_eeprom(buf);//==GW
-  buf[2] = 'o'; strcpy_P(buf+3, PSTR("00"));            FNcol.write_eeprom(buf);//GMT
+  buf[2] = 'd'; strcpy_P(buf+3, PSTR("1"));             FNcol.write_eeprom(buf, false);//DHCP
+  buf[2] = 'a'; strcpy_P(buf+3, PSTR("192.168.178.244")); FNcol.write_eeprom(buf, false);//IP
+  buf[2] = 'n'; strcpy_P(buf+3, PSTR("255.255.255.0")); FNcol.write_eeprom(buf, false);
+  buf[2] = 'g'; strcpy_P(buf+3, PSTR("192.168.178.1"));   FNcol.write_eeprom(buf, false);//GW
+  buf[2] = 'p'; strcpy_P(buf+3, PSTR("2323"));          FNcol.write_eeprom(buf, false);
+  buf[2] = 'N'; strcpy_P(buf+3, PSTR("0.0.0.0"));       FNcol.write_eeprom(buf, false);//==GW
+  buf[2] = 'o'; strcpy_P(buf+3, PSTR("00"));            FNcol.write_eeprom(buf, false);//GMT
 
 #ifdef EE_DUDETTE_MAC
   // check for mac stored during manufacture
@@ -110,7 +117,7 @@ void EthernetClass::reset(void)
         STRINGFUNC.tohex(FNcol.erb( ee++ ), (uint8_t*)buf+11);
         STRINGFUNC.tohex(FNcol.erb( ee++ ), (uint8_t*)buf+13);
         buf[15] = 0;
-        FNcol.write_eeprom(buf);
+        FNcol.write_eeprom(buf, commit);
         return;
       } 
 #endif
@@ -133,12 +140,35 @@ void EthernetClass::reset(void)
   STRINGFUNC.tohex(serial & 0xff, (uint8_t*)buf+13);
   
   buf[15] = 0;
-  FNcol.write_eeprom(buf);
+  FNcol.write_eeprom(buf, commit);
 }
 
 // 1 char senden
-void EthernetClass::putchar(char data)
+//__attribute__((__noinline__))
+void EthernetClass::putChar(char data)
 {
+	ReplyBuffer[ReplyPos++] = data;
+	ReplyBuffer[ReplyPos] = 0;
+	if (data == 0 | data == '\n' | data == '\r' | ReplyPos >= 70) {
+		// send a reply, to the IP address and port that sent us the packet we received
+		if (ip_active == TCP_MAX){
+		  Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+		  IPAddress ip(192, 168, 178, 59);
+		  //Serial.print("put2 ");
+		  if (Udp.beginPacket(ip, 2323)) {
+			int n = Udp.write(ReplyBuffer);
+			//Serial.print(n);
+			n = Udp.endPacket();
+			//Serial.println(n);
+		  }
+		}
+        if (ip_active >= 0 && ip_active < tcp_initialized) 
+        {
+			int n = Tcp[ip_active].print(ReplyBuffer);
+		}
+		Serial.printf("\nsend to client %d\n", ip_active);
+		ReplyPos = 0;
+	}
 }
 
 void EthernetClass::display_mac(uint8_t *a)
@@ -169,12 +199,11 @@ void EthernetClass::func(char *in)
   } else if(in[1] == 'c') {
     display_ip4((uint8_t *)uip_hostaddr); DC(' ');
     display_mac((uint8_t *)uip_ethaddr.addr);
-    /////////////////DNL();
-
+    DNL();
   } else if(in[1] == 'd') {
     eth_debug = (eth_debug+1) & 0x3;
     DH2(eth_debug);
-    /////////////////DNL();
+    DNL();
 
   } else if(in[1] == 'n') {
     // ntp_sendpacket();
@@ -207,7 +236,7 @@ void EthernetClass::dumppkt(void)
 
 void EthernetClass::Task(void) {
      int i;
-	 /*
+#ifndef ESP8266
      ethernet_process();
      
      if(timer_expired(&periodic_timer)) {
@@ -239,13 +268,68 @@ void EthernetClass::Task(void) {
 	  uip_arp_timer();
 	  
      }
-     */
+#else
+  // if there's udp-data available, read a packet
+  int packetSize = Udp.parsePacket();
+  //Serial.print(packetSize);
+  if (packetSize) {
+    Serial.printf("Received packet of size %d from %s:%d\n    (to %s:%d, free heap = %d B)\n",
+                  packetSize,
+                  Udp.remoteIP().toString().c_str(), Udp.remotePort(),
+                  Udp.destinationIP().toString().c_str(), Udp.localPort(),
+                  ESP.getFreeHeap());
+
+    // read the packet into packetBufffer
+    int n = Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
+    packetBuffer[n] = 0;
+    Serial.printf("UDP: %s\n", packetBuffer);
+    //ip_active = TCP_MAX;
+  }
+  // tcp-data
+  if (tcp_initialized < TCP_MAX){
+	  Tcp[tcp_initialized] = server.available();
+	  if (Tcp[tcp_initialized]) {
+          Serial.printf("\nUDP %d, TCP %d to %s:%d\n", eth_initialized, tcp_initialized, Tcp[tcp_initialized].remoteIP().toString().c_str(), Tcp[tcp_initialized].remotePort());
+		  tcp_initialized++;
+	  }
+  }
+  for (uint8_t i = 0; i < tcp_initialized; i++) 
+  {
+    // we have a client sending some request
+	if (Tcp[i].connected())
+	{
+	  while (Tcp[i].available())
+	  {
+        //int n = Tcp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
+		//String line = Tcp.readStringUntil('\r');
+		char line = Tcp[i].read();
+		//Tcp.print(line);
+        Serial.print(line);
+		if(line > 0){
+		  TTYdata.rxBuffer.put(line);
+		}
+	  }
+      ip_active = i;
+      TTYdata.analyze_ttydata(DISPLAY_USB|DISPLAY_TCP);
+	} else {
+		for(uint8_t k=i; k<TCP_MAX-1; k++){
+			Tcp[k] = Tcp[k+1];
+		}
+		tcp_initialized--;
+		if (i == ip_active)
+			ip_active = -1;
+	}
+  }  
+#endif
 }
 
 // EEPROM Read IP
 void EthernetClass::erip(void *ip, uint8_t *addr)
 {
-  //uip_ipaddr(ip, FNcol.erb(addr), FNcol.erb(addr+1), FNcol.erb(addr+2), FNcol.erb(addr+3));
+#ifndef ESP8266
+    uip_ipaddr(ip, FNcol.erb(addr[0]), FNcol.erb(addr[1]), FNcol.erb(addr[2]), FNcol.erb(addr[3]));
+#else
+#endif
 }
 
 // EEPROM Write IP
@@ -263,41 +347,42 @@ void EthernetClass::ewip(const uint16_t ip[2], uint8_t *addr)
 
 void EthernetClass::ip_initialized(void)
 {
-  /*
+#ifndef ESP8266
   network_set_led(0x476);// LED A: Link Status  LED B: TX/RX
   tcplink_init();
   ntp_init();
-  */
+#endif
 #ifdef HAS_MDNS
   mdns_init();
 #endif
 }
 
- /*
+
 void EthernetClass::dhcpc_configured(const struct dhcpc_state *s)
 {
-   if(s == 0) {
+  if(s == 0) {
     set_eeprom_addr();
     return;
   }
+#ifndef ESP8266
   ewip(s->ipaddr,         EE_IP4_ADDR);    uip_sethostaddr(s->ipaddr);
   ewip(s->default_router, EE_IP4_GATEWAY); uip_setdraddr(s->default_router);
   ewip(s->netmask,        EE_IP4_NETMASK); uip_setnetmask(s->netmask);
   //resolv_conf(s->dnsaddr);
   uip_udp_remove(s->conn);
   ip_initialized();
+#endif
 }
-  */
 
 void EthernetClass::set_eeprom_addr()
 {
-  /*
+#ifndef ESP8266
   uip_ipaddr_t ipaddr;
   erip(ipaddr, EE_IP4_ADDR);    uip_sethostaddr(ipaddr);
   erip(ipaddr, EE_IP4_GATEWAY); uip_setdraddr(ipaddr);
   erip(ipaddr, EE_IP4_NETMASK); uip_setnetmask(ipaddr);
   ip_initialized();
-  */
+#endif
 }
 
 void EthernetClass::tcp_appcall()

@@ -8,9 +8,12 @@ public:
 	FNCOLLECTIONClass();
 	void read_eeprom(char *);
 	void write_eeprom(char *);
+	void write_eeprom(char *, bool);
 	void eeprom_init(void);
 	void eeprom_factory_reset(char *unused);
 	void ewb(uint8_t p, uint8_t v);
+	void ewb(uint8_t p, uint8_t v, bool commit);
+	void ewc(bool commit);
 	uint8_t erb(uint8_t p);
     uint16_t erw(uint8_t p);
 	void ledfunc(char *);

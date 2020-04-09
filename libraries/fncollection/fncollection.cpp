@@ -33,17 +33,28 @@ uint8_t led_mode = 2;   // Start blinking
 //////////////////////////////////////////////////
 // EEprom
 FNCOLLECTIONClass::FNCOLLECTIONClass() {
-	EEPROM.begin(0xFF);
 }
 
 // eeprom_write_byte is inlined and it is too big
-__attribute__((__noinline__)) 
 void FNCOLLECTIONClass::ewb(uint8_t p, uint8_t v)
 {
+	ewb(p, v, true);
+}
+
+__attribute__((__noinline__)) 
+void FNCOLLECTIONClass::ewb(uint8_t p, uint8_t v, bool commit)
+{
 	EEPROM.write(p, v);
-	EEPROM.commit();
+	ewc(commit);
 //esp8266  eeprom_write_byte(p, v);
 //esp8266  eeprom_busy_wait();
+}
+
+void FNCOLLECTIONClass::ewc(bool commit = true)
+{
+	if (commit) {
+	  EEPROM.commit();
+	}
 }
 
 // eeprom_read_byte is inlined and it is too big
@@ -171,6 +182,11 @@ void FNCOLLECTIONClass::read_eeprom(char *in)
 
 void FNCOLLECTIONClass::write_eeprom(char *in)
 {
+  write_eeprom(in, true);
+}
+
+void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
+{
   uint8_t hb[6], d = 0;
 
 #ifdef HAS_ETHERNET
@@ -190,8 +206,8 @@ void FNCOLLECTIONClass::write_eeprom(char *in)
 #endif
     }
     for(uint8_t i = 0; i < d; i++)
-      ewb(addr++, hb[i]);
-
+      ewb(addr++, hb[i], false);
+	ewc(commit);
   } else 
 #endif
   {
@@ -211,14 +227,17 @@ void FNCOLLECTIONClass::write_eeprom(char *in)
     while(in[0]) {
       if(!STRINGFUNC.fromhex(in, hb, 1))
         return;
-      ewb((uint8_t)++addr, hb[0]);
+      ewb((uint8_t)++addr, hb[0], false);
       in += 2;
     }
+	ewc(commit);
   }
 }
 
 void FNCOLLECTIONClass::eeprom_init(void)
 {
+  //esp8266
+  EEPROM.begin(0xFF);
   if(erb(EE_MAGIC_OFFSET)   != VERSION_1 ||
      erb(EE_MAGIC_OFFSET+1) != VERSION_2)
        eeprom_factory_reset(0);
@@ -250,32 +269,33 @@ void FNCOLLECTIONClass::eeprom_init(void)
 
 void FNCOLLECTIONClass::eeprom_factory_reset(char *in)
 {
-  ewb(EE_MAGIC_OFFSET  , VERSION_1);
+  CC1100.cc_factory_reset(false);
+
+  //DS("B");DNL();
+  ewb(EE_RF_ROUTER_ID, 0, false);
+  ewb(EE_RF_ROUTER_ROUTER, 0, false);
+  ewb(EE_REQBL, 0, false);
+  ewb(EE_LED, 2, false);
+
+# ifdef HAS_LCD
+    ewb(EE_CONTRAST,   0x40, false);
+    ewb(EE_BRIGHTNESS, 0x80, false);
+    ewb(EE_SLEEPTIME, 30, false);
+# endif
+# ifdef HAS_ETHERNET
+    Ethernet.reset(false);
+# endif
+# ifdef HAS_FS
+    ewb(EE_LOGENABLED, 0x00, false);
+# endif
+# ifdef HAS_RF_ROUTER
+    ewb(EE_RF_ROUTER_ID, 0x00, false);
+    ewb(EE_RF_ROUTER_ROUTER, 0x00, false);
+# endif
+  ewb(EE_MAGIC_OFFSET  , VERSION_1, false);
+  Serial.println("ewb(EE_MAGIC_OFFSET)");
   ewb(EE_MAGIC_OFFSET+1, VERSION_2);
-
-  CC1100.cc_factory_reset();
-
-DS("B");DNL();
-  ewb(EE_RF_ROUTER_ID, 0);
-  ewb(EE_RF_ROUTER_ROUTER, 0);
-  ewb(EE_REQBL, 0);
-  ewb(EE_LED, 2);
-
-#ifdef HAS_LCD
-  ewb(EE_CONTRAST,   0x40);
-  ewb(EE_BRIGHTNESS, 0x80);
-  ewb(EE_SLEEPTIME, 30);
-#endif
-#ifdef HAS_ETHERNET
-  Ethernet.reset();
-#endif
-#ifdef HAS_FS
-  ewb(EE_LOGENABLED, 0x00);
-#endif
-#ifdef HAS_RF_ROUTER
-  ewb(EE_RF_ROUTER_ID, 0x00);
-  ewb(EE_RF_ROUTER_ROUTER, 0x00);
-#endif
+  return;
   if(in[1] != 'x')
     prepare_boot(0);
 }
@@ -302,11 +322,13 @@ void FNCOLLECTIONClass::ledfunc(char *in)
       xled_pattern = 0xaa00; 
       break;
   }
+  //Serial.println("~XLED");
 #else
   if(led_mode & 1)
     LED_ON();
   else
     LED_OFF();
+  //Serial.println("~LED");
 #endif
 
   ewb(EE_LED, led_mode);
@@ -316,6 +338,7 @@ void FNCOLLECTIONClass::ledfunc(char *in)
 // boot
 void FNCOLLECTIONClass::prepare_boot(char *in)
 {
+#ifndef esp8266
   uint8_t bl = 0;
   if(in)
     STRINGFUNC.fromhex(in+1, &bl, 1);
@@ -341,6 +364,7 @@ void FNCOLLECTIONClass::prepare_boot(char *in)
   
   wdt_enable(WDTO_15MS);       // Make sure the watchdog is running 
   while (1);                 // go to bed, the wathchdog will take us to reset
+#endif
 }
 
 void FNCOLLECTIONClass::version(char *in)

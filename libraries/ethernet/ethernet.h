@@ -3,18 +3,27 @@
 
 #include "board.h"
 #include "private.h"
+#include "ttydata.h"
 
-// von http://marcotuliogm.github.io/mult-UIP/docs/html/group__uip.html
-typedef struct uip_eth_addr {
-	uint8_t addr[6];
-};
-typedef uint16_t 	uip_ip4addr_t [2];
-typedef uip_ip4addr_t 	uip_ipaddr_t;
+#ifdef ESP8266
+#   include <WiFiUdp.h>
+#   include <ESP8266WiFi.h>
+#   define TCP_MAX 5
+	// von http://marcotuliogm.github.io/mult-UIP/docs/html/group__uip.html
+	typedef struct uip_eth_addr {
+		uint8_t addr[6];
+	};
+	typedef uint16_t 	uip_ip4addr_t [2];
+	typedef uip_ip4addr_t 	uip_ipaddr_t;
+	typedef struct dhcpc_state {
+	};
+#endif
 
 class EthernetClass {
 public:
+	EthernetClass();
 	void close(char *);
-	void reset(void);
+	void reset(bool);
 	void init(void);
 	void Task(void);
 #ifndef ESP8266
@@ -25,7 +34,7 @@ public:
 	extern uint8_t eth_initialized;
     struct timer periodic_timer, arp_timer;
 #else
-    void putchar(char data); //von tcp_link.h uebernommen
+    void putChar(char data); //von tcp_link.h uebernommen
 	uip_ipaddr_t 	uip_hostaddr;
 	struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
 	uint8_t eth_debug;
@@ -46,7 +55,18 @@ private:
 	void set_eeprom_addr();
 	void dumppkt();
 	void ip_initialized(void);
-	//void dhcpc_configured(const dhcpc_state*);
+	void dhcpc_configured(const dhcpc_state*);
+#ifdef ESP8266
+	// buffers for receiving and sending data
+	char packetBuffer[UDP_TX_PACKET_MAX_SIZE + 1]; //buffer to hold incoming packet,
+	char  ReplyBuffer[80];// = "acknowledged\r\n";       // a string to send back
+	uint8_t ReplyPos;
+	WiFiUDP Udp;
+	WiFiServer server;
+	WiFiClient Tcp[TCP_MAX];  // 
+	uint8_t tcp_initialized;
+	int ip_active;
+#endif //ESP8266
 };
 
 #ifndef ESP8266

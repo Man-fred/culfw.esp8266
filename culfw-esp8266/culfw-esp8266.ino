@@ -158,6 +158,7 @@ void Serial_Task() {
   if (Serial.available() > 0) {
     uint8_t data = Serial.read();
     TTYdata.rxBuffer.put(data);
+    //Serial.println(data);
   }
   //???output_flush_func = CDC_Task;
   //input_handle_func(DISPLAY_USB);
@@ -168,7 +169,7 @@ void Serial_Task() {
 // count & compute in the interrupt, else long runnning tasks would block
 // a "minute" task too long
 //ISR(TIMER0_COMPA_vect, ISR_BLOCK)
-void inline IsrTimer0 (void){
+inline void ICACHE_RAM_ATTR IsrTimer0 (void){
   timer0count++;
   Timer0Cycles = Timer0Cycles + 640000;
   timer0_write(Timer0Cycles);
@@ -178,7 +179,8 @@ void inline IsrTimer0 (void){
 //////////////////////////////////////////////////////////////////////
 // "Edge-Detected" Interrupt Handler
 //ISR(CC1100_INTVECT)
-void inline IsrHandler (void){
+// before 2.6.3: void inline IsrHandler (void){
+inline void ICACHE_RAM_ATTR IsrHandler (void){
   gdo2count++;
   RfReceive.IsrHandler();
 }
@@ -187,7 +189,7 @@ void inline IsrHandler (void){
 // Timer Compare Interrupt Handler. If we are called, then there was no
 // data for SILENCE time, and we can put the data to be analysed
 //ISR(TIMER1_COMPA_vect)
-void IsrTimer1(void)
+inline void ICACHE_RAM_ATTR IsrTimer1(void)
 {
   timer1count++;
   RfReceive.IsrTimer1();
@@ -226,7 +228,7 @@ void loop1Hz(unsigned long counter) {
 void loop125Hz(unsigned long counter) {
 }
 
-void ccreg(char *data)                {CC1100.ccreg(data); };
+void ccreg(char *data)                { CC1100.ccreg(data); };
 void ccsetpa(char *data)              { CC1100.ccsetpa(data); };
 void eeprom_factory_reset(char *data) { FNcol.eeprom_factory_reset(data); };
 void em_send(char *data)              { RfSend.em_send(data); };
@@ -251,6 +253,9 @@ void write_eeprom(char *data)         { FNcol.write_eeprom(data); };
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  Serial.println("eeprom_init");
+  FNcol.eeprom_init();
+  Serial.println("eeprom_init ok");
 
   int i = 0;
 #ifdef HAS_ASKSIN
@@ -372,7 +377,7 @@ void setup() {
   timer1_isr_init();
   timer1_enable(TIM_DIV16, TIM_EDGE, TIM_LOOP); // TIM_DIV16 : 80 MHz / 16 -> 5.000.000 Ticks je s
   timer1_write(OCR1A); 
-  timer1_attachInterrupt(IsrTimer1);
+  //timer1_attachInterrupt(IsrTimer1);
   interrupts();
 #endif
 
@@ -386,8 +391,6 @@ void setup() {
 #endif
   led_init();
   spi_init();
-  FNcol.eeprom_init();
-  Serial.println("eeprom_init");
 //  USB_Init();
   FHT.fht_init();
   RfReceive.tx_init();
@@ -396,7 +399,9 @@ void setup() {
   RfRouter.init();
 #endif
 #ifdef HAS_ETHERNET
+  display.channel |= DISPLAY_TCP;
   Ethernet.init();
+  Serial.printf("\nChannel %d \n", display.channel);
 #endif
   Serial.print("CC1100_PARTNUM 0x00: "); Serial.println(CC1100.readStatus(0x30), HEX);
   Serial.print("CC1100_VERSION 0x14: "); Serial.println(CC1100.readStatus(0x31), HEX);
