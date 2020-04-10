@@ -3,3 +3,4 @@ Firmware for different busware.de gadgets and esp8266
 Copyright Rudolf Koenig, 2008,2009,2010,2011 for busware, Manfred Bielemeier for implementation esp8266
 License: GPL v2
 
+Culfw now running on ESP8266, initial copy from SVN repo V1.66 svn://svn.code.sf.net/p/culfw/code/trunk/culfw 
