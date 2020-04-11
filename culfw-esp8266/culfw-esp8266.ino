@@ -131,6 +131,9 @@ byte CheckGDO(void)
 #ifdef HAS_EVOHOME
 #  include "rf_evohome.h"
 #endif
+#if defined (HAS_IRRX) || defined (HAS_IRTX)
+#  include "ir.h"
+#endif
 
 void start_bootloader(void)
 {
