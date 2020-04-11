@@ -267,6 +267,8 @@ extern unsigned char OCIE1A;
 #define HAS_ETHERNET_KEEPALIVE  1
 #define ETHERNET_KEEPALIVE_TIME 30
 //#define HAS_NTP                 1   
-
+// Ergaenzung wegen IR
+#define HAS_IRRX
+#define HAS_IRTX
 
 #endif // __BOARD_H__

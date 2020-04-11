@@ -454,7 +454,7 @@ void RfSendClass::ur_send(char *in)
 #endif
 
 #ifdef HAS_HOERMANN_SEND
-void fSendClass::hm_send(char *in)
+void RfSendClass::hm_send(char *in)
 {
   uint8_t hb[MAX_SNDMSG];
   STRINGFUNC.fromhex(in + 2, hb, MAX_SNDMSG - 1);

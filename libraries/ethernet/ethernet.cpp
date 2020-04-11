@@ -1,5 +1,7 @@
 #include <pgmspace.h>
-//#include <avr/boot.h>
+#ifndef ESP8266
+#  include <avr/boot.h>
+#endif
 #include "board.h"
 #include "ethernet.h"
 #include "fncollection.h"
