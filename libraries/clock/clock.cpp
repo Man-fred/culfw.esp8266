@@ -1,70 +1,28 @@
-//#include <avr/io.h>
-// #include <wdt.h>
-//#include <avr/interrupt.h>
-
-#include "board.h"
-#include "led.h"
-#ifdef XLED
-#  include "xled.h"
-#endif
-#include "fncollection.h"
 #include "clock.h"
-#include "display.h"
-#if defined(HAS_LCD) && defined(BAT_PIN)
-#  include "battery.h"
-#endif
-#ifdef JOY_PIN1
-#  include "joy.h"
-#endif
-#ifdef HAS_FHT_TF
-#  include "fht.h"
-#endif
-//#include "fswrapper.h"                 // fs_sync();
-#include "rf_send.h"                   // credit_10ms
-#ifdef HAS_SLEEP
-#  include "mysleep.h"
-#endif
-////////////////#include "pcf8833.h"
-#ifdef HAS_USB
-//#  include "cdc.h"
-#endif
-#include "rf_router.h"                  // rf_router_flush();
-#ifdef HAS_NTP
-#  include "ntp.h"
-#endif
-#ifdef HAS_ONEWIRE
-#  include "onewire.h"
-#endif
-#ifdef HAS_VZ
-#  include "vz.h"
-#endif
-
-#if defined (HAS_IRRX) || defined (HAS_IRTX)
-#  include "ir.h"
-#endif
 
 // count & compute in the interrupt, else long runnning tasks would block
 // a "minute" task too long
 //esp8266 ISR(TIMER0_COMPA_vect, ISR_BLOCK)
 void CLOCKClass::IsrHandler()
 {
-#ifdef HAS_IRTX     //IS IRTX defined ?
-  if(! ir_send_data() ) {   //If IR-Sending is in progress, don't receive
-#ifdef HAS_IRRX  //IF also IRRX is define
-    ir_sample(); // call IR sample handler
-#endif
-  }
-#elif defined (HAS_IRRX)
-  ir_sample(); // call IR sample handler
-#endif
-
-#if defined (HAS_IRTX) || defined (HAS_IRRX)
-  // if IRRX is compiled in, timer runs 125x faster ... 
-  if (++ir_ticks<125) 
-    return;
-    
-  ir_ticks = 0;
-#endif
+	#ifndef ESP8266
+		#ifdef HAS_IRTX     //IS IRTX defined ?
+			if(! IR.send_data() ) {   //If IR-Sending is in progress, don't receive
+		#ifdef HAS_IRRX  //IF also IRRX is define
+				IR.sample(); // call IR sample handler
+		#endif
+			}
+		#elif defined (HAS_IRRX)
+			IR.sample(); // call IR sample handler
+		#endif
+		#if defined (HAS_IRTX) || defined (HAS_IRRX)
+			// if IRRX is compiled in, timer runs 125x faster ... 
+			if (++ir_ticks<125) 
+				return;
+				
+			ir_ticks = 0;
+		#endif
+	#endif //ESP8266
 
   // 125Hz
   ticks++; 
