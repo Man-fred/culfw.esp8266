@@ -1,4 +1,5 @@
 #ifndef _BOARD_H
+
 #define _BOARD_H
 
 // Ports for esp8266 seek
@@ -165,6 +166,7 @@ extern unsigned char TIFR1;
 extern unsigned int  TCNT1;
 #endif
 
+extern unsigned int  OCR0A;
 extern unsigned int  OCR1A;
 extern unsigned char OCF1A;
 extern unsigned char OCIE1A;
@@ -268,7 +270,9 @@ extern unsigned char OCIE1A;
 #define ETHERNET_KEEPALIVE_TIME 30
 //#define HAS_NTP                 1   
 // Ergaenzung wegen IR
-#define HAS_IRRX
-#define HAS_IRTX
+// #define HAS_IRRX
+// #define HAS_IRTX
+// #define IRSND_OCx               16  // D0 !? ESP GPIO pin to use. Recommended: 4 (D2).
+// #define IRMP_PIN                2 // D4 !? 
 
 #endif // __BOARD_H__
