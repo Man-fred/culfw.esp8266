@@ -151,24 +151,26 @@ void EthernetClass::putChar(char data)
 {
 	ReplyBuffer[ReplyPos++] = data;
 	ReplyBuffer[ReplyPos] = 0;
-	if (data == 0 | data == '\n' | data == '\r' | ReplyPos >= 70) {
+	if (data == 0 || data == '\n' || data == '\r' || ReplyPos >= 70) {
 		// send a reply, to the IP address and port that sent us the packet we received
-		if (ip_active == TCP_MAX){
-		  Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-		  IPAddress ip(192, 168, 178, 59);
-		  //Serial.print("put2 ");
-		  if (Udp.beginPacket(ip, 2323)) {
-			int n = Udp.write(ReplyBuffer);
-			//Serial.print(n);
-			n = Udp.endPacket();
-			//Serial.println(n);
-		  }
+		/*if (ReplyPos > 1 || (data != '\n' && data != '\r'))*/{
+			if (ip_active == TCP_MAX){
+				Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+				IPAddress ip(192, 168, 178, 59);
+				//Serial.print("put2 ");
+				if (Udp.beginPacket(ip, 2323)) {
+				int n = Udp.write(ReplyBuffer);
+				//Serial.print(n);
+				n = Udp.endPacket();
+				//Serial.println(n);
+				}
+			}
+			if (ip_active >= 0 && ip_active < tcp_initialized) 
+			{
+				int n = Tcp[ip_active].print(ReplyBuffer);
+			}
+			Serial.printf("\nsend to client %d %s:%d\n", ip_active, Tcp[ip_active].remoteIP().toString().c_str(), Tcp[ip_active].remotePort());
 		}
-        if (ip_active >= 0 && ip_active < tcp_initialized) 
-        {
-			int n = Tcp[ip_active].print(ReplyBuffer);
-		}
-		Serial.printf("\nsend to client %d\n", ip_active);
 		ReplyPos = 0;
 	}
 }
@@ -298,29 +300,28 @@ void EthernetClass::Task(void) {
   for (uint8_t i = 0; i < tcp_initialized; i++) 
   {
     // we have a client sending some request
-	if (Tcp[i].connected())
-	{
-	  while (Tcp[i].available())
-	  {
-        //int n = Tcp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
-		//String line = Tcp.readStringUntil('\r');
-		char line = Tcp[i].read();
-		//Tcp.print(line);
-        Serial.print(line);
-		if(line > 0){
-		  TTYdata.rxBuffer.put(line);
+		if (Tcp[i].connected())
+		{
+			while (Tcp[i].available())
+			{
+				//int n = Tcp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
+				//String line = Tcp.readStringUntil('\r');
+				char line = Tcp[i].read();
+				if(line > 0){
+					Serial.print(line);
+					TTYdata.rxBuffer.put(line);
+				}
+			}
+			ip_active = i;
+			TTYdata.analyze_ttydata(DISPLAY_USB|DISPLAY_TCP);
+		} else {
+			for(uint8_t k=i; k<TCP_MAX-1; k++){
+				Tcp[k] = Tcp[k+1];
+			}
+			tcp_initialized--;
+			if (i == ip_active)
+				ip_active = -1;
 		}
-	  }
-      ip_active = i;
-      TTYdata.analyze_ttydata(DISPLAY_USB|DISPLAY_TCP);
-	} else {
-		for(uint8_t k=i; k<TCP_MAX-1; k++){
-			Tcp[k] = Tcp[k+1];
-		}
-		tcp_initialized--;
-		if (i == ip_active)
-			ip_active = -1;
-	}
   }  
 #endif
 }

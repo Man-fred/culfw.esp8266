@@ -21,6 +21,7 @@ unsigned char EICRA;
 unsigned char TIMSK1;
 unsigned char TIFR1;
 uint32_t      TCNT1;     // Zähler für Timer1, im Gegensatz zu Arduino bei esp8266 von OCR1A -> 0
+unsigned int  OCR0A;     // Divisor für Timer 0, genutzt in clock und ir
 unsigned int  OCR1A;     // Dauer für Timer1: Faktor 5 notwendig, da Timer1 nicht 1MHz sondern 5MHz
 unsigned char OCF1A;
 unsigned char OCIE1A;
@@ -161,7 +162,7 @@ void Serial_Task() {
   if (Serial.available() > 0) {
     uint8_t data = Serial.read();
     TTYdata.rxBuffer.put(data);
-    //Serial.println(data);
+    Serial.write(data);
   }
   //???output_flush_func = CDC_Task;
   //input_handle_func(DISPLAY_USB);
@@ -174,7 +175,7 @@ void Serial_Task() {
 //ISR(TIMER0_COMPA_vect, ISR_BLOCK)
 inline void ICACHE_RAM_ATTR IsrTimer0 (void){
   timer0count++;
-  Timer0Cycles = Timer0Cycles + 640000;
+  Timer0Cycles = Timer0Cycles + OCR0A;
   timer0_write(Timer0Cycles);
   CLOCK.IsrHandler();
 }
@@ -240,6 +241,9 @@ void fhtsend(char *data)              { FHT.fhtsend(data); };
 void fs20send(char *data)             { RfSend.fs20send(data); };
 void ftz_send(char *data)             { RfSend.ftz_send(data); };
 void gettime(char *data)              { CLOCK.gettime(data); };
+#if defined (HAS_IRRX) || defined (HAS_IRTX)
+  void ir_func(char *data)              { IR.func(data); };
+#endif
 void ks_send(char *data)              { RfSend.ks_send(data); };
 void ledfunc(char *data)              { FNcol.ledfunc(data); };
 void native_func(char *data)          { RfNative.native_func(data); };
@@ -252,6 +256,36 @@ void set_txreport(char *data)         { RfReceive.set_txreport(data); };
 void tcplink_close(char *data)        { Ethernet.close(data); }
 void version(char *data)              { FNcol.version(data); };
 void write_eeprom(char *data)         { FNcol.write_eeprom(data); };
+
+const PROGMEM t_fntab fntab[] = {
+
+//  { 'm', getfreemem },
+
+  { 'B', prepare_boot },
+#ifdef HAS_MBUS
+  { 'b', rf_mbus_func },
+#endif
+  { 'C', ccreg },
+  { 'F', fs20send },
+#ifdef HAS_VZ
+  { 'o', vz_func },
+#endif
+#ifdef HAS_MORITZ
+  { 'Z', moritz_func },
+#endif
+#ifdef HAS_DMX
+  { 'D', dmx_func },
+#endif
+#ifdef HAS_INTERTECHNO
+  { 'i', it_func },
+#endif
+#ifdef HAS_ASKSIN
+  { 'A', asksin_func },
+#endif
+#if defined (HAS_IRRX) || defined (HAS_IRTX)
+  { 'I', ir_func }
+#endif
+};
 
 void setup() {
   // put your setup code here, to run once:
@@ -285,6 +319,9 @@ void setup() {
   #endif
   #ifdef HAS_INTERTECHNO
     { 'i', it_func },
+  #endif
+  #if defined (HAS_IRRX) || defined (HAS_IRTX)
+    TTYdata.fntab[i++] = { 'I', ir_func };
   #endif
   #ifdef HAS_RAWSEND
     TTYdata.fntab[i++] = { 'K', ks_send };
@@ -359,23 +396,37 @@ void setup() {
 */
 
   // Setup the timers. Are needed for watchdog-reset
+
 #ifndef ESP8266
-  OCR0A  = 249;                            // Timer0: 0.008s = 8MHz/256/250
+  #if defined (HAS_IRRX) || defined (HAS_IRTX)
+    IR.init();
+    // IR uses highspeed TIMER0 for sampling 
+    OCR0A  = 1;                              // Timer0: 0.008s = 8MHz/256/2   == 15625Hz Fac: 125
+  #else
+    OCR0A  = 249;                            // Timer0: 0.008s = 8MHz/256/250 == 125Hz
+  # endif
   TCCR0B = _BV(CS02);
   TCCR0A = _BV(WGM01);
   TIMSK0 = _BV(OCIE0A);
   TCCR1A = 0;
   TCCR1B = _BV(CS11) | _BV(WGM12);         // Timer1: 1us = 8MHz/8 -> 0 bis 4.000 
+  MCUSR &= ~(1 << WDRF);                   // Enable the watchdog
 #else
   pinMode(CC1100_IN_PIN, INPUT);
   attachInterrupt(digitalPinToInterrupt(CC1100_IN_PIN), IsrHandler, CHANGE);
   pinMode(CC1100_OUT_PIN, OUTPUT);
-
-  Timer0Cycles = ESP.getCycleCount() + 640000;
+  #if defined (HAS_IRRX) || defined (HAS_IRTX)
+    IR.init();
+    // IR uses highspeed TIMER0 for sampling 
+    OCR0A  = 640000; // Timer zu schnell? wird auch nicht benötigt, da eigene library! 5120;   // Timer0: 0.008s = 80MHz/256/2   == 15625Hz Fac: 125
+  #else
+    OCR0A  = 640000; // soll 80000000 (1sec) /125 -> 125 Hz
+  # endif
+  Timer0Cycles = ESP.getCycleCount() + OCR0A;
   noInterrupts();
   timer0_isr_init();
   timer0_attachInterrupt(IsrTimer0);
-  timer0_write(Timer0Cycles); // soll 80000000 (1sec) /125 -> 125 Hz
+  timer0_write(Timer0Cycles); 
   OCR1A = 20000; // SILENCE 4 ms= 4 * 5.000
   timer1_isr_init();
   timer1_enable(TIM_DIV16, TIM_EDGE, TIM_LOOP); // TIM_DIV16 : 80 MHz / 16 -> 5.000.000 Ticks je s
@@ -383,8 +434,6 @@ void setup() {
   //timer1_attachInterrupt(IsrTimer1);
   interrupts();
 #endif
-
-//esp8266   MCUSR &= ~(1 << WDRF);                   // Enable the watchdog
 
 #ifdef HAS_RF_ROUTER
   display.channel = (DISPLAY_USB|DISPLAY_RFROUTER);
@@ -444,6 +493,12 @@ void loop() {
 #ifdef HAS_ASKSIN
     rf_asksin_task();
 #endif
+#ifdef HAS_IRRX
+    IR.task();
+#endif
+#ifdef HAS_ETHERNET
+    Ethernet.Task();
+#endif
 #ifdef HAS_MORITZ
     rf_moritz_task();
 #endif
@@ -464,9 +519,6 @@ void loop() {
 #endif
 #ifdef HAS_EVOHOME
     rf_evohome_task();
-#endif
-#ifdef HAS_ETHERNET
-    Ethernet.Task();
 #endif
 
 }

@@ -7,10 +7,10 @@
 
 //esp8266	extern const PROGMEM t_fntab fntab[];
 
-typedef struct {
+typedef struct t_fntab{
   unsigned char name;
   void (*fn)(char *);
-} fntab_t;
+} t_fntab;
 	
 class TTYdataClass {
 public:
@@ -23,7 +23,7 @@ public:
 
 	RingbufferClass txBuffer;
 	RingbufferClass rxBuffer;
-	fntab_t fntab[20];
+	t_fntab fntab[20];
 };
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_TTYDATA)
