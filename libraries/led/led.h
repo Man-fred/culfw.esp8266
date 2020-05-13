@@ -1,7 +1,7 @@
 #ifndef _LED_H
 #define _LED_H   1
 
-#include <arduino.h>
+#include <Arduino.h>
 #include <stdint.h>
 
 #define HI8(x)  ((uint8_t)((x) >> 8))
