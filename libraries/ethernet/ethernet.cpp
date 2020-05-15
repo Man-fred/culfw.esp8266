@@ -169,7 +169,7 @@ void EthernetClass::putChar(char data)
 			{
 				int n = Tcp[ip_active].print(ReplyBuffer);
 			}
-			Serial.printf("\nsend to client %d %s:%d\n", ip_active, Tcp[ip_active].remoteIP().toString().c_str(), Tcp[ip_active].remotePort());
+			//Serial.printf("\nsend to client %d %s:%d\n", ip_active, Tcp[ip_active].remoteIP().toString().c_str(), Tcp[ip_active].remotePort());
 		}
 		ReplyPos = 0;
 	}
@@ -277,28 +277,29 @@ void EthernetClass::Task(void) {
   int packetSize = Udp.parsePacket();
   //Serial.print(packetSize);
   if (packetSize) {
-    Serial.printf("Received packet of size %d from %s:%d\n    (to %s:%d, free heap = %d B)\n",
+    /*Serial.printf("Received packet of size %d from %s:%d\n    (to %s:%d, free heap = %d B)\n",
                   packetSize,
                   Udp.remoteIP().toString().c_str(), Udp.remotePort(),
                   Udp.destinationIP().toString().c_str(), Udp.localPort(),
-                  ESP.getFreeHeap());
+                  ESP.getFreeHeap());*/
 
     // read the packet into packetBufffer
     int n = Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
     packetBuffer[n] = 0;
-    Serial.printf("UDP: %s\n", packetBuffer);
+    //Serial.printf("UDP: %s\n", packetBuffer);
     //ip_active = TCP_MAX;
   }
   // tcp-data
   if (tcp_initialized < TCP_MAX){
 	  Tcp[tcp_initialized] = server.available();
 	  if (Tcp[tcp_initialized]) {
-          Serial.printf("\nUDP %d, TCP %d to %s:%d\n", eth_initialized, tcp_initialized, Tcp[tcp_initialized].remoteIP().toString().c_str(), Tcp[tcp_initialized].remotePort());
+      //    Serial.printf("\nUDP %d, TCP %d to %s:%d\n", eth_initialized, tcp_initialized, Tcp[tcp_initialized].remoteIP().toString().c_str(), Tcp[tcp_initialized].remotePort());
 		  tcp_initialized++;
 	  }
   }
   for (uint8_t i = 0; i < tcp_initialized; i++) 
   {
+		 yield();
     // we have a client sending some request
 		if (Tcp[i].connected())
 		{
@@ -308,12 +309,13 @@ void EthernetClass::Task(void) {
 				//String line = Tcp.readStringUntil('\r');
 				char line = Tcp[i].read();
 				if(line > 0){
-					Serial.print(line);
+					//Serial.print(line);
 					TTYdata.rxBuffer.put(line);
 				}
 			}
 			ip_active = i;
-			TTYdata.analyze_ttydata(DISPLAY_USB|DISPLAY_TCP);
+			//TTYdata.analyze_ttydata(DISPLAY_USB|DISPLAY_TCP);
+			TTYdata.analyze_ttydata(DISPLAY_TCP);
 		} else {
 			for(uint8_t k=i; k<TCP_MAX-1; k++){
 				Tcp[k] = Tcp[k+1];
