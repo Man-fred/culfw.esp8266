@@ -3,7 +3,7 @@
 // count & compute in the interrupt, else long runnning tasks would block
 // a "minute" task too long
 //esp8266 ISR(TIMER0_COMPA_vect, ISR_BLOCK)
-void CLOCKClass::IsrHandler()
+void ICACHE_RAM_ATTR CLOCKClass::IsrHandler()
 {
 	#ifndef ESP8266
 		#ifdef HAS_IRTX     //IS IRTX defined ?

@@ -380,24 +380,22 @@ void setup() {
   #endif
   TTYdata.fntab[i++] = { 0, 0 };
 
-//  wdt_enable(WDTO_2S);
-//esp8266   clock_prescale_set(clock_div_1);
+#ifndef ESP8266
+  wdt_enable(WDTO_2S);
+  clock_prescale_set(clock_div_1);
 
-//esp8266   MARK433_PORT |= _BV( MARK433_BIT ); // Pull 433MHz marker
-//esp8266   MARK915_PORT |= _BV( MARK915_BIT ); // Pull 915MHz marker
+  MARK433_PORT |= _BV( MARK433_BIT ); // Pull 433MHz marker
+  MARK915_PORT |= _BV( MARK915_BIT ); // Pull 915MHz marker
 
   // if we had been restarted by watchdog check the REQ BootLoader byte in the
   // EEPROM ...
-/*esp8266 
   if(bit_is_set(MCUSR,WDRF) && erb(EE_REQBL)) {
     ewb( EE_REQBL, 0 ); // clear flag
     start_bootloader();
   }
-*/
 
   // Setup the timers. Are needed for watchdog-reset
 
-#ifndef ESP8266
   #if defined (HAS_IRRX) || defined (HAS_IRTX)
     IR.init();
     // IR uses highspeed TIMER0 for sampling 
@@ -420,7 +418,7 @@ void setup() {
     // IR uses highspeed TIMER0 for sampling 
     OCR0A  = 640000; // Timer zu schnell? wird auch nicht benötigt, da eigene library! 5120;   // Timer0: 0.008s = 80MHz/256/2   == 15625Hz Fac: 125
   #else
-    OCR0A  = 640000; // soll 80000000 (1sec) /125 -> 125 Hz
+    OCR0A  = 640000; // soll 80000000 Hz <=> 1sec /125 = 125 Hz
   # endif
   Timer0Cycles = ESP.getCycleCount() + OCR0A;
   noInterrupts();
