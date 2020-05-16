@@ -728,7 +728,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
 #endif
 }
 
-void RfReceiveClass::reset_input(void)
+void ICACHE_RAM_ATTR RfReceiveClass::reset_input(void)
 {
   TIMSK1 = 0;
   bucket_array[bucket_in].state = STATE_RESET;
@@ -741,7 +741,7 @@ void RfReceiveClass::reset_input(void)
 // Timer Compare Interrupt Handler. If we are called, then there was no
 // data for SILENCE time, and we can put the data to be analysed
 //esp8266 ISR(TIMER1_COMPA_vect)
-void RfReceiveClass::IsrTimer1(void)
+void ICACHE_RAM_ATTR RfReceiveClass::IsrTimer1(void)
 {
 #ifdef LONG_PULSE
   uint16_t tmp;
@@ -824,7 +824,7 @@ uint8_t RfReceiveClass::makeavg(uint8_t i, uint8_t j)
   return (i+i+i+j)/4;
 }
 
-void RfReceiveClass::addbit(bucket_t *b, uint8_t bit)
+void ICACHE_RAM_ATTR RfReceiveClass::addbit(bucket_t *b, uint8_t bit)
 {
   if(b->byteidx>=sizeof(b->data)){
     reset_input();
@@ -861,7 +861,7 @@ void RfReceiveClass::delbit(bucket_t *b)
 //////////////////////////////////////////////////////////////////////
 // "Edge-Detected" Interrupt Handler
 //esp8266 CC1100_INTVECT
-void RfReceiveClass::IsrHandler()
+void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 {  
   silence = 0;
 

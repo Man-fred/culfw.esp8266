@@ -17,6 +17,10 @@
 	typedef uip_ip4addr_t 	uip_ipaddr_t;
 	typedef struct dhcpc_state {
 	};
+  class WiFiServerExt : public WiFiServer {
+    public:
+      WiFiServerExt():WiFiServer(0){}
+	};
 #endif
 
 class EthernetClass {
@@ -62,7 +66,7 @@ private:
 	char  ReplyBuffer[80];// = "acknowledged\r\n";       // a string to send back
 	uint8_t ReplyPos;
 	WiFiUDP Udp;
-	WiFiServer server;
+	WiFiServerExt server;
 	WiFiClient Tcp[TCP_MAX];  // 
 	uint8_t tcp_initialized;
 	int ip_active;
