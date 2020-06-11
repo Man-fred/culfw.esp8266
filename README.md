@@ -14,6 +14,9 @@ V1.67.0 is the last one that has to be uploaded with the arduino-ide.
 Copyright Rudolf Koenig, 2008,2009,2010,2011 for busware, Manfred Bielemeier for implementation esp8266
 License: GPL v2
 
-Culfw now running on ESP8266, initial copy from SVN repo V1.66 svn://svn.code.sf.net/p/culfw/code/trunk/culfw 
+Culfw now running on ESP8266, initial copy from SVN repo V1.66 svn://svn.code.sf.net/p/culfw/code/trunk/culfw, updated to 1.67.
 
-Beschreibungen des Projekts finden sich im [Wiki](https://github.com/Man-fred/culfw-esp8266/wiki)
+Descriptions of the project can be found in the [wiki](https://github.com/Man-fred/culfw.esp8266/wiki)
+
+I started with a fork of svn2github/culfw, but there are many changes that have nothing to do with the original project. So I decided to split it from the fork. The new repositoriy is named Man-fred/culfw.esp8266 but will be renamed to the original title later
+regards, Manfred
