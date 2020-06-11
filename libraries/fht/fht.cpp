@@ -350,7 +350,8 @@ void FHTClass::fht8v_timer(void)
   } else {
     fht8v_timeout = (125*(230+(fht_hc1&0x7)))>>1;
   }
-
+  //Serial.print("Sync/msec");
+  //Serial.println(fht8v_timeout/125);
   for(i = 0 ; i < FHT_8V_NUM; i++ ) {
     if(fht8v_buf[2*i] == FHT_8V_DISABLED )
       continue;
@@ -368,6 +369,7 @@ void FHTClass::fht8v_timer(void)
     fht_display_buf(hb);
 
   }
+  //Serial.println(millis());
 
   if(fht8v_ctsync) {
     if(fht8v_ctsync == 3) {

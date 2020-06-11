@@ -2,16 +2,12 @@
 #include "display.h"
 
 //esp8266 void (*input_handle_func)(uint8_t channel);
-//extern DisplayClass display;
 
 TTYdataClass::TTYdataClass() {}
 
 uint8_t TTYdataClass::callfn(char *buf){
   for(uint8_t idx = 0; ; idx++) {
-//esp8266 
     uint8_t n = fntab[idx].name;
-	//display.hex2(n);
-//esp8266 
     if(!n)
       return 0;
     if(buf == 0) {
@@ -19,12 +15,9 @@ uint8_t TTYdataClass::callfn(char *buf){
       display.chr(n);
     } else if(buf[0] == n) {
       void (*fn)(char *) = (void (*)(char *))fntab[idx].fn;
-	//	void (*fn)(char *) = fntab[idx].fn;
       fn(buf);
       return 1;
-    } else {
-	  //display.hex2(buf[0]);
-	}
+    }
   }
   return 0;
 }

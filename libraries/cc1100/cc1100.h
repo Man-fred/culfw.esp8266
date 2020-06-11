@@ -15,6 +15,7 @@
 class CC1100Class {
 public:
 	void ccInitChip(uint8_t cfg);
+	void manualReset(uint8_t first = 1);
 	void cc_factory_reset(bool);
 	void ccDump(void);
 	void ccTX(void);
@@ -195,7 +196,7 @@ extern uint8_t cc_on;
 
 //#include "board.h"
 #ifndef ESP8266
-#xx  define CC1100_DEASSERT  SET_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
+#  define CC1100_DEASSERT  SET_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
 #  define CC1100_ASSERT    CLEAR_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
 #else
 #  define CC1100_DEASSERT  CC1100.deassert()

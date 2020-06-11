@@ -3,11 +3,12 @@
 
 #include <stdint.h>
 
-#define MAX_CREDIT 900       // max 9 seconds burst / 25% of the hourly budget
+#define MAX_CREDIT 3600// 900       // max 9 seconds burst / 25% of the hourly budget
 
 class RfSendClass {
 public:
 	/* public prototypes */
+	RfSendClass();
 	void fs20send(char *in);
 	void ftz_send(char *in);
 	void rawsend(char *in);

@@ -1,3 +1,8 @@
+Version 1.67.00 esp8266 (2020-06-11)
+- esp8266 OTA activated
+- SSID, WPA-key and devicename in EEPROM
+- FS20, FHT and MAX! tested
+
 Version 1.67 (2016-11-23)
 - Hoermann Send (activated for CUL + nanoCUL)
 - RFR filter: ufKERV forwards only messages starting with one of KERV

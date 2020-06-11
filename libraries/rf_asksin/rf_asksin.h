@@ -9,10 +9,20 @@
 #define MAX_ASKSIN_MSG 50
 #endif
 
-extern uint8_t asksin_on;
+class RfAsksinClass {
+public:
+  uint8_t on;
 
-void rf_asksin_init(void);
-void rf_asksin_task(void);
-void asksin_func(char *in);
+  void init(void);
+  void task(void);
+  void func(char *in);
+private:
+  static void reset_rx(void);
+	void send(char *in);
+};
+
+#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_RF_ASKSIN)
+extern RfAsksinClass RfAsksin;
+#endif
 
 #endif

@@ -96,20 +96,9 @@ const uint8_t PROGMEM MODE_CFG[MAX_MODES][20] = {
 
 void RfNativeClass::native_init(uint8_t mode) {
 
-  //esp8266 EIMSK &= ~_BV(CC1100_INT);                 // disable INT - we'll poll...
-  //esp8266 SET_BIT( CC1100_CS_DDR, CC1100_CS_PIN );   // CS as output
+  CC1100.manualReset();
 
   native_on = 0;
-
-  CC1100_DEASSERT;                           // Toggle chip select signal
-  MYDELAY.my_delay_us(30);
-  CC1100_ASSERT;
-  MYDELAY.my_delay_us(30);
-  CC1100_DEASSERT;
-  MYDELAY.my_delay_us(45);
-
-  CC1100.ccStrobe( CC1100_SRES );                   // Send SRES command
-  MYDELAY.my_delay_us(100);
 
   if (!mode || mode>MAX_MODES)
     return;

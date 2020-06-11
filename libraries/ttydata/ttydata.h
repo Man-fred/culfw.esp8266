@@ -5,13 +5,12 @@
 
 #include "ringbuffer.h"
 
-//esp8266	extern const PROGMEM t_fntab fntab[];
-
 typedef struct t_fntab{
-  unsigned char name;
-  void (*fn)(char *);
+	unsigned char name;
+	void (*fn)(char *);
 } t_fntab;
-	
+extern const t_fntab fntab[];
+
 class TTYdataClass {
 public:
 	TTYdataClass();
@@ -23,7 +22,6 @@ public:
 
 	RingbufferClass txBuffer;
 	RingbufferClass rxBuffer;
-	t_fntab fntab[20];
 };
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_TTYDATA)

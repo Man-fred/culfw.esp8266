@@ -3,29 +3,29 @@
 
 #include "ringbuffer.h"
 #include "rf_router.h"
-/*
-#ifdef HAS_USB
-//#include "cdc.h"
-#else
-#include "serial.h"
+#ifndef ESP8266
+	#ifdef HAS_USB
+	//#include "cdc.h"
+	#else
+		#include "serial.h"
+	#endif
+	#include "led.h"
+	#include "delay.h"
+	#include "pcf8833.h"
+	#include "ttydata.h"            // callfn
+	#include "fht.h"                // fht_hc
+	#include "rf_router.h"
+	#include "clock.h"
+	#include "log.h"
 #endif
-#include "led.h"
-#include "delay.h"
-#include "pcf8833.h"
-#include "ttydata.h"            // callfn
-#include "fht.h"                // fht_hc
-#include "rf_router.h"
-#include "clock.h"
-#include "log.h"
-*/
 #ifdef HAS_PRIVATE_CHANNEL
-//#include "private_channel.h"
+  #include "private_channel.h"
 #endif
 #ifdef HAS_ETHERNET
-#include "ethernet.h"
+  #include "ethernet.h"
 #endif
 #ifdef HAS_DOGM
-//#include "dogm16x.h"
+  #include "dogm16x.h"
 #endif
 
 #include <stddef.h>
@@ -37,6 +37,7 @@
 DisplayClass::DisplayClass() {
 	log_enabled = 0;
 	channel = 0;
+	echo_serial = true;
 }
 
 //////////////////////////////////////////////////
@@ -51,14 +52,15 @@ void DisplayClass::chr(char data)
 # define buffer_used()
 #endif
 
-/*ifdef HAS_RF_ROUTER
+/* don't change the channel in DisplayClass!
+#ifdef HAS_RF_ROUTER
   channel = (DISPLAY_USB|DISPLAY_RFROUTER);
-////#else
+#else
   channel = DISPLAY_USB;
-//#endif
-//#ifdef HAS_ETHERNET
+#endif
+#ifdef HAS_ETHERNET
   channel |= DISPLAY_TCP;
-//#endif
+#endif
 */
 
 #ifdef HAS_ETHERNET
@@ -76,21 +78,22 @@ void DisplayClass::chr(char data)
 #endif
 
 #ifdef HAS_USB
-  if(USB_IsConnected && (channel & DISPLAY_USB)) {
-    Serial.print(data);
-	/*
-	if(TTY_Tx_Buffer.nbytes >= TTY_BUFSIZE)
-      CDC_Task();
-    TTY_Tx_Buffer.put(data);
-    if(data == '\n')
-      CDC_Task();
-    buffer_used();
-	*/
+  if(USB_IsConnected && ((channel & DISPLAY_USB) || echo_serial)) {
+		#ifndef ESP8266
+		  if(TTY_Tx_Buffer.nbytes >= TTY_BUFSIZE)
+				CDC_Task();
+			TTY_Tx_Buffer.put(data);
+			if(data == '\n')
+				CDC_Task();
+			buffer_used();
+		#else
+			Serial.print(data);
+		#endif
   }
 #endif
 
 #ifdef HAS_UART
-  if(channel & DISPLAY_USB) {
+  if((channel & DISPLAY_USB) || echo_serial) {
     if((TTY_Tx_Buffer.nbytes  < TTY_BUFSIZE-2) ||
        (TTY_Tx_Buffer.nbytes  < TTY_BUFSIZE && (data == '\r' || data == '\n')))
     TTY_Tx_Buffer.put(data);
@@ -235,6 +238,16 @@ void DisplayClass::hex(uint16_t h, int8_t pad, uint8_t padc)
 void DisplayClass::hex2(uint8_t h)
 {
   hex(h, 2, '0');
+}
+
+void DisplayClass::func(char *in)
+{
+  if(in[1] == 'd') {                // no echo on USB
+    echo_serial = false;
+  } else if(in[1] == 'e') {         // echo on USB
+    echo_serial = true;
+  }
+  DC('s');DH2(echo_serial);DNL();
 }
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_DISPLAY)
