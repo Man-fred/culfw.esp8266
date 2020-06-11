@@ -75,29 +75,45 @@ void EthernetClass::init(void)
 #else
   WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
-  //#ifdef STANAME
-    WiFi.hostname(FNcol.ers(EE_NAME));
-  //#endif
+  Serial.print("Connecting ");
+  char sta_name[EE_STR_LEN];
+	uint8_t i = 0;
+	char test = 1;
+  for(i = 0; i < EE_STR_LEN && test > 0; i++) {
+		char test = FNcol.erb(EE_NAME + i);
+    if ((test >= '0' && test <= '9') || (test >= 'A' && test <= 'Z') || (test >= 'a' && test <= 'z') || test=='-' || test==0){
+			sta_name[i] = test;
+		} else {
+			i = 0;
+			break;
+		}
+	}
+	if (i > 0)
+		// hostname ok
+    WiFi.hostname(sta_name);
   if(!FNcol.erb(EE_USE_DHCP)) {
     set_eeprom_addr();
   }
   WiFi.begin(FNcol.ers(EE_WPA_SSID), FNcol.ers(EE_WPA_KEY));
-
-  //Serial.print("Connecting");
-  while (WiFi.status() != WL_CONNECTED)
+	i = 9;
+  while (i-- && WiFi.status() != WL_CONNECTED)
   {
     delay(500);
-    //Serial.print(".");
+    Serial.print(i);
   }
-  //Serial.println();
-  tcplink_port = FNcol.erw(EE_IP4_TCPLINK_PORT);
-  eth_initialized = Udp.begin(tcplink_port);
-  server.begin(tcplink_port);
-  IPAddress localIP = WiFi.localIP();
-  uip_hostaddr[0] = localIP[1]<<8 | localIP[0];
-  uip_hostaddr[1] = localIP[3]<<8 | localIP[2];
-  WiFi.macAddress(uip_ethaddr.addr);
-  Serial.printf("\nUDP %d, TCP %d on %s:%d\n", eth_initialized, tcp_initialized, WiFi.localIP().toString().c_str(), tcplink_port);
+	if (i){
+		//Serial.println();
+		tcplink_port = FNcol.erw(EE_IP4_TCPLINK_PORT);
+		eth_initialized = Udp.begin(tcplink_port);
+		server.begin(tcplink_port);
+		IPAddress localIP = WiFi.localIP();
+		uip_hostaddr[0] = localIP[1]<<8 | localIP[0];
+		uip_hostaddr[1] = localIP[3]<<8 | localIP[2];
+		WiFi.macAddress(uip_ethaddr.addr);
+		Serial.printf("\nUDP %d, TCP %d on %s:%d\n", eth_initialized, tcp_initialized, WiFi.localIP().toString().c_str(), tcplink_port);
+  } else {
+		Serial.println('\nNo WLan');
+	}
 #endif
 }
 
