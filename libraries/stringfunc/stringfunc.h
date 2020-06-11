@@ -8,6 +8,7 @@ public:
 	int fromhex(const char *in, uint8_t *out, uint8_t outlen);
 	int fromip(const char *in, uint8_t *out, uint8_t outlen);
 	void fromdec(const char *in, uint8_t *out);
+  void fromchars(const char *in, uint8_t *out, uint8_t max_length);
 	void tohex(uint8_t in, uint8_t *out);
 };
 

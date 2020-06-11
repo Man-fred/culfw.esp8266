@@ -19,7 +19,7 @@
 #include "led.h"
 #include "display.h"
 #include "fncollection.h"
-//#include "fht.h"
+#include "fht.h"
 
 #ifdef HAS_DMX
 #  include "dmx.h"
@@ -63,6 +63,10 @@
 #  define MAX_SNDRAW 12
 
    static uint8_t zerohigh, zerolow, onehigh, onelow;
+
+RfSendClass::RfSendClass(){
+	credit_10ms = MAX_CREDIT;
+}
 
 void RfSendClass::send_bit(uint8_t bit, uint8_t edge = 0)
 {
@@ -134,10 +138,10 @@ void RfSendClass::sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bit
 
 #ifdef HAS_MORITZ
   uint8_t restore_moritz = 0;
-  if(moritz_on) {
+  if(Moritz.on()) {
     restore_moritz = 1;
-    moritz_on = 0;
-    set_txreport("21");
+    Moritz.on(0);
+    RfReceive.set_txreport("21");
   }
 #endif
   if(tx_report & REP_BITS) {
@@ -206,7 +210,7 @@ void RfSendClass::sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bit
 
 #ifdef HAS_MORITZ
   if(restore_moritz)
-    rf_moritz_init();
+    Moritz.init();
 #endif
   LED_OFF();
 }

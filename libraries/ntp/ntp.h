@@ -38,21 +38,33 @@ typedef struct tm {
   uint8_t    tm_sec;
 } tm_t;
 
-void ntp_init(void);
-void ntp_sendpacket(void);
-void ntp_digestpacket(void);
-void ntp_func(char *in);
-void ntp_get(uint8_t now[6]);
-void ntp_sec2tm(time_t sec, tm_t *t);
-time_t ntp_tm2sec(tm_t *t);
-
-extern time_t   ntp_sec;
-extern uint8_t  ntp_hsec;
-extern  int8_t  ntp_gmtoff;
-extern struct uip_udp_conn *ntp_conn;
-
 #define NTP_PORT 123
 #define NTP_INTERVAL 8            // Max interval is 9 (512sec)
 #define NTP_INTERVAL_MASK 0xff    // 264sec = 4.5min
+
+class NtpClass {
+public:
+
+	void init(void);
+	void digestpacket(void);
+	void func(char *in);
+	void get(uint8_t now[6]);
+	void sec2tm(time_t sec, tm_t *t);
+	time_t tm2sec(tm_t *t);
+
+private:
+	// Time of last sync.
+	time_t  sec = 3461476149U; // 2009-09-09 09:09:09 (GMT)
+	uint8_t hsec;
+	int8_t  gmtoff;
+	struct uip_udp_conn *conn = 0;
+	
+	void fill_packet(ntp_packet_t *p);
+	void sendpacket(void);
+};
+
+#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_FASTRF)
+extern NtpClass Ntp;
+#endif
 
 #endif

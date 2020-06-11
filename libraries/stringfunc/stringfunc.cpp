@@ -68,6 +68,17 @@ void STRINGFUNCClass::fromdec(const char *in, uint8_t *out)
   *(uint16_t*)out = h;
 }
 
+// Used to parse ip-adresses, but may also be used to parse single-byte values
+void STRINGFUNCClass::fromchars(const char *in, uint8_t *out, uint8_t max_length)
+{
+  uint8_t c;
+  uint16_t h = 0;
+  max_length--;
+  while((c = *in++) && h++ < max_length)
+    *out++ = c;
+	*out = 0;
+}
+
 
 // Just one byte
 void STRINGFUNCClass::tohex(uint8_t f, uint8_t *t)

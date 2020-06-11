@@ -5,27 +5,28 @@
 #include <stdint.h>
 #include <pgmspace.h>
 
-/*
-#include "ringbuffer.h"
-#ifdef HAS_USB
-//#include "cdc.h"
-#else
-#include "serial.h"
+#ifndef ESP8266
+	#include "ringbuffer.h"
+	#ifdef HAS_USB
+	  #include "cdc.h"
+	#else
+	  #include "serial.h"
+	#endif
+	#include "led.h"
+	#include "delay.h"
+	#include "pcf8833.h"
+	#include "ttydata.h"            // callfn
+	#include "fht.h"                // fht_hc
+	#include "rf_router.h"
+	#include "clock.h"
+	#include "log.h"
+	#ifdef HAS_ETHERNET
+	  #include "tcplink.h"
+	#endif
+  #include "stringfunc.h"
 #endif
-#include "led.h"
-#include "delay.h"
-#include "pcf8833.h"
-#include "ttydata.h"            // callfn
-#include "fht.h"                // fht_hc
-#include "rf_router.h"
-#include "clock.h"
-#include "log.h"
-*/
 #ifdef HAS_PRIVATE_CHANNEL
 //#include "private_channel.h"
-#endif
-#ifdef HAS_ETHERNET
-//#include "tcplink.h"
 #endif
 #ifdef HAS_DOGM
 //#include "dogm16x.h"
@@ -37,7 +38,6 @@
 #include "Printable.h"
 
 #include <pgmspace.h>
-//#include "stringfunc.h"
 
 #define DC display.chr
 #define DS(a) display.string((char*)a)
@@ -64,8 +64,10 @@ public:
 	void hex(uint16_t h, int8_t pad, uint8_t padc);
 	void hex2(uint8_t h);
 	void nL(void);
+  void func(char *in);
 	uint8_t channel;
 	uint8_t log_enabled;
+	uint8_t echo_serial;
 };
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_DISPLAY)

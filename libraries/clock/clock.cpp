@@ -47,7 +47,9 @@ void ICACHE_RAM_ATTR CLOCKClass::IsrHandler()
 #endif
 #ifdef HAS_FHT_8v
   if(FHT.fht8v_timeout)
+	{
     FHT.fht8v_timeout--;
+	}
 #endif
 #ifdef HAS_FHT_80b
   if(FHT.fht80b_timeout != FHT_TIMER_DISABLED)
@@ -114,7 +116,9 @@ void CLOCKClass::Minute_Task(void)
 #endif
 #ifdef HAS_FHT_8v
   if(FHT.fht8v_timeout == 0)
+	{
     FHT.fht8v_timer();
+	}
 #endif
 #ifdef HAS_FHT_80b
   if(FHT.fht80b_timeout == 0)
@@ -128,7 +132,7 @@ void CLOCKClass::Minute_Task(void)
 #ifdef HAS_ONEWIRE
   // Check if a running conversion is done
   // if HMS Emulation is on, and the Minute timer has expired
-  onewire_HsecTask ();
+  Onewire.HsecTask ();
 #endif
 
   if(clock_hsec<125)
@@ -142,10 +146,11 @@ void CLOCKClass::Minute_Task(void)
 
   if (RfSend.credit_10ms < MAX_CREDIT) // 10ms/1s == 1% -> allowed talk-time without CD
     RfSend.credit_10ms += 1;
-
+  // ToDo: only testing, not for productive rollout
+  //RfSend.credit_10ms = MAX_CREDIT;
 #ifdef HAS_ONEWIRE
   // if HMS Emulation is on, check the HMS timer
-  onewire_SecTask ();
+  Onewire.SecTask ();
 #endif
 #ifdef HAS_VZ
   vz_sectask();

@@ -14,10 +14,9 @@
 #include "cc1100.h"
 
 #include "rf_asksin.h"  // asksin_on
-#include "rf_moritz.h"  // moritz_on
 
 #ifdef HAS_MORITZ
-#include "rf_moritz.h"
+#include "rf_moritz.h" // moritz_on
 #endif
 
 uint8_t cc_on;
@@ -161,8 +160,10 @@ void CC1100Class::deassert(void) {
 	while(digitalRead(SPI_MISO));
 	digitalWrite(SPI_SS,1);
 }
+#endif
 
 uint8_t CC1100Class::cc1100_sendbyte(uint8_t data){
+#ifdef ESP8266
   /*//SPI.cpp
 	while(SPI1CMD & SPIBUSY) {}
 	setDataBits(8);
@@ -172,26 +173,77 @@ uint8_t CC1100Class::cc1100_sendbyte(uint8_t data){
 	return (uint8_t) (SPI1W0 & 0xff);
   */
   return SPI.transfer(data);
-  
-}
 #else
-uint8_t CC1100Class::cc1100_sendbyte(uint8_t data){
 	SPDR = data;		        // send byte
-xx
 	while (!(SPSR & _BV (SPIF)));	// wait until transfer finished
 	return SPDR;
-}
 #endif
+}
+
+// The manual power-up sequence
+// all internal registers and states are set to the default, IDLE state. 
+// INT mode disabled, we will pull
+
+void CC1100Class::manualReset(uint8_t first){
+  #ifndef ESP8266	
+		EIMSK &= ~_BV(CC1100_INT);               //INT mode disabled
+    SET_BIT( CC1100_CS_DDR, CC1100_CS_PIN ); // CS as output
+  #else
+		GPC(CC1100_INT) &= ~(0xF << GPCI);       //INT mode disabled
+    if (first)
+		  pinMode(CC1100_CS_PIN, OUTPUT);
+  #endif
+  if (first){
+		CC1100_DEASSERT;                           // Toggle chip select signal
+		MYDELAY.my_delay_us(30);
+		CC1100_ASSERT;
+		MYDELAY.my_delay_us(30);
+		CC1100_DEASSERT;
+		MYDELAY.my_delay_us(45);
+  }
+  ccStrobe( CC1100_SRES );                   // Send SRES command
+  MYDELAY.my_delay_us(100);
+}
 
 void CC1100Class::ccInitChip(uint8_t cfg){
 #ifdef HAS_MORITZ
-  moritz_on = 0; //loading this configuration overwrites moritz cfg
+  Moritz.on(0); //loading this configuration overwrites moritz cfg
 #endif
+  manualReset();
+  
+	// not in c -->
+	ccStrobe(CC1100_SFRX);
+  ccStrobe(CC1100_SFTX);
+	// not in c <--
+  
+  CC1100_ASSERT;                             // load configuration
+  cc1100_sendbyte( 0 | CC1100_WRITE_BURST );
+  for(uint8_t i = 0; i < EE_CC1100_CFG_SIZE; i++) {
+    //DH2(FNcol.erb(cfg));
+	  cc1100_sendbyte(FNcol.erb(cfg++));
+  }
+  CC1100_DEASSERT;
+	// not in c -->
+  MYDELAY.my_delay_us(10);
+	// not in c <--
 
-//esp8266  EIMSK &= ~_BV(CC1100_INT);                 
-//esp8266    SET_BIT( CC1100_CS_DDR, CC1100_CS_PIN ); // CS as output
-  uint8_t cfg2 = cfg;
-  pinMode(CC1100_CS_PIN, OUTPUT);
+  uint8_t pa = EE_CC1100_PA;
+
+  // setup PA table
+  CC1100_ASSERT;
+  cc1100_sendbyte( CC1100_PATABLE | CC1100_WRITE_BURST );
+  for (uint8_t i = 0;i<8;i++) {
+    //DH2(FNcol.erb(pa));
+    cc1100_sendbyte(FNcol.erb(pa++));
+  }
+  CC1100_DEASSERT;
+
+  ccStrobe( CC1100_SCAL );
+  MYDELAY.my_delay_ms(1);
+  //DNL();
+
+  /*original esp8266 from above 
+	uint8_t cfg2 = cfg;
   digitalWrite(CC1100_CS_PIN,HIGH);    
   delayMicroseconds(1);
 
@@ -203,10 +255,8 @@ void CC1100Class::ccInitChip(uint8_t cfg){
 
   ccStrobe(CC1100_SRES);
   delayMicroseconds(100);
-  ccStrobe(CC1100_SFRX);
-  ccStrobe(CC1100_SFTX);
-
-  digitalWrite(CC1100_CS_PIN,LOW);    
+	
+	digitalWrite(CC1100_CS_PIN,LOW);    
   while(digitalRead(SPI_MISO));
   
   SPI.transfer( 0 | CC1100_WRITE_BURST);
@@ -215,13 +265,8 @@ void CC1100Class::ccInitChip(uint8_t cfg){
   }
   while(digitalRead(SPI_MISO));
   digitalWrite(CC1100_CS_PIN,HIGH);  
-  for(uint8_t i = 0; i < EE_CC1100_CFG_SIZE; i++) {
-    DH2(FNcol.erb(cfg2++));
-  }
 
-  delayMicroseconds(10);
-  uint8_t pa = EE_CC1100_PA;
-  // setup PA table
+
   digitalWrite(CC1100_CS_PIN,LOW);    
   while(digitalRead(SPI_MISO));
   SPI.transfer( CC1100_PATABLE | CC1100_WRITE_BURST);
@@ -233,38 +278,7 @@ void CC1100Class::ccInitChip(uint8_t cfg){
 
   ccStrobe( CC1100_SCAL );
   delayMicroseconds(1);
-/*
-  CC1100_DEASSERT;                           // Toggle chip select signal
-  MYDELAY.my_delay_us(30);
-  CC1100_ASSERT;
-  MYDELAY.my_delay_us(30);
-  CC1100_DEASSERT;
-  MYDELAY.my_delay_us(45);
-
-  ccStrobe( CC1100_SRES );                   // Send SRES command
-  MYDELAY.my_delay_us(100);
-
-  CC1100_ASSERT;                             // load configuration
-  cc1100_sendbyte( 0 | CC1100_WRITE_BURST );
-  for(uint8_t i = 0; i < EE_CC1100_CFG_SIZE; i++) {
-    DH2(FNcol.erb(cfg));
-	cc1100_sendbyte(FNcol.erb(cfg++));
-  }
-  CC1100_DEASSERT;
-
-  uint8_t pa = EE_CC1100_PA;
-  CC1100_ASSERT;                             // setup PA table
-  cc1100_sendbyte( CC1100_PATABLE | CC1100_WRITE_BURST );
-  for (uint8_t i = 0;i<8;i++) {
-    DH2(FNcol.erb(pa));
-    cc1100_sendbyte(FNcol.erb(pa++));
-  }
-  CC1100_DEASSERT;
-
-  ccStrobe( CC1100_SCAL );
-  MYDELAY.my_delay_ms(1);
-  DNL();
-*/
+	*/
 }
 
 //--------------------------------------------------------------------
@@ -272,7 +286,7 @@ void CC1100Class::ccInitChip(uint8_t cfg){
 void CC1100Class::cc_set_pa(uint8_t idx){
   uint8_t t = EE_CC1100_PA;
   if(idx > 9)
-    idx = 8;
+    idx = 9;
 
 #ifdef FULL_CC1100_PA
   const uint8_t *f = CC1100_PA+idx*8;
@@ -332,7 +346,11 @@ void CC1100Class::ccsetpa(char *in){
 //--------------------------------------------------------------------
 void CC1100Class::ccTX(void){
   uint8_t cnt = 0xff;
-  EIMSK  &= ~_BV(CC1100_INT);
+  #ifndef ESP8266	
+		EIMSK &= ~_BV(CC1100_INT);
+  #else
+		GPC(CC1100_INT) &= ~(0xF << GPCI);//INT mode disabled
+  #endif
 
   // Going from RX to TX does not work if there was a reception less than 0.5
   // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
@@ -340,6 +358,9 @@ void CC1100Class::ccTX(void){
   while(cnt-- &&
         (ccStrobe(CC1100_STX) & CC1100_STATUS_STATE_BM) != CC1100_STATE_TX)
     MYDELAY.my_delay_us(10);
+  if (cnt == 0){
+		DC('D');DC('Z');DC('c');DC('n');DC('t');DH2(CC1100_STX);DNL();
+	}
 }
 
 //--------------------------------------------------------------------
@@ -349,8 +370,14 @@ void CC1100Class::ccRX(void){
   while(cnt-- &&
         (ccStrobe(CC1100_SRX) & CC1100_STATUS_STATE_BM) != CC1100_STATE_RX)
     MYDELAY.my_delay_us(10);
-  EIMSK |= _BV(CC1100_INT);
-
+  #ifndef ESP8266	
+		EIMSK |= _BV(CC1100_INT);
+  #else
+		GPC(CC1100_INT) |= ((0x3 & 0xF) << GPCI);//INT mode "mode" (0x3)
+  #endif
+  #ifdef HAS_MORITZ
+	  Moritz.on(0);
+	#endif
 }
 
 
@@ -407,19 +434,28 @@ uint8_t CC1100Class::cc1100_readReg(uint8_t addr){
 
 //--------------------------------------------------------------------
 uint8_t CC1100Class::readStatus(uint8_t addr){
-  uint8_t ret;
-	digitalWrite(SPI_SS,0);
-	while(digitalRead(SPI_MISO));
-  ret = SPI.transfer(addr|CC1100_READ_BURST);
-  ret = SPI.transfer(0);
-	while(digitalRead(SPI_MISO));
-	digitalWrite(SPI_SS,1);
-  return ret;
+  uint8_t ret0,ret1 = 0xFF;
+	uint8_t cnt = 0xFF;
+
+	CC1100_ASSERT;
+  SPI.transfer(addr|CC1100_READ_BURST);
+  ret0 = SPI.transfer(0);
+	CC1100_DEASSERT;
+	while (cnt-- && (ret0 != ret1) ){
+		ret1 = ret0;
+		CC1100_ASSERT;
+		SPI.transfer(addr|CC1100_READ_BURST);
+		ret0 = SPI.transfer(0);
+		CC1100_DEASSERT;
+	}
+  if (cnt == 0){
+		DC('D');DC('Z');DC('c');DC('n');DC('t');DH2(addr);DNL();
+	}
+	return ret0;
 }
 
 void CC1100Class::cc1100_writeReg(uint8_t addr, uint8_t data){
   CC1100_ASSERT;
-//  cc1100_sendbyte( addr|CC1100_WRITE_BURST );
   cc1100_sendbyte( addr|CC1100_WRITE_SINGLE );
   cc1100_sendbyte( data );
   CC1100_DEASSERT;
@@ -447,11 +483,11 @@ void CC1100Class::set_ccoff(void){
   cc_on = 0;
 
 #ifdef HAS_ASKSIN
-  asksin_on = 0;
+  RfAsksin.on = 0;
 #endif
 
 #ifdef HAS_MORITZ
-  moritz_on = 0;
+  Moritz.on(0);
 #endif
 }
 
@@ -460,11 +496,11 @@ void CC1100Class::set_ccon(void){
   cc_on = 1;
 
 #ifdef HAS_ASKSIN
-  asksin_on = 0;
+  RfAsksin.on = 0;
 #endif
 
 #ifdef HAS_MORITZ
-  moritz_on = 0;
+  Moritz.on(0);
 #endif
 }
 

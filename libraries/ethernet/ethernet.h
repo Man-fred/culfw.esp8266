@@ -2,8 +2,6 @@
 #define __ETHERNET_H_
 
 #include "board.h"
-#include "private.h"
-#include "ttydata.h"
 
 #ifdef ESP8266
 #   include <WiFiUdp.h>
@@ -38,11 +36,14 @@ public:
 	extern uint8_t eth_initialized;
     struct timer periodic_timer, arp_timer;
 #else
-    void putChar(char data); //von tcp_link.h uebernommen
+  void putChar(char data); //von tcp_link.h uebernommen
 	uip_ipaddr_t 	uip_hostaddr;
 	struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
 	uint8_t eth_debug;
 	uint8_t eth_initialized;
+  // ota, only ESP8266
+	void ota();
+	uint8_t in_ota(void);
 #endif //ESP8266
     static struct uip_eth_addr mac;       // static for dhcpc
 
@@ -52,8 +53,8 @@ public:
 	void tcp_appcall(void);
 	void func(char *);
 private:
-	const char* ssid = STASSID;
-	const char* password = STAPSK;
+	//const char* ssid = STASSID;
+	//const char* password = STAPSK;
 	void display_mac(uint8_t *a);
 	void display_ip4(uint8_t*);
 	void set_eeprom_addr();
@@ -61,6 +62,8 @@ private:
 	void ip_initialized(void);
 	void dhcpc_configured(const dhcpc_state*);
 #ifdef ESP8266
+	uint8_t now_in_ota;
+	
 	// buffers for receiving and sending data
 	char packetBuffer[UDP_TX_PACKET_MAX_SIZE + 1]; //buffer to hold incoming packet,
 	char  ReplyBuffer[80];// = "acknowledged\r\n";       // a string to send back
@@ -70,6 +73,7 @@ private:
 	WiFiClient Tcp[TCP_MAX];  // 
 	uint8_t tcp_initialized;
 	int ip_active;
+	uint16_t tcplink_port;
 #endif //ESP8266
 };
 

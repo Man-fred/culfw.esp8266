@@ -4,10 +4,17 @@
 #define FASTRF_MODE_ON	1
 #define FASTRF_MODE_OFF	0
 
-void fastrf_mode(uint8_t on);
-void fastrf_func(char *in);
-extern uint8_t fastrf_on;
+class FastRFClass {
+public:
+  uint8_t fastrf_on;
+	
+  //void mode(uint8_t on);
+  void func(char *in);
+  void Task(void);
+};
 
-void FastRF_Task(void);
+#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_FASTRF)
+extern FastRFClass FastRF;
+#endif
 
 #endif

@@ -14,15 +14,18 @@ public:
 	void ewb(uint8_t p, uint8_t v);
 	void ewb(uint8_t p, uint8_t v, bool commit);
 	void ewc(bool commit);
+  void ews(uint8_t p, String data, bool commit = true);
 	uint8_t erb(uint8_t p);
-    uint16_t erw(uint8_t p);
+  uint16_t erw(uint8_t p);
+  String ers(uint8_t p);
 	void ledfunc(char *);
 	void prepare_boot(char *);
 	void version(char *);
 	void do_wdt_enable(uint8_t t);
 private:
 	void dumpmem(uint8_t *addr, uint16_t len);
-    void display_ee_bytes(uint8_t a, uint8_t cnt);
+  void display_string(uint8_t a, uint8_t cnt);
+  void display_ee_bytes(uint8_t a, uint8_t cnt);
 	void display_ee_mac(uint8_t);
 #ifdef HAS_ETHERNET
       void display_ee_ip4(uint8_t a);
@@ -67,15 +70,26 @@ extern FNCOLLECTIONClass FNcol;
 # define EE_IP4_NTPSERVER    (EE_IP4_GATEWAY+4)                      
 # define EE_IP4_TCPLINK_PORT (EE_IP4_NTPSERVER+4)               // Offset x79
 # define EE_IP4_NTPOFFSET    (EE_IP4_TCPLINK_PORT+2)
-# define EE_ETH_LAST         (EE_IP4_NTPOFFSET+1)       // 
+# define EE_STR_LEN        20
+# ifdef ESP8266
+#   define EE_WPA_SSID       (EE_IP4_NTPOFFSET+1)
+#   define EE_WPA_KEY        (EE_WPA_SSID+EE_STR_LEN)
+#   define EE_NAME           (EE_WPA_KEY+EE_STR_LEN)
+#   define EE_OTA_SERVER     (EE_NAME+EE_STR_LEN)
+#   define EE_ETH_LAST       (EE_OTA_SERVER+4)
+# else
+#   define EE_ETH_LAST       (EE_IP4_NTPOFFSET+1)
+# endif
+#else
+# define EE_ETH_LAST         (EE_RF_ROUTER_ROUTER+1)
 #endif
 
 #ifdef HAS_LCD
-#ifdef HAS_ETHERNET
-# define EE_CONTRAST          EE_ETH_LAST
-#else
-# define EE_CONTRAST          (EE_FASTRF_CFG+EE_CC1100_CFG_SIZE)
-#endif
+# ifdef HAS_ETHERNET
+#   define EE_CONTRAST          EE_ETH_LAST
+# else
+#   define EE_CONTRAST          (EE_FASTRF_CFG+EE_CC1100_CFG_SIZE)
+# endif
 # define EE_BRIGHTNESS        (EE_CONTRAST+1)
 # define EE_SLEEPTIME         (EE_BRIGHTNESS+1)
 # define EE_LCD_LAST          (EE_SLEEPTIME+1)
@@ -84,10 +98,11 @@ extern FNCOLLECTIONClass FNcol;
 #endif
 
 #ifdef HAS_FS
-# define EE_LOGENABLED        (EE_LCD_LAST)
+# define EE_LOGENABLED        EE_LCD_LAST
 # define EE_FS_LAST           (EE_LOGENABLED+1)
+#else
+#	define EE_FS_LAST           EE_LCD_LAST
 #endif
-
 
 extern uint8_t led_mode;
 
