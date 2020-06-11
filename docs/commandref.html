@@ -25,6 +25,8 @@
     <h3>culfw<br>reference</h3>
   </div>
   <div id="right">
+<h2>Work in progress</h2>
+<p>The differences between CUL-programming and the Arduino-IDE are not decribed here. See the wiki on Github</p>
 
 <h3>Contents</h3>
 <ul>
@@ -69,6 +71,7 @@
     <a href="#cmd_X">X</a>
     <a href="#cmd_Y">Y</a>
     <a href="#cmd_Z">Z</a>
+    <a href="#cmd_1">1</a>
   </ul>
   <a href="#protocol2">Protocol Part 2 (radio messages)</a><br>
   <a href="#FHT_8v">FHT_8v</a><br>
@@ -140,6 +143,7 @@
     <li> HMS
     <li> ESA
     <li> ASKSIN (aka BidCos(R))
+		<li> MAX! with the moritz protocol
     <li> basic OneWire Protocol through the DS4282 (CUNO only)
     <li> UNIRoll
   </ul>
@@ -412,7 +416,7 @@
     <a name="cmd_E"></a>
     E&lt;x&gt;
     <ul>
-      (CUN only) eth debugging
+      (CUN only) eth debugging moved to command 1, E is used for RWE-devices
       <ul>
       <li> c<br>
         Print out the currently configured IP & MAC address.
@@ -885,12 +889,18 @@
     V
     <ul>
       Print the firmware version.
-      Example: V -&gt; V 1.30 CUL868
+      Example: V -&gt; V 1.67 CUL868
     </ul>
     VH
     <ul>
-      Print the hardware version on CUL_V3 and CUL_V4
-    </ul><br><br>
+      Print the hardware version on CUL_V3, CUL_V4 and CUL_ESP
+    </ul>
+    VI
+    <ul>
+      Print the image version. The bin-file for over the air updates should look similar with a higher version number.
+      Example: VI -&gt; V01-67-00.culfw-esp8266.ino.d1_mini
+    </ul>
+		<br><br>
 
     <a name="cmd_v"></a>
     v&lt;func&gt;[&lt;hex&gt;]
@@ -949,7 +959,11 @@
       <li>Win - IPV4 network mask
       <li>Wip - tcplink port
       <li>WiN - NTP sever
-      <li>Wio - GMT offset</li>
+      <li>Wio - GMT offset
+			<li>Wis - SSID (up to 20 character)</li>
+			<li>Wik - WPA-key (up to 20 character)</li>
+			<li>WiD - devicename (up to 20 character)</li>
+			<li>WiO - IPV4 Address of the OTA-server</li>
       Notes:
         <ul>
         <li>Factory reset: use DHCP, port 2323, NTP-Server = Router, GMT offset:0
@@ -1094,6 +1108,33 @@
       <li> x<br>
         Disable MORITZ mode. To enable reception of FS20 messages, an "X21" or
         similar is needed.
+      </ul>
+    </ul><br><br>
+
+    <a name="cmd_1"></a>
+    1&lt;x&gt;
+    <ul>
+      (CUN only) eth debugging moved from command E, wich is used for RWE-devices
+      <ul>
+      <li> c<br>
+        Print out the currently configured IP & MAC address.
+        The IP address may be different from what you configured with Wia
+        if DHCP is enabled. 0.0.0.0 is shown if no IP address is set, e.g.
+        when DHCP is enabled but the network cable is unplugged or CUN
+        could not get an IP address over LAN. Note that the IP address
+        that you configured with Wia is disregarded if DHCP is enabled.
+
+      <li> d<br>
+        increase the debug level. Meaning of the levels
+        1: application debugging, e.g. the NTP module will display the time
+        2: print ETH header (mac adress + ETH frametype)
+        3: dump whole ethernet packet.
+
+      <li> i<br>
+        Reinitialize the ethernet subsystem, restart DHCP & NTP
+
+      <li> n<br>
+        Request an NTP update
       </ul>
     </ul><br><br>
 
