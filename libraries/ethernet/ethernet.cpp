@@ -99,7 +99,7 @@ void EthernetClass::init(void)
   while (i-- && WiFi.status() != WL_CONNECTED)
   {
     delay(500);
-    Serial.print(i);
+    Serial.print(".");
   }
 	if (i){
 		//Serial.println();
@@ -138,7 +138,7 @@ void EthernetClass::reset(bool commit = true)
 # ifdef ESP8266
     buf[2] = 's'; strcpy_P(buf+3, PSTR("SSID"));          FNcol.write_eeprom(buf, false);//SSID;
     buf[2] = 'k'; strcpy_P(buf+3, PSTR("password"));      FNcol.write_eeprom(buf, false);//WPA_KEY;
-    buf[2] = 'D'; strcpy_P(buf+3, PSTR("cul_esp"));       FNcol.write_eeprom(buf, false);//EE_NAME;
+    buf[2] = 'D'; strcpy_P(buf+3, PSTR("cul-esp"));       FNcol.write_eeprom(buf, false);//EE_NAME;
     buf[2] = 'O'; strcpy_P(buf+3, PSTR("0.0.0.0"));       FNcol.write_eeprom(buf, false);//OTA_SERVER;
 # endif
 
