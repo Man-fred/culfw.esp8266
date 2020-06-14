@@ -650,14 +650,14 @@ void RfReceiveClass::RfAnalyze_Task(void)
             break;
           }
 
-        if(roby == oby && (CLOCK.ticks - reptime < REPTIME)) // 38/125 = 0.3 sec
+        if(roby == oby && (CLOCKClass::ticks - reptime < REPTIME)) // 38/125 = 0.3 sec
           packetCheckValues.isrep = 1;
       }
 
       // save the data
       for(roby = 0; roby < oby; roby++)
         robuf[roby] = obuf[roby];
-      reptime = CLOCK.ticks;
+      reptime = CLOCKClass::ticks;
 
     }
 

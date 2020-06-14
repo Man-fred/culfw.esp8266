@@ -1,17 +1,21 @@
 #include <avr/io.h>
 #include "board.h"
+#include "battery.h"
 #include "display.h"
-#include "cdc.h"
-#ifdef HAS_LCD
-#include "pcf8833.h"
+#ifdef HAS_CDC
+  #include "cdc.h"
 #endif
-#include <Drivers/USB/USB.h>     // USB_IsConnected
+#ifdef HAS_LCD
+  #include "pcf8833.h"
+#endif
+#ifdef USB_IS_CONNECTED
+#  include <Drivers/USB/USB.h>     // USB_IsConnected
+#endif
 #include "adcw.h"
+#include "stringfunc.h"
 
-uint8_t battery_state;
-
-static void
-raw2percent(uint16_t bv)
+void
+BatClass::raw2percent(uint16_t bv)
 {
   static uint8_t bat[] = { 0,109,136,141,143,152,164,179,196,214,240 };
   uint8_t s1, s2;
@@ -26,15 +30,15 @@ raw2percent(uint16_t bv)
       break;
   
   s2 = s1-1;
-  battery_state = 10*s2+(10*(uint16_t)(b-bat[s2]))/(uint16_t)(bat[s1]-bat[s2]);
+  state = 10*s2+(10*(uint16_t)(b-bat[s2]))/(uint16_t)(bat[s1]-bat[s2]);
 }
 
 void
-batfunc(char *in)
+BatClass::func(char *in)
 {
   uint8_t hb[2];
   uint16_t bv;
-  uint8_t l = fromhex(in+1,hb,2);
+  uint8_t l = STRINGFUNC.fromhex(in+1,hb,2);
 
 #ifdef CURV3
 
@@ -88,13 +92,13 @@ batfunc(char *in)
 
 #if defined(HAS_LCD) && defined(BAT_PIN)
 void
-bat_drawstate(void)
+BatClass::drawstate(void)
 {
   if(!lcd_on)
     return;
 
   raw2percent(get_adcw(BAT_MUX));
-  uint16_t v1 = battery_state*VISIBLE_WIDTH/100;
+  uint16_t v1 = state*VISIBLE_WIDTH/100;
 
   lcd_line(WINDOW_LEFT,TITLE_HEIGHT-1,          // the green/blue part
                    WINDOW_LEFT+v1,TITLE_HEIGHT-1, 0x0f00);
@@ -116,7 +120,7 @@ bat_drawstate(void)
 #endif
 
 void
-bat_init(void)
+BatClass::init(void)
 {
 #ifdef CURV3
      BAT_DDR  = 0xE;    // BAT_CEN BAT_PEN2 BAT_USUS
@@ -126,3 +130,5 @@ bat_init(void)
      BAT_PORT |= (_BV(BAT_PIN1) | _BV(BAT_PIN1));          // pull Battery stati
 #endif
 }
+
+BatClass Bat;

@@ -1,10 +1,11 @@
-#include <pgmspace.h>
 #include "board.h"
 
 #include <stdio.h>
 #include <string.h>
-//esp8266 #include <avr/pgmspace.h>
-//esp8266 #include <avr/eeprom.h>
+#ifndef ESP8266
+  #include <avr/pgmspace.h>
+  #include <avr/eeprom.h>
+#endif
 #include <SPI.h>
 
 #include "delay.h"

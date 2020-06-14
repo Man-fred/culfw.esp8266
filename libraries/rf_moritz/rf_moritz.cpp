@@ -1,5 +1,5 @@
-#include "board.h"
-#ifdef HAS_MORITZ
+#include "rf_moritz.h"
+
 #include <string.h>
 #ifndef ESP8266
   #include <avr/pgmspace.h>
@@ -14,7 +14,7 @@
 #include "clock.h"
 #include "rf_send.h" //credit_10ms
 
-#include "rf_moritz.h"
+#include "fncollection.h"
 
 
 /*
@@ -293,7 +293,7 @@ void RfMoritzClass::sendraw(uint8_t *dec, int longPreamble)
    * This looks a bit cumbersome but handles overflows of ticks gracefully.
    */
   if(lastSendingTicks)
-    while(CLOCK.ticks == lastSendingTicks || CLOCK.ticks == lastSendingTicks+1)
+    while(CLOCKClass::ticks == lastSendingTicks || CLOCKClass::ticks == lastSendingTicks+1)
       MYDELAY.my_delay_ms(1);
 
   /* Enable TX. Perform calibration first if MCSM0.FS_AUTOCAL=1 (this is the case) (takes 809μs)
@@ -396,7 +396,7 @@ void RfMoritzClass::sendraw(uint8_t *dec, int longPreamble)
   if(!in_moritz) {
     RfReceive.set_txrestore();
   }
-  lastSendingTicks = CLOCK.ticks;
+  lastSendingTicks = CLOCKClass::ticks;
 }
 
 void RfMoritzClass::sendAck(uint8_t* enc)
@@ -456,4 +456,3 @@ void RfMoritzClass::func(char *in)
 RfMoritzClass Moritz;
 #endif
 
-#endif

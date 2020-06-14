@@ -1,9 +1,17 @@
 #ifndef _BATTERY_H
 #define _BATTERY_H
 
-void batfunc(char *unused);
-void bat_init(void);
-void bat_drawstate(void);
-extern uint8_t battery_state;
+class BatClass {
+	public:
+		void func(char *unused);
+		void init(void);
+		void drawstate(void);
+    
+		uint8_t state;
+	private:
+	  void raw2percent(uint16_t bv);
+};
+
+extern BatClass Bat; 
 
 #endif
