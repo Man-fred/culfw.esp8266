@@ -47,12 +47,12 @@ FastRFClass::Task(void)
 
   if(fastrf_on == FASTRF_MODE_ON) {
     static uint8_t lasttick;         // Querying all the time affects reception.
-    if(lasttick != (uint8_t)CLOCK.ticks) {
+    if(lasttick != (uint8_t)CLOCKClass::ticks) {
       if(CC1100.cc1100_readReg(CC1100_MARCSTATE) == MARCSTATE_RXFIFO_OVERFLOW) {
         CC1100.ccStrobe(CC1100_SFRX);
         CC1100.ccRX();
       }
-      lasttick = (uint8_t)CLOCK.ticks;
+      lasttick = (uint8_t)CLOCKClass::ticks;
     }
     return;
   }

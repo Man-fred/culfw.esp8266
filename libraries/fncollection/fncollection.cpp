@@ -1,7 +1,16 @@
 #include <EEPROM.h>
-//esp8266 #include <wdt.h>
-//esp8266 #include <interrupt.h>
-#include <pgmspace.h>
+
+#ifndef ESP8266
+  #include <avr/wdt.h>
+  #include <avr/interrupt.h>
+  #include <avr/pgmspace.h>
+//#include "mysleep.h"
+//#include "fswrapper.h"
+//#include "../version.h"
+	#ifdef HAS_USB
+		#  include <Drivers/USB/USB.h>
+	#endif
+#endif
 
 #include "board.h"
 #include "display.h"
@@ -10,19 +19,12 @@
 #include "cc1100.h"
 #include "stringfunc.h"
 
-//#include "../version.h"
-#ifdef HAS_USB
-//#  include <Drivers/USB/USB.h>
-#endif
 #include "clock.h"
-//#include "mysleep.h"
-//#include "fswrapper.h"
 #include "fastrf.h"
 #include "rf_router.h"
 #ifdef HAS_ETHERNET
 #  include "ethernet.h"
 #endif
-// ??? doppelt ??? #include <avr/wdt.h>
 
 uint8_t led_mode = 2;   // Start blinking
 /*
@@ -43,18 +45,23 @@ void FNCOLLECTIONClass::ewb(uint8_t p, uint8_t v)
 
 __attribute__((__noinline__)) 
 void FNCOLLECTIONClass::ewb(uint8_t p, uint8_t v, bool commit)
-{
+{ 
+#ifdef ESP8266
 	EEPROM.write(p, v);
 	ewc(commit);
-//esp8266  eeprom_write_byte(p, v);
-//esp8266  eeprom_busy_wait();
+#else
+  eeprom_write_byte(p, v);
+  eeprom_busy_wait();
+#endif
 }
 
 void FNCOLLECTIONClass::ewc(bool commit = true)
 {
+#ifdef ESP8266
 	if (commit) {
 	  EEPROM.commit();
 	}
+#endif
 }
 
 // eeprom_read_byte is inlined and it is too big
@@ -69,8 +76,11 @@ uint8_t FNCOLLECTIONClass::erb(uint8_t p)
 __attribute__((__noinline__)) 
 uint16_t FNCOLLECTIONClass::erw(uint8_t p)
 {
-  //return eeprom_read_word((uint16_t *)p);
+#ifdef ESP8266
   return (uint16_t)EEPROM.read(p) | ((uint16_t)EEPROM.read(p+1) << 8);
+#else
+  return eeprom_read_word((uint16_t *)p);
+#endif
 }
 
 void FNCOLLECTIONClass::ews(uint8_t p, String data, bool commit)
@@ -78,11 +88,11 @@ void FNCOLLECTIONClass::ews(uint8_t p, String data, bool commit)
   uint8_t _size = data.length();
   for(uint8_t i=0;i<_size && i<20;i++)
   {
-    EEPROM.write(p++,data[i]);
+    ewb(p++,data[i]);
   }
-  EEPROM.write(p,'\0');   //Add termination null character for String Data
+  ewb(p,'\0');   //Add termination null character for String Data
 	if (commit) {
-	  EEPROM.commit();
+	  ewc();
 	}
 }
  
@@ -93,7 +103,7 @@ String FNCOLLECTIONClass::ers(uint8_t p)
   unsigned char k = 1;
   while(k != '\0' && len<20)   //Read until null character
   {    
-    k=EEPROM.read(p++);
+    k=erb(p++);
     data[len++]=k;
   }
   data[len]='\0';
@@ -289,8 +299,9 @@ void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
 
 void FNCOLLECTIONClass::eeprom_init(void)
 {
-  //esp8266
+#ifdef ESP8266
   EEPROM.begin(0xFF);
+#endif
   if(erb(EE_MAGIC_OFFSET)   != VERSION_1 ||
      erb(EE_MAGIC_OFFSET+1) != VERSION_2)
        eeprom_factory_reset(0);
@@ -439,7 +450,7 @@ void FNCOLLECTIONClass::version(char *in)
 #if defined(VERSION_OTA)
   // version of image
   if (in[1] == 'I') {
-	  DS(concat(VERSION_OTA, VERSION_BOARD));
+	  DS(con_cat(VERSION_OTA, VERSION_BOARD));
     DNL();
     return;
   }

@@ -11,7 +11,9 @@
 #include "board.h"
 #ifdef HAS_RFNATIVE
 #include <string.h>
-#include <pgmspace.h>
+#ifndef ESP8266
+  #include <avr/pgmspace.h>
+#endif
 #include "cc1100.h"
 #include "delay.h"
 #include "rf_receive.h"

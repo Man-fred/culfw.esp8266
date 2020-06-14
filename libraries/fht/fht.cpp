@@ -47,7 +47,7 @@ void FHTClass::fht_display_buf(uint8_t ptr[])
 #warning FHT USB DEBUGGING IS ACTIVE
   uint8_t odc = display.channel;
   display.channel = DISPLAY_USB;
-  uint16_t *p = (uint16_t *)&ticks;
+  uint16_t *p = (uint16_t *)&CLOCKClass::ticks;
   DU(*p, 5);
   DC(' ');
   DH2(fht80b_state);

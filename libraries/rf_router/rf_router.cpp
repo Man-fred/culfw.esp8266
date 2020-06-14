@@ -1,7 +1,9 @@
 #include "board.h"
 #ifdef HAS_RF_ROUTER
 #include <string.h>
-#include <pgmspace.h>
+#ifndef ESP8266
+	#include <avr/pgmspace.h>
+#endif
 #include "rf_router.h"
 #include "cc1100.h"
 #include "delay.h"
@@ -50,7 +52,7 @@ void RfRouterClass::func(char *in)
     DNL();
 #ifdef RFR_DEBUG 
   } else if(in[1] == 'd') {     // ud: Debug
-    DH((uint16_t)CLOCK.ticks, 4); DC('.');
+    DH((uint16_t)CLOCKClass::ticks, 4); DC('.');
     DH2(rf_router_sendtime);
     DNL();
   } else if(in[1] == 's') {     // us: Statistics
@@ -190,7 +192,7 @@ void RfRouterClass::task(void)
   if(rf_router_status == RF_ROUTER_INACTIVE)
     return;
 
-  uint8_t hsec = (uint8_t)CLOCK.ticks;
+  uint8_t hsec = (uint8_t)CLOCKClass::ticks;
 
   if(rf_router_status == RF_ROUTER_GOT_DATA) {
 

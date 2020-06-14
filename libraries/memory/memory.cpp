@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #ifndef ESP8266
   #include <avr/io.h>
+	#include <avr/pgmspace.h>
 #endif
 #include "display.h"
 #include "memory.h"
@@ -75,7 +76,7 @@ void MemoryClass::testmem(char *unused) {
 	  // read
 	  for (uint16_t i = 0; i<size; i++) {
 	    if (*(buf+i) != (i & 0xff)) {
-		    DS_P( PSTR("Problmes at ") );
+		    DS_P( PSTR("Problems at ") );
 		    display.udec(i, 5,' ');
 		    DNL();
 		    free( buf );
