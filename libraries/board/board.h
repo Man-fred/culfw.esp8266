@@ -57,7 +57,10 @@
 #  define HAS_MORITZ                    // PROGMEM: 1696
 //#  define HAS_ESA                       // PROGMEM:  286
 #  define HAS_TX3                       // PROGMEM:  168
-//#  define HAS_INTERTECHNO               // PROGMEM: 1352
+/* Intertechno Senden einschalten */
+#  define HAS_INTERTECHNO
+/* Intertechno Empfang einschalten */
+#  define HAS_IT
 //#  define HAS_TCM97001                  // PROGMEM:  264
 //#  define HAS_UNIROLL                   // PROGMEM:   92
 #  define HAS_MEMFN                     // PROGMEM:  168

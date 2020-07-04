@@ -186,7 +186,7 @@ const t_fntab fntab[] = {
     { 'I', lambda(IR, func) },
   #endif
   #ifdef HAS_INTERTECHNO
-    { 'i', it_func },
+    { 'i', lambda(it, func) },
   #endif
   #ifdef HAS_RAWSEND
     { 'K', lambda(RfSend, ks_send) },
@@ -446,8 +446,8 @@ void setup() {
   display.channel |= DISPLAY_TCP;
   display.channel &= ~DISPLAY_USB; //USB only when 
   Ethernet.init();
-  Serial.printf("\nChannel %d \n", display.channel);
 #endif
+  Serial.print("\nChannel "); Serial.println(display.channel, BIN);
   Serial.print("CC1100_PARTNUM 0x00: "); Serial.println(CC1100.readStatus(0x30), HEX);
   Serial.print("CC1100_VERSION 0x14: "); Serial.println(CC1100.readStatus(0x31), HEX);
 

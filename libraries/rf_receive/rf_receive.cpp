@@ -436,12 +436,16 @@ uint8_t RfReceiveClass::analyze_TX3(bucket_t *b)
 #ifdef HAS_IT
 uint8_t RfReceiveClass::analyze_it(bucket_t *b)
 {
+Serial.print("IT? ");Serial.print(b->state);
+
   if ((b->state != STATE_IT || b->byteidx != 3 || b->bitidx != 7) 
     && (b->state != STATE_ITV3 || b->byteidx != 8 || b->bitidx != 7)) {
-        return 0;
+			Serial.println(" failed");
+      return 1;//Todo: 0
     }
   for (oby=0;oby<b->byteidx;oby++)
       obuf[oby]=b->data[oby];
+  Serial.println(" ok");
   return 1;
 }
 #endif
@@ -639,7 +643,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
   if(datatype && (tx_report & REP_KNOWN)) {
 
     packetCheckValues.isrep = 0;
-    packetCheckValues.packageOK = 0;
+    packetCheckValues.packageOK = 0; //ToDo: ///?????0; 
     if(!(tx_report & REP_REPEATED)) {      // Filter repeated messages
       
       // compare the data
@@ -675,7 +679,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
     if(datatype == TYPE_FHT && RfRouter.rf_router_target && !FHT.fht_hc0) // Forum #50756
       packetCheckValues.packageOK = 0;
 #endif
-
+Serial.print("packageOK ");Serial.println(packetCheckValues.packageOK);
     if(packetCheckValues.packageOK) {
       DC(datatype);
       if(nibble)
@@ -909,26 +913,26 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
     }
   }
 
-//#ifdef HAS_FTZ
+#ifdef HAS_FTZ
   if ( b->state == STATE_FTZ ) {
     if(c < TSCALE(750))
     {
-		pulseTooShort++;
-		shortMax = max(shortMax, (uint32_t)c);
-		return;
-	}
-    if(c > TSCALE(1250)) {
-	  pulseTooLong++;
-      reset_input();
-      return;
-    }
-	if (longMin == 0) {
-		longMin = c;
-	} else {
-		longMin = min(longMin, (uint32_t)c);
-	}
+			pulseTooShort++;
+			shortMax = max(shortMax, (uint32_t)c);
+			return;
+		}
+			if(c > TSCALE(1250)) {
+			pulseTooLong++;
+				reset_input();
+				return;
+			}
+		if (longMin == 0) {
+			longMin = c;
+		} else {
+			longMin = min(longMin, (uint32_t)c);
+		}
   }
-//#endif //HAS_FTZ
+#endif //HAS_FTZ
 
 #ifdef HAS_ESA
   if (b->state == STATE_ESA) {
@@ -978,7 +982,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
     }
     if (b->sync == 0) {
       if (lowtime > TSCALE(2400)) { 
-        // this sould be the start bit for IT V3
+        // this should be the start bit for IT V3
         b->state = STATE_ITV3;
 #ifdef ESP8266
         timer1_write(OCR1A); // restart timer
@@ -1200,8 +1204,8 @@ retry_sync:
       b->zero.hightime = makeavg(b->zero.hightime, hightime);
       b->zero.lowtime  = makeavg(b->zero.lowtime,  lowtime);
     } else {
-        if (b->state!=STATE_IT) 
-      reset_input();
+      if (b->state!=STATE_IT) 
+        reset_input();
     }
 
   }
