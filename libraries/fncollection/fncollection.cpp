@@ -86,7 +86,7 @@ uint16_t FNCOLLECTIONClass::erw(uint8_t p)
 void FNCOLLECTIONClass::ews(uint8_t p, String data, bool commit)
 {
   uint8_t _size = data.length();
-  for(uint8_t i=0;i<_size && i<20;i++)
+  for(uint8_t i=0;i<_size && i<19;i++)
   {
     ewb(p++,data[i]);
   }
@@ -101,7 +101,7 @@ String FNCOLLECTIONClass::ers(uint8_t p)
   char data[20]; //Max 20 Bytes
   int len=0;
   unsigned char k = 1;
-  while(k != '\0' && len<20)   //Read until null character
+  while(k != '\0' && len<19)   //Read until null character
   {    
     k=erb(p++);
     data[len++]=k;
@@ -264,7 +264,22 @@ void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
 #   ifdef ESP8266
     } else if(in[2] == 's') { d=EE_STR_LEN; STRINGFUNC.fromchars(in+3,hb, EE_STR_LEN); addr=EE_WPA_SSID;
     } else if(in[2] == 'k') { d=EE_STR_LEN; STRINGFUNC.fromchars(in+3,hb, EE_STR_LEN); addr=EE_WPA_KEY;
-    } else if(in[2] == 'D') { d=EE_STR_LEN; STRINGFUNC.fromchars(in+3,hb, EE_STR_LEN); addr=EE_NAME;
+    } else if(in[2] == 'D') {
+			d=EE_STR_LEN; STRINGFUNC.fromchars(in+3,hb, EE_STR_LEN); addr=EE_NAME;
+			uint8_t len = strlen((const char*)hb);
+			bool compliant = (len <= 24);
+			for (uint8_t i = 0; compliant && i < len; i++)
+					if (!isalnum(hb[i]) && hb[i] != '-')
+							compliant = false;
+			if (hb[len - 1] == '-')
+					compliant = false;
+
+			if (!compliant) {
+					Serial.print("WiD: hostname '");
+					Serial.print((const char*)hb);
+					Serial.println("' is not compliant with RFC952 (0-9 a-z A-Z -)");
+					return;
+			}
     } else if(in[2] == 'O') { d=4; STRINGFUNC.fromip (in+3,hb,4); addr=EE_OTA_SERVER;
 #   endif
     }
