@@ -278,6 +278,6 @@ extern unsigned char OCIE1A;
 #define MARK915_PIN             PINB
 #define MARK915_BIT             5
 // helper for concatenating two char[]
-#define concat(first, second) first second
+#define con_cat(first, second) first second
 
 #endif // __BOARD_H__

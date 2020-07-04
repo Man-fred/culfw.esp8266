@@ -76,26 +76,44 @@ void EthernetClass::init(void)
   WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
   Serial.print("Connecting ");
+	Serial.print(WiFi.hostname());
+  Serial.print(", hostname ");
+	//Serial.println(FNcol.ers(EE_NAME));
   char sta_name[EE_STR_LEN];
 	uint8_t i = 0;
 	char test = 1;
-  for(i = 0; i < EE_STR_LEN && test > 0; i++) {
+  for(i = 0; i < EE_STR_LEN; i++) {
 		char test = FNcol.erb(EE_NAME + i);
-    if ((test >= '0' && test <= '9') || (test >= 'A' && test <= 'Z') || (test >= 'a' && test <= 'z') || test=='-' || test==0){
+    if ((test >= '0' && test <= '9') || (test >= 'A' && test <= 'Z') || (test >= 'a' && test <= 'z') || test=='-'){
 			sta_name[i] = test;
-		} else {
+			//Serial.print(test,HEX);
+		} else if (test == 0){
+			sta_name[i] = test;
+			//Serial.print("=");
+			break;
+		}	else {
 			i = 0;
+			//Serial.print("-");
+			//Serial.print(test,HEX);
 			break;
 		}
 	}
-	if (i > 0)
+	if (i > 0){
 		// hostname ok
     WiFi.hostname(sta_name);
+    Serial.println(sta_name);
+	} else {
+		Serial.print(sta_name);
+	  Serial.println("' is not compliant with RFC952 (0-9 a-z A-Z -)");
+  }		
   if(!FNcol.erb(EE_USE_DHCP)) {
     set_eeprom_addr();
+    //Serial.println("noDHCP");
   }
+	//Serial.println(FNcol.ers(EE_WPA_SSID));
+	//Serial.println(FNcol.ers(EE_WPA_KEY));
   WiFi.begin(FNcol.ers(EE_WPA_SSID), FNcol.ers(EE_WPA_KEY));
-	i = 9;
+	i = 10;
   while (i-- && WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -242,7 +260,7 @@ void EthernetClass::ota(){
 		t_httpUpdate_return ret = httpUpdate.update(wifiClient, para.mqtt_server, 80, "/esp8266/ota.php", tochararray(cstr, mVersionNr, mVersionBoard));
 # else      
 		DS("[update] start ");
-		t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, "/esp8266/ota.php", concat(VERSION_OTA, VERSION_BOARD));
+		t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, "/esp8266/ota.php", con_cat(VERSION_OTA, VERSION_BOARD));
 # endif
 	switch (ret) {
 		case HTTP_UPDATE_FAILED:
