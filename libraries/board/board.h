@@ -150,7 +150,7 @@
 #define IRMP_PIN                2 // D4 !? 
 // IR */
 
-/*/ Ergaenzung wegen ONEWIRE Ã¼ber i2c, nicht parallel zu cc1101 nutzbar
+/*/ Ergaenzung wegen ONEWIRE über i2c, nicht parallel zu cc1101 nutzbar
 #define HAS_ONEWIRE         10      // OneWire Device Buffer, RAM: 10 * 8 Byte 
 #define OW_SPU			                // enable StrongPullUp
 // ONEWIRE */
@@ -160,11 +160,11 @@
 #  include <avr/io.h>
 #  include <avr/power.h>
 
-#  if !defined(clock_prescale_set) && __AVR_LIBC_VERSION__  < 10701UL
-#    warning "avr/power.h needs patching for prescaler functions to work."
-#    warning "for the m32u4 add __AVR_ATmega32U4__ for cpu types on prescale block"
-#    warning "for the m32u2 add __AVR_ATmega32U2__ for cpu types on prescale block"
-#  endif
+#if !defined(clock_prescale_set) && __AVR_LIBC_VERSION__  < 10701UL
+#  warning "avr/power.h needs patching for prescaler functions to work."
+#  warning "for the m32u4 add __AVR_ATmega32U4__ for cpu types on prescale block"
+#  warning "for the m32u2 add __AVR_ATmega32U2__ for cpu types on prescale block"
+#endif
 #endif
 
 #ifdef ARDUINO_ESP8266_NODEMCU
@@ -181,10 +181,10 @@
 #  define PORTB1 14     //         nodemcu D5 // PORTB1     (Nano PIN 13) // CLK
 #  define PORTB2 13     //         nodemcu D7 // PORTB2     (Nano PIN 11) // MOSI
 #  define PORTB3 12     //         nodemcu D6 // PORTB3     (Nano PIN 12) // MISO
-#  define PB6 PORTB6 //         nodemcu not connected 
+#  define PB6 PORTB6 // nodemcu not connected 
 #  define PORTD2 5      // esp8266/nodemcu D1 // PORTD2     (Nano PIN  2) // GDO2
 #  define PORTD3 4      // esp8266/nodemcu D2 // PORTD3     (Nano PIN  3) // GDO0
-#  define INT2 PD2   // nodemcu int wie GPO		0x02
+#  define INT2 PD2 //nodemcu int wie GPO		0x02
 
 #define EIMSK GPIE //ESP8266_REG(0x31C) //GPIO_STATUS R/W (Interrupt Enable)
 //------------- speziell esp8266 ------------------
@@ -247,12 +247,12 @@ extern unsigned char OCIE1A;
 #  define DIGITAL_HIGH(a,bit) a |= _BV(bit);
 #  define DIGITAL_LOW(a,bit) a &= ~_BV(bit);
 #else
-#  define LED_INV
-#  define bit_is_set(sfr, bit) digitalRead(bit)
+#define LED_INV
+#define bit_is_set(sfr, bit) digitalRead(bit)
 #  define DIGITAL_HIGH(a,bit) digitalWrite(bit,1);   // GPOS = (1 << b)            
 #  define DIGITAL_LOW(a,bit) digitalWrite(bit,0);    // GPOC = (1 << b)  
-#  define USB_IsConnected 1
-#  define __LPM(a) pgm_read_byte(a)
+#define USB_IsConnected 1
+#define __LPM(a) pgm_read_byte(a)
 #endif
 
 #if defined(CUL_V4)
@@ -275,20 +275,20 @@ extern unsigned char OCIE1A;
 #endif
 
 #if defined(CUL_V3)
-#  define CC1100_CS_DDR			    SPI_DDR
+#  define CC1100_CS_DDR			SPI_DDR
 #  define CC1100_CS_PORT        SPI_PORT
-#  define CC1100_CS_PIN			    SPI_SS
+#  define CC1100_CS_PIN			SPI_SS
 #  define CC1100_OUT_DDR        DDRD
 #  define CC1100_OUT_PORT       PORTD
 #  define CC1100_OUT_PIN        PD3
 #  define CC1100_OUT_IN         PIND
-#  define CC1100_IN_DDR			    DDRD
+#  define CC1100_IN_DDR			DDRD
 #  define CC1100_IN_PORT        PIND
 #  define CC1100_IN_PIN         PD2
 #  define CC1100_IN_IN          PIND
-#  define CC1100_INT			      INT2
+#  define CC1100_INT			INT2
 #  define CC1100_INTVECT        INT2_vect
-#  define CC1100_ISC			      ISC20
+#  define CC1100_ISC			ISC20
 #  define CC1100_EICR           EICRA
 #  define LED_DDR               DDRE
 #  define LED_PORT              PORTE
