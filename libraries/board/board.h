@@ -61,6 +61,7 @@
 #  define HAS_INTERTECHNO
 /* Intertechno Empfang einschalten */
 #  define HAS_IT
+#  define HAS_FLAMINGO
 //#  define HAS_TCM97001                  // PROGMEM:  264
 //#  define HAS_UNIROLL                   // PROGMEM:   92
 #  define HAS_MEMFN                     // PROGMEM:  168
@@ -247,12 +248,12 @@ extern unsigned char OCIE1A;
 #  define DIGITAL_HIGH(a,bit) a |= _BV(bit);
 #  define DIGITAL_LOW(a,bit) a &= ~_BV(bit);
 #else
-#define LED_INV
-#define bit_is_set(sfr, bit) digitalRead(bit)
+#  define LED_INV
+#  define bit_is_set(sfr, bit) digitalRead(bit)
 #  define DIGITAL_HIGH(a,bit) digitalWrite(bit,1);   // GPOS = (1 << b)            
 #  define DIGITAL_LOW(a,bit) digitalWrite(bit,0);    // GPOC = (1 << b)  
-#define USB_IsConnected 1
-#define __LPM(a) pgm_read_byte(a)
+#  define USB_IsConnected 1
+#  define __LPM(a) pgm_read_byte(a)
 #endif
 
 #if defined(CUL_V4)

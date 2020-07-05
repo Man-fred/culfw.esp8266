@@ -14,7 +14,7 @@
 #define TYPE_TCM97001 's'
 
 #define TYPE_REVOLT	 'r'
-#define TYPE_IT  	 'i'
+#define TYPE_IT  	   'i'
 #define TYPE_FTZ     'Z'
                             // X21 X67 X3F X35
 #define REP_KNOWN    _BV(0) //  x   x   x   x
@@ -26,6 +26,7 @@
 #define REP_FHTPROTO _BV(6) //      x 
 #define REP_LCDMON   _BV(7)
 
+#define RF_DEBUG
 
 #ifdef ESP8266
 #  define TWRAP		100000
@@ -38,11 +39,16 @@
 #endif
 
 /* public prototypes */
-#ifdef HAS_ESA
-#  define MAXMSG 20               // ESA messages
+#ifdef RF_DEBUG
+#  define MAXBIT 500               // for debugging timing high/low
+#  define MAXMSG 100
 #else
-//esp8266#  define MAXMSG 12               // EMEM messages
-#  define MAXMSG 20               // EMEM messages
+	#ifdef HAS_ESA
+	#  define MAXMSG 20               // ESA messages
+	#else
+	//esp8266#  define MAXMSG 12               // EMEM messages
+	#  define MAXMSG 20               // EMEM messages
+	#endif
 #endif
 
 #ifdef HAS_IT
@@ -94,6 +100,16 @@ private:
 	  uint8_t state, byteidx, sync, bitidx; 
 	  uint8_t data[MAXMSG];         // contains parity and checksum, but no sync
 	  wave_t zero, one; 
+		#ifdef RF_DEBUG
+				uint8_t bithigh[MAXBIT]; // debug timing
+				uint8_t bitlow[MAXBIT]; // debug timing
+				uint8_t bitused;
+		#endif
+		#ifdef HAS_FLAMINGO
+				uint8_t bit2;
+				uint8_t bitsaved;
+		//	  uint8_t bitrepeated;
+		#endif
 	} bucket_t;
     bucket_t bucket_array[RCV_BUCKETS];
 
@@ -135,6 +151,9 @@ private:
 #ifdef HAS_IT
 	uint8_t analyze_it(bucket_t *b);
 	uint8_t wave_equals_itV3(uint8_t htime, uint8_t ltime);
+#endif
+#ifdef HAS_FLAMINGO
+	uint8_t analyze_flamingo(bucket_t *b);
 #endif
 #ifdef HAS_TCM97001
     uint8_t analyze_tcm97001(bucket_t *b);

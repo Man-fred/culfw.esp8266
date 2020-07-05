@@ -33,6 +33,9 @@
 #ifdef HAS_ASKSIN
 #  include "rf_asksin.h"
 #endif
+#ifdef HAS_FLAMINGO
+#  include "intertechno.h"
+#endif
 #ifdef HAS_MBUS
 #  include "rf_mbus.h"
 #endif
@@ -83,6 +86,7 @@
 #define STATE_TCM97001 8
 #define STATE_ITV3     9
 #define STATE_FTZ     10
+#define STATE_FLAMINGO   11
 
 uint8_t tx_report;              // global verbose / output-filter
 
@@ -442,12 +446,47 @@ Serial.print("IT? ");Serial.print(b->state);
   if ((b->state != STATE_IT || b->byteidx != 3 || b->bitidx != 7) 
     && (b->state != STATE_ITV3 || b->byteidx != 8 || b->bitidx != 7)) {
 			Serial.println(" failed");
-      return 1;//Todo: 0
+      return 0;//Todo: 0
     }
   for (oby=0;oby<b->byteidx;oby++)
       obuf[oby]=b->data[oby];
   Serial.println(" ok");
   return 1;
+}
+#endif
+
+#ifdef HAS_FLAMINGO
+uint8_t RfReceiveClass::analyze_flamingo(bucket_t *b)
+{
+	uint8_t repeat[18];
+	if (b->state != STATE_FLAMINGO || b->byteidx < 9) {
+        return 0;
+    }
+	// 8 x Daten, mehrfache Übereinstimmung?
+	for (oby=0;oby<b->byteidx;oby++) {
+		repeat[oby] = 1;
+		if (repeat[oby] > repeat[(oby % 3) + 15])
+		{
+			obuf[oby % 3]=b->data[oby];
+			repeat[(oby % 3) + 15] = repeat[oby];
+		}
+		for (uint8_t j = 0; j <= 12; j=j+3) {
+			if (oby >= 3+j && b->data[oby % 3 + j] == b->data[oby]) {
+				repeat[oby % 3 + j]++;
+				if (repeat[oby % 3 + j] > repeat[(oby % 3) + 15])
+				{
+					obuf[oby % 3]=b->data[oby];
+					repeat[(oby % 3) + 15] = repeat[oby % 3 + j];
+				}
+			}
+		}
+	}
+	if (repeat[15] > 2 && repeat[16] > 2 && repeat[17] > 2) {
+        it.FlamingoDecrypt(obuf);
+		oby = 5;
+		return 1;
+	}
+	return 0;
 }
 #endif
 
@@ -490,6 +529,7 @@ void RfReceiveClass::checkForRepeatedPackage(uint8_t *datatype, bucket_t *b) {
 	#if defined (HAS_IT) || defined (HAS_TCM97001)
 		if (*datatype == TYPE_IT || (*datatype == TYPE_TCM97001)) {
 				if (packetCheckValues.isrep == 1 && packetCheckValues.isnotrep == 0) { 
+				  // first rep.
 					packetCheckValues.isnotrep = 1;
 					packetCheckValues.packageOK = 1;
 				} else if (packetCheckValues.isrep == 1) {
@@ -560,6 +600,13 @@ void RfReceiveClass::RfAnalyze_Task(void)
 
   LED_ON();
 
+#ifdef HAS_FLAMINGO
+  if(b->state == STATE_FLAMINGO) {
+    if(!datatype && analyze_flamingo(b)) { 
+      datatype = TYPE_IT;
+    }
+  }
+#endif
 #ifdef HAS_IT
   if(b->state == STATE_IT || b->state == STATE_ITV3) {
     if(!datatype && analyze_it(b)) { 
@@ -647,7 +694,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
   if(datatype && (tx_report & REP_KNOWN)) {
 
     packetCheckValues.isrep = 0;
-    packetCheckValues.packageOK = 0; //ToDo: ///?????0; 
+    packetCheckValues.packageOK = 0; 
     if(!(tx_report & REP_REPEATED)) {      // Filter repeated messages
       
       // compare the data
@@ -683,9 +730,18 @@ void RfReceiveClass::RfAnalyze_Task(void)
 			if(datatype == TYPE_FHT && RfRouter.rf_router_target && !FHT.fht_hc0) // Forum #50756
 				packetCheckValues.packageOK = 0;
 		#endif
-		
-		Serial.print("packageOK ");Serial.print(packetCheckValues.isrep);Serial.print(packetCheckValues.isnotrep);Serial.println(packetCheckValues.packageOK);
-    //if(packetCheckValues.packageOK) {
+		#ifdef HAS_IT
+			if(b->state == STATE_ITV3 && datatype == TYPE_IT) {
+				packetCheckValues.packageOK = !(packetCheckValues.isrep);
+			}
+			#ifdef HAS_FLAMINGO
+				else if(b->state == STATE_FLAMINGO && datatype == TYPE_IT) {
+					packetCheckValues.packageOK = !(packetCheckValues.isrep);
+				}
+			#endif		
+		#endif		
+		Serial.print("packageOK ");Serial.print(b->state);Serial.print(datatype);Serial.print(packetCheckValues.isrep);Serial.print(packetCheckValues.isnotrep);Serial.println(packetCheckValues.packageOK);
+    if(packetCheckValues.packageOK) {
       DC(datatype);
       if(nibble)
         oby--;
@@ -696,13 +752,24 @@ void RfReceiveClass::RfAnalyze_Task(void)
       if(tx_report & REP_RSSI)
         DH2(CC1100.readStatus(CC1100_RSSI));
       DNL();
-    //}
+    }
 
   }
 
 #ifndef NO_RF_DEBUG
   if(tx_report & REP_BITS) {
-
+		#ifdef RF_DEBUG
+			for(uint8_t i=0; i < b->bitused+5; i++) {
+				DC('H');
+				DU(b->bithigh[i]*16,5);
+				DC('L');
+				DU(b->bitlow[i]*16,5);
+				if ( b->bitlow[i]*16 > 1500) {
+					DNL();DC('p');
+					wdt_reset();
+				}
+			}
+		#endif
     DNL();
     DC('p');
     DU(b->state,        2);
@@ -748,9 +815,13 @@ void ICACHE_RAM_ATTR RfReceiveClass::reset_input(void)
 	
   TIMSK1 = 0;
   bucket_array[bucket_in].state = STATE_RESET;
-#if defined (HAS_IT) || defined (HAS_TCM97001)
-  packetCheckValues.isnotrep = 0;
-#endif
+	#ifdef RF_DEBUG
+		bucket_array[bucket_in].bitused = 0;
+		bucket_array[bucket_in].bitsaved = 0;
+  #endif
+	#if defined (HAS_IT) || defined (HAS_TCM97001)
+		packetCheckValues.isnotrep = 0;
+	#endif
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -802,7 +873,10 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrTimer1(void)
     bucket_in++;
     if(bucket_in == RCV_BUCKETS)
       bucket_in = 0;
-
+		#ifdef RF_DEBUG
+			bucket_array[bucket_in].bitused = 0;
+			bucket_array[bucket_in].bitsaved = 0;
+		#endif
   }
 
 }
@@ -980,6 +1054,56 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
   TCNT1 = 0;
 #endif
 
+#ifdef RF_DEBUG
+	if (b->bitused < MAXBIT) {	
+	  b->bithigh[b->bitused] = hightime;
+	  b->bitlow[b->bitused++] = lowtime;
+	}
+#endif
+# ifdef HAS_FLAMINGO
+	if(b->state == STATE_FLAMINGO) {
+		if (b->sync && (hightime < TSCALE(1400)) && (lowtime < TSCALE(1400)) && (b->byteidx < sizeof(b->data))) {
+			if (b->bit2) {
+				if (b->one.hightime) {
+				  b->one.hightime = makeavg(b->one.hightime, (hightime > lowtime ? hightime : lowtime));
+				  b->one.lowtime  = makeavg(b->one.lowtime,  (hightime < lowtime ? hightime : lowtime));
+				} else {
+					b->one.hightime = (hightime > lowtime ? hightime : lowtime);
+					b->one.lowtime  = (hightime < lowtime ? hightime : lowtime);
+				}
+			} else {
+				if (b->zero.hightime) {
+				  b->zero.hightime = makeavg(b->zero.hightime, (hightime > lowtime ? hightime : lowtime));
+				  b->zero.lowtime  = makeavg(b->zero.lowtime,  (hightime < lowtime ? hightime : lowtime));
+				} else {
+					b->zero.hightime = (hightime > lowtime ? hightime : lowtime);
+					b->zero.lowtime  = (hightime < lowtime ? hightime : lowtime);
+				}
+			}
+			addbit(b, (hightime > lowtime) );
+			b->bitsaved++;
+		}
+		// phase 1
+		if (lowtime > TSCALE(2000) ) {
+			// phase 2
+			if ( (hightime > TSCALE(2900) ) && (lowtime > TSCALE(2900) ) )
+				b->bit2 = 1;
+			if ((b->bitsaved %24) > 0) {
+				//ergänzen, wenn Paket zu kurz
+				for (uint8_t i = (b->bitsaved %24);i<24;i++) {
+					addbit(b, 0 );
+				}
+				b->bitsaved = 0;
+#ifdef RF_DEBUG
+				b->bithigh[b->bitused] = 0;
+				b->bitlow[b->bitused++] = 0;
+#endif
+			}
+		}
+	}
+# endif
+
+
 #ifdef HAS_IT
   if(b->state == STATE_IT || b->state == STATE_ITV3) {
     if (lowtime > TSCALE(3000)) {
@@ -1050,6 +1174,20 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
     return;
   }
 
+#ifdef HAS_FLAMINGO
+	if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
+								lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
+		TIMSK1 = _BV(OCIE1A);
+		b->state = STATE_FLAMINGO;
+		b->byteidx = 0;
+		b->bitidx  = 7;
+		b->data[0] = 0;
+		b->sync    = 1;
+		//??OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
+        OCR1A = 20000 * 5; //20000; //toom debug
+        return;
+	} 
+#endif
   ///////////////////////
   // http://www.nongnu.org/avr-libc/user-manual/FAQ.html#faq_intbits
   TIFR1 = _BV(OCF1A);                 // clear Timers flags (?, important!)
@@ -1094,6 +1232,19 @@ retry_sync:
 #endif //HAS_TCM97001
 
 #ifdef HAS_IT
+	#ifdef HAS_FLAMINGO
+		if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
+								lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
+			OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
+			TIMSK1 = _BV(OCIE1A);
+			b->state = STATE_FLAMINGO;
+			b->byteidx = 0;
+			b->bitidx  = 7;
+			b->data[0] = 0;
+			b->sync    = 1;
+			return;
+		} else
+	# endif
   if(hightime < TSCALE(600)   && hightime > TSCALE(140) &&
      lowtime  < TSCALE(17000) && lowtime  > TSCALE(2500) ) {
     OCR1A = SILENCE;

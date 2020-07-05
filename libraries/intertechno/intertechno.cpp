@@ -254,7 +254,6 @@ IntertechnoClass::send_bit_V3(uint8_t bit)
     */
 void IntertechnoClass::FlamingoDecrypt(uint8_t *in)
 {
-
     uint8_t ikey[16] = {7,14,8,3,13,10,2,12,4,5,6,0,9,1,11,15};  //invers cryptokey (exchanged index & value)
     uint8_t mn[6];	// message separated in nibbles
 
@@ -272,12 +271,12 @@ void IntertechnoClass::FlamingoDecrypt(uint8_t *in)
 	}
 	mn[0] = ikey[mn[0]];					//decrypt first nibble
 
-    //Output decrypted message 
-    in[0] = (mn[5] << 4) + mn[4]; // transmitterId
-    in[1] = (mn[3] << 4) + mn[2]; // transmitterId
-    in[2] =  mn[0] & 0x7;         // receiverId
-    in[3] = (mn[1] >> 1) & 0x1;   // on/off
-    in[4] = (mn[1] >> 2) & 0x3;   // rolling code
+	//Output decrypted message 
+	in[0] = (mn[5] << 4) + mn[4]; // transmitterId
+	in[1] = (mn[3] << 4) + mn[2]; // transmitterId
+	in[2] =  mn[0] & 0x7;         // receiverId
+	in[3] = (mn[1] >> 1) & 0x1;   // on/off
+	in[4] = (mn[1] >> 2) & 0x3;   // rolling code
 }
 
 
@@ -291,32 +290,45 @@ void IntertechnoClass::FlamingoDecrypt(uint8_t *in)
     */
 void IntertechnoClass::FlamingoEncrypt(uint8_t *transmitterId)
 {
-    uint8_t key[16] = {11,13,6,3,8,9,10,0,2,12,5,14,7,4,1,15}; //cryptokey 
-    uint8_t mn[6];
-    
-    mn[0] = 8 + transmitterId[2];								// mn[0] = 1iiib i=receiver-ID
-    mn[1] = (transmitterId[4] << 2) & 15; 				// 2 lowest bits of rolling-code
-    if (transmitterId[3] > 0)
-    {												// ON or OFF
-        mn[1] |= 2;
-    }												// mn[1] = rrs0b r=rolling-code, s=ON/OFF, 0=const 0?
-    mn[2] =  transmitterId[1] & 15;						// mn[2..4] = ttttb t=transmitterId in nibbles -> 4x ttttb
-    mn[3] = (transmitterId[1] >> 4) & 15;						// mn[2..4] = ttttb t=transmitterId in nibbles -> 4x ttttb
-    mn[4] =  transmitterId[0] & 15;
-    mn[5] = (transmitterId[0] >> 4) & 15;
+	uint8_t key[16] = {11,13,6,3,8,9,10,0,2,12,5,14,7,4,1,15}; //cryptokey 
+	uint8_t mn[6];
+	Serial.print(transmitterId[0],HEX);Serial.print(transmitterId[1],HEX);Serial.print(transmitterId[2],HEX);
+	Serial.print(transmitterId[3],HEX);Serial.println(transmitterId[4],HEX);
+	mn[0] = 8 + transmitterId[2];								// mn[0] = 1iiib i=receiver-ID
+	mn[1] = (transmitterId[4] << 2) & 15; 			// 2 lowest bits of rolling-code
+	if (transmitterId[3] > 0)
+	{												                    // ON or OFF
+			mn[1] |= 2;
+	}												                    // mn[1] = rrs0b r=rolling-code, s=ON/OFF, 0=const 0?
+	mn[2] =  transmitterId[1] & 15;						  // mn[2..4] = ttttb t=transmitterId in nibbles -> 4x ttttb
+	mn[3] = (transmitterId[1] >> 4) & 15;				// mn[2..4] = ttttb t=transmitterId in nibbles -> 4x ttttb
+	mn[4] =  transmitterId[0] & 15;
+	mn[5] = (transmitterId[0] >> 4) & 15;
 
-    //XOR encryption 1 round
+	//XOR encryption 1 round
 	mn[0] = key[mn[0]];					// encrypt first nibble
 	for (uint8_t i = 1; i <= 4; i++)
 	{											// encrypt 4 nibbles
 		mn[i] = key[(mn[i] ^ mn[i - 1])];// crypted with predecessor & key
 	}
-    //mn[6] = mn[6] ^ 9;								// no  encryption
+	//mn[6] = mn[6] ^ 9;								// no  encryption
 
-    //Output encrypted message 
-    transmitterId[0] = (mn[5] << 4) + mn[4]; // transmitterId
-    transmitterId[1] = (mn[3] << 4) + mn[2]; // transmitterId
-    transmitterId[2] = (mn[1] << 4) + mn[0]; // on/off, rolling code, receiverId
+	//Output encrypted message 
+	transmitterId[0] = (mn[5] << 4) + mn[4]; // transmitterId
+	transmitterId[1] = (mn[3] << 4) + mn[2]; // transmitterId
+	transmitterId[2] = (mn[1] << 4) + mn[0]; // on/off, rolling code, receiverId
+	transmitterId[3] = 0;
+	Serial.print(transmitterId[0],HEX);Serial.print(transmitterId[1],HEX);Serial.println(transmitterId[2],HEX);
+}
+
+void
+IntertechnoClass::send_F (char *in) {  
+  intertek = 1;
+	uint8_t input[7];
+	STRINGFUNC.fromhex(in+2, input+2, 5);
+	FlamingoEncrypt (input+2);
+	send ((char *)input);
+  intertek = 0;
 }
 
 void
@@ -331,28 +343,28 @@ IntertechnoClass::send (char *in) {
 			
 	// If NOT InterTechno mode
   if(!on)  {
-	#ifdef HAS_ASKSIN
-		if (asksin_on) {
-			restore_asksin = 1;
-        Asksin.on = 0;
+		#ifdef HAS_ASKSIN
+			if (asksin_on) {
+				restore_asksin = 1;
+					Asksin.on = 0;
+				}
+		#endif
+		#ifdef HAS_MORITZ
+				if(Moritz.on()) {
+				restore_moritz = 1;
+					Moritz.on(0);
 			}
-	#endif
-	#ifdef HAS_MORITZ
-      if(Moritz.on()) {
-			restore_moritz = 1;
-        Moritz.on(0);
-		}
-	#endif
-	tunein();
-	MYDELAY.my_delay_ms(3);             // 3ms: Found by trial and error
-    }
-  	CC1100.ccStrobe(CC1100_SIDLE);
-  	CC1100.ccStrobe(CC1100_SFRX );
-  	CC1100.ccStrobe(CC1100_SFTX );
+		#endif
+		tunein();
+		MYDELAY.my_delay_ms(3);             // 3ms: Found by trial and error
+	}
+	CC1100.ccStrobe(CC1100_SIDLE);
+	CC1100.ccStrobe(CC1100_SFRX );
+	CC1100.ccStrobe(CC1100_SFTX );
 
-	  CC1100.ccTX();                       // Enable TX 
-	
-    int8_t sizeOfPackage = strlen(in)-1; // IT-V1 = 14, IT-V3 = 33
+	CC1100.ccTX();                       // Enable TX 
+
+	int8_t sizeOfPackage = strlen(in)-1; // IT-V1 = 14, IT-V3 = 33
 	  
 	for(i = 0; i < it_repetition; i++)  {
 		if (sizeOfPackage == 33) {      
@@ -380,7 +392,7 @@ IntertechnoClass::send (char *in) {
 		for(j = 1; j < sizeOfPackage; j++)  {
 			if (intertek) {
 			  for(k = 7; k >= 0; k--) {
-				send_bit_F(in[j+1] & _BV(k));
+				  send_bit_F(in[j+1] & _BV(k));
 			  }
 			} else if(in[j+1] == '0') {
 				if (sizeOfPackage == 33) {
@@ -442,19 +454,20 @@ IntertechnoClass::send (char *in) {
       Moritz.init();
 	}
 	#endif
-  	else {
-    	RfReceive.set_txrestore();
-  	}	
+	else {
+		RfReceive.set_txrestore();
+	}	
 
-    #if defined (HAS_IRRX) || defined (HAS_IRTX) //Activate IR_Reception again
-      sei(); 
-    #endif		  
+	#if defined (HAS_IRRX) || defined (HAS_IRTX) //Activate IR_Reception again
+		sei(); 
+	#endif		  
 
-		LED_OFF();
+	LED_OFF();
 	
-		DC('i');DC('s');
-		for(j = 1; j < sizeOfPackage; j++)  {
-		 	if(in[j+1] == '0') {
+	DC('i');DC('s');
+	for(j = 1; j < sizeOfPackage; j++)  {
+		if (!intertek){
+			if(in[j+1] == '0') {
 				DC('0');
 			} else if (in[j+1] == '1') {
 				DC('1');
@@ -463,8 +476,11 @@ IntertechnoClass::send (char *in) {
 			} else {
 				DC('F');
 			}
+		} else {
+			DH2(in[j+1]);
 		}
-		DNL();
+	}
+	DNL();
 }
 
 
@@ -478,6 +494,8 @@ IntertechnoClass::func(char *in)
 			if (in[2] == 'r') {		// Modify Repetition-counter
 				STRINGFUNC.fromdec (in+3, (uint8_t *)&it_repetition);
 				DU(it_repetition,0); DNL();
+			} else if (in[2] == 'f') {		// send flamingo-encrypted
+			  send_F(in+1);
 			} else {
 				send (in);				// Sending real data
 		} //sending real data

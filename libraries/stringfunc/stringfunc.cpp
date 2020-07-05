@@ -1,5 +1,5 @@
 #include "stringfunc.h"
-
+#include "board.h"
 /*
  * Converts a hex string to a buffer. Not hex characters will be skipped
  * Returns the hex bytes found. Single-Nibbles wont be converted.
@@ -7,7 +7,9 @@
 int STRINGFUNCClass::fromhex(const char *in, uint8_t *out, uint8_t buflen)
 {
   uint8_t *op = out, c, h = 0, step = 0;
+	const char *in0 = in;
   while((c = *in++)) {
+		Serial.print(c,HEX);
     if(c >= 'a')
       c -= 'a'-'A';
     if(c >= '0' && c <= '9') {
@@ -22,13 +24,16 @@ int STRINGFUNCClass::fromhex(const char *in, uint8_t *out, uint8_t buflen)
     if(step++) {
       *op++ = h;
       if(--buflen <= 0)
-        return (op-out);
+        break;//return (op-out);
       step = 0;
       h = 0;
     } else {
       h <<= 4;
     }
   }
+  Serial.print(" -> ");
+	Serial.print(out[0],HEX);Serial.print(out[1],HEX);Serial.print(out[2],HEX);Serial.print(out[3],HEX);Serial.println(out[4],HEX);
+
   return op-out;
 }
 
