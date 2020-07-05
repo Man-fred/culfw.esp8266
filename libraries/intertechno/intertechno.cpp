@@ -11,6 +11,7 @@
   #include <util/parity.h>
 #endif
 #include <stdio.h>
+#include <parity.h> //flamingo?
 #include <string.h>
 
 
@@ -83,93 +84,120 @@ const uint8_t PROGMEM CC1100_ITCFG[EE_CC1100_CFG_SIZE] = {
 void
 IntertechnoClass::tunein(void)
 {
-  int8_t i;
-  CC1100.manualReset(0);
-      
-  CC1100_ASSERT;                             // load configuration
-  CC1100.cc1100_sendbyte( 0 | CC1100_WRITE_BURST );
-  for(i = 0; i < 13; i++) {
-    //CC1100.cc1100_sendbyte(__LPM(CC1100_ITCFG+i));
-    CC1100.cc1100_sendbyte(pgm_read_byte(&CC1100_ITCFG[i]));
-  }                                                    // Tune to standard IT-Frequency
-  CC1100.cc1100_sendbyte(it_frequency[0]);                    // Modify Freq. for 433.92MHZ, or whatever
-  CC1100.cc1100_sendbyte(it_frequency[1]);
-  CC1100.cc1100_sendbyte(it_frequency[2]);      
-  for (i = 16; i<EE_CC1100_CFG_SIZE; i++) {
-    //CC1100.cc1100_sendbyte(__LPM(CC1100_ITCFG+i));
-    CC1100.cc1100_sendbyte(pgm_read_byte(&CC1100_ITCFG[i]));
+  if (!on){
+    int8_t i;
+    CC1100.manualReset(0);
+        
+    CC1100_ASSERT;                             // load configuration
+    CC1100.cc1100_sendbyte( 0 | CC1100_WRITE_BURST );
+    for(i = 0; i < 13; i++) {
+      //CC1100.cc1100_sendbyte(__LPM(CC1100_ITCFG+i));
+      CC1100.cc1100_sendbyte(pgm_read_byte(&CC1100_ITCFG[i]));
+    }                                                    // Tune to standard IT-Frequency
+    CC1100.cc1100_sendbyte(it_frequency[0]);                    // Modify Freq. for 433.92MHZ, or whatever
+    CC1100.cc1100_sendbyte(it_frequency[1]);
+    CC1100.cc1100_sendbyte(it_frequency[2]);      
+    for (i = 16; i<EE_CC1100_CFG_SIZE; i++) {
+      //CC1100.cc1100_sendbyte(__LPM(CC1100_ITCFG+i));
+      CC1100.cc1100_sendbyte(pgm_read_byte(&CC1100_ITCFG[i]));
+    }
+    CC1100_DEASSERT;
+    
+    // not in c -->
+    MYDELAY.my_delay_us(10);
+    // not in c <--
+
+    uint8_t pa = EE_CC1100_PA;
+    CC1100_ASSERT;                             // setup PA table
+    CC1100.cc1100_sendbyte( CC1100_PATABLE | CC1100_WRITE_BURST );
+    for (uint8_t i = 0;i<8;i++) {
+      CC1100.cc1100_sendbyte(FNcol.erb(pa++));
+    }
+    CC1100_DEASSERT;
+
+    CC1100.ccStrobe( CC1100_SCAL );
+    MYDELAY.my_delay_ms(1);
+    cc_on = 1;                                  // Set CC_ON  
+
+    CC1100.ccRX();
+    on = 1;
   }
-  CC1100_DEASSERT;
-  
-  // not in c -->
-  MYDELAY.my_delay_us(10);
-  // not in c <--
-
-  uint8_t pa = EE_CC1100_PA;
-  CC1100_ASSERT;                             // setup PA table
-  CC1100.cc1100_sendbyte( CC1100_PATABLE | CC1100_WRITE_BURST );
-  for (uint8_t i = 0;i<8;i++) {
-    CC1100.cc1100_sendbyte(FNcol.erb(pa++));
-  }
-  CC1100_DEASSERT;
-
-  CC1100.ccStrobe( CC1100_SCAL );
-  MYDELAY.my_delay_ms(1);
-  cc_on = 1;                                  // Set CC_ON  
-
-  CC1100.ccRX();
-  on = 1;
 }
 
 void
 IntertechnoClass::send_bit(uint8_t bit)
 {
   if (bit == 1) {
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
-    MYDELAY.my_delay_us(it_interval * 3);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
+    MYDELAY.my_delay_us(it_interval * it_faktor);
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
     MYDELAY.my_delay_us(it_interval);
 
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
-    MYDELAY.my_delay_us(it_interval * 3);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
+    MYDELAY.my_delay_us(it_interval * it_faktor);
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
     MYDELAY.my_delay_us(it_interval);
   } else if (bit == 0) {
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
     MYDELAY.my_delay_us(it_interval);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
-    MYDELAY.my_delay_us(it_interval * 3);
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
+    MYDELAY.my_delay_us(it_interval * it_faktor);
 
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
     MYDELAY.my_delay_us(it_interval);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
-    MYDELAY.my_delay_us(it_interval * 3);
-  } else {
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
+    MYDELAY.my_delay_us(it_interval * it_faktor);
+  } else if (bit == 2) {
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
+    MYDELAY.my_delay_us(it_interval * it_faktor);
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
     MYDELAY.my_delay_us(it_interval);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
-    MYDELAY.my_delay_us(it_interval * 3);
 
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
-    MYDELAY.my_delay_us(it_interval * 3);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
-    MYDELAY.my_delay_us(it_interval);    
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
+    MYDELAY.my_delay_us(it_interval);
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
+    MYDELAY.my_delay_us(it_interval * it_faktor);
+  } else { // (bit == 3 / F)
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
+    MYDELAY.my_delay_us(it_interval);
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
+    MYDELAY.my_delay_us(it_interval * it_faktor);
+
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
+    MYDELAY.my_delay_us(it_interval * it_faktor);
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
+    MYDELAY.my_delay_us(it_interval);
+  }
+}
+
+void IntertechnoClass::send_bit_F(uint8_t bit)
+{
+  if (bit == 1) {
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
+    MYDELAY.my_delay_us(it_interval * it_faktor);
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
+    MYDELAY.my_delay_us(it_interval);
+  } else if (bit == 0) {
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
+    MYDELAY.my_delay_us(it_interval);
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
+    MYDELAY.my_delay_us(it_interval * it_faktor);
   }
 }
 
 void
 IntertechnoClass::send_start_V3(void) {
-  CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
   MYDELAY.my_delay_us(it_interval);
-  CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
   MYDELAY.my_delay_us(it_interval_v3 * 10);
 }
 
 void
 IntertechnoClass::send_stop_V3(void) {
-  CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
   MYDELAY.my_delay_us(it_interval_v3);
-  CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
   MYDELAY.my_delay_us(it_interval_v3 * 40);
 }
 
@@ -177,36 +205,118 @@ void
 IntertechnoClass::send_bit_V3(uint8_t bit)
 {
   if (bit == 1) {
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
     MYDELAY.my_delay_us(it_interval_v3);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
     MYDELAY.my_delay_us(it_interval_v3 * 5);
 
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
     MYDELAY.my_delay_us(it_interval_v3);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
     MYDELAY.my_delay_us(it_interval_v3);
   } else if (bit == 0) {
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
     MYDELAY.my_delay_us(it_interval_v3);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
     MYDELAY.my_delay_us(it_interval_v3);
 
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
     MYDELAY.my_delay_us(it_interval_v3);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
     MYDELAY.my_delay_us(it_interval_v3 * 5);
   } else {
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
     MYDELAY.my_delay_us(it_interval_v3);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
     MYDELAY.my_delay_us(it_interval_v3);
 
-    CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+    DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
     MYDELAY.my_delay_us(it_interval_v3);
-     CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+     DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
     MYDELAY.my_delay_us(it_interval_v3);    
   }
+}
+
+/*
+  Encode and decode routines are based on
+  http ://cpp.sh/9ye4
+  https ://github.com/r10r/he853-remote
+  Thanks to fuchks from the FHEM forum for providing this
+  see also https ://forum.fhem.de/index.php/topic,36399.60.html
+*/
+
+/*
+    Extracts from the input (28-Bit code needs to be aligned to the right: 0x0.......):
+    button = receiverId
+    value (0=OFF, 1=ON, DIM)
+    rolling code 0..n
+    transmitterId of the remote control.
+    */
+void IntertechnoClass::FlamingoDecrypt(uint8_t *in)
+{
+
+    uint8_t ikey[16] = {7,14,8,3,13,10,2,12,4,5,6,0,9,1,11,15};  //invers cryptokey (exchanged index & value)
+    uint8_t mn[6];  // message separated in nibbles
+
+    mn[0] = (in[2] & 0x0F);
+    mn[1] = (in[2] & 0xF0) >> 0x4;
+    mn[2] = (in[1] & 0x0F);
+    mn[3] = (in[1] & 0xF0) >> 0x4;
+    mn[4] = (in[0] & 0x0F);
+    mn[5] = (in[0] & 0xF0) >> 0x4;
+
+    //XOR decryption
+  for (uint8_t i = 4; i >= 1; i--)
+  {                          // decrypt 4 nibbles
+    mn[i] = ikey[mn[i]] ^ mn[i - 1];  // decrypted with predecessor & key
+  }
+  mn[0] = ikey[mn[0]];          //decrypt first nibble
+
+    //Output decrypted message 
+    in[0] = (mn[5] << 4) + mn[4]; // transmitterId
+    in[1] = (mn[3] << 4) + mn[2]; // transmitterId
+    in[2] =  mn[0] & 0x7;         // receiverId
+    in[3] = (mn[1] >> 1) & 0x1;   // on/off
+    in[4] = (mn[1] >> 2) & 0x3;   // rolling code
+}
+
+
+/*
+    Encrypts the
+    button = receiverId
+    value (0=OFF, 1=ON; DIM)
+    rolling code 0..n
+    transmitterId of the remote control.
+  28-Bit code is aligned to the right (0x0.......)!
+    */
+void IntertechnoClass::FlamingoEncrypt(uint8_t *transmitterId)
+{
+    uint8_t key[16] = {11,13,6,3,8,9,10,0,2,12,5,14,7,4,1,15}; //cryptokey 
+    uint8_t mn[6];
+    
+    mn[0] = 8 + transmitterId[2];                // mn[0] = 1iiib i=receiver-ID
+    mn[1] = (transmitterId[4] << 2) & 15;         // 2 lowest bits of rolling-code
+    if (transmitterId[3] > 0)
+    {                        // ON or OFF
+        mn[1] |= 2;
+    }                        // mn[1] = rrs0b r=rolling-code, s=ON/OFF, 0=const 0?
+    mn[2] =  transmitterId[1] & 15;            // mn[2..4] = ttttb t=transmitterId in nibbles -> 4x ttttb
+    mn[3] = (transmitterId[1] >> 4) & 15;            // mn[2..4] = ttttb t=transmitterId in nibbles -> 4x ttttb
+    mn[4] =  transmitterId[0] & 15;
+    mn[5] = (transmitterId[0] >> 4) & 15;
+
+    //XOR encryption 1 round
+  mn[0] = key[mn[0]];          // encrypt first nibble
+  for (uint8_t i = 1; i <= 4; i++)
+  {                      // encrypt 4 nibbles
+    mn[i] = key[(mn[i] ^ mn[i - 1])];// crypted with predecessor & key
+  }
+    //mn[6] = mn[6] ^ 9;                // no  encryption
+
+    //Output encrypted message 
+    transmitterId[0] = (mn[5] << 4) + mn[4]; // transmitterId
+    transmitterId[1] = (mn[3] << 4) + mn[2]; // transmitterId
+    transmitterId[2] = (mn[1] << 4) + mn[0]; // on/off, rolling code, receiverId
 }
 
 void
@@ -247,9 +357,32 @@ IntertechnoClass::send (char *in) {
   for(i = 0; i < it_repetition; i++)  {
     if (sizeOfPackage == 33) {      
       send_start_V3();
+    } else if (intertek) {
+      if (i < 4) {
+        it_interval = 375;
+        it_faktor   = 3;
+      } else {
+        it_interval = 510;
+        it_faktor   = 2;
+      }
+
+      // Sync-Bit
+      DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
+      for(k = 0; k < (i<4 ? 1 : 6); k++)  {
+        MYDELAY.my_delay_us(it_interval);
+      }
+      DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
+      //for(k = 0; k < 31; k++)  {
+      for(k = 0; k < 6; k++)  {
+        MYDELAY.my_delay_us(it_interval);
+      }
     }
     for(j = 1; j < sizeOfPackage; j++)  {
-      if(in[j+1] == '0') {
+      if (intertek) {
+        for(k = 7; k >= 0; k--) {
+          send_bit_F(in[j+1] & _BV(k));
+        }
+      } else if(in[j+1] == '0') {
         if (sizeOfPackage == 33) {
           send_bit_V3(0);
         } else {
@@ -261,21 +394,27 @@ IntertechnoClass::send (char *in) {
         } else {
           send_bit(1);
         }  
-      } else {
+      } else if (in[j+1] == '2') {
         if (sizeOfPackage == 33) {
           send_bit_V3(2);
         } else {
           send_bit(2);
         }
+      } else {
+        if (sizeOfPackage == 33) {
+          send_bit_V3(3);
+        } else {
+          send_bit(3);
+        }
       }
     }
     if (sizeOfPackage == 33) {  
       send_stop_V3();
-    } else {
+    } else if (!intertek) {
       // Sync-Bit
-      CC1100_OUT_PORT |= _BV(CC1100_OUT_PIN);         // High
+      DIGITAL_HIGH(CC1100_OUT_PORT, CC1100_OUT_PIN);     // High          
       MYDELAY.my_delay_us(it_interval);
-      CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);       // Low
+      DIGITAL_LOW(CC1100_OUT_PORT, CC1100_OUT_PIN);       // Low
       for(k = 0; k < 31; k++)  {
         MYDELAY.my_delay_us(it_interval);
       }
@@ -294,7 +433,7 @@ IntertechnoClass::send (char *in) {
       restore_asksin = 0;
       rf_asksin_init();
       asksin_on = 1;
-      ccRX();
+          CC1100.ccRX();
     }  
   #endif
   #ifdef HAS_MORITZ
@@ -319,6 +458,8 @@ IntertechnoClass::send (char *in) {
       DC('0');
     } else if (in[j+1] == '1') {
       DC('1');
+      } else if (in[j+1] == '2') {
+        DC('2');
     } else {
       DC('F');
     }
@@ -337,11 +478,17 @@ IntertechnoClass::func(char *in)
       if (in[2] == 'r') {    // Modify Repetition-counter
         STRINGFUNC.fromdec (in+3, (uint8_t *)&it_repetition);
         DU(it_repetition,0); DNL();
-      } else if (in[2] == 'f') {    // flamingo-coded
-        send (in+1);
       } else {
         send (in);        // Sending real data
     } //sending real data
+  } else if (in[1] == 'i') { // set type intertek
+    intertek = (in[2] == '1');
+    if (intertek) {
+      tunein ();
+      // raw x08 // pa 5dB ohne ramping
+      // raw X21 // pa aktivieren 
+    }
+    DC('i');DU(intertek,0); DNL();
   } else if (in[1] == 'r') { // Start of "Set Frequency" (f)
     #ifdef HAS_ASKSIN
       if (asksin_on) {
@@ -376,7 +523,7 @@ IntertechnoClass::func(char *in)
       restore_asksin = 0;
       rf_asksin_init();
       asksin_on = 1;
-      ccRX();
+      CC1100.ccRX();
     #endif
     #ifdef HAS_MORITZ
     } else if (restore_moritz) {
@@ -397,6 +544,6 @@ IntertechnoClass::func(char *in)
     }
 }
 
+#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_INTERTECHNO)
 IntertechnoClass it;
-
-// #endif
+#endif
