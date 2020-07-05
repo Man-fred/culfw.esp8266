@@ -16,14 +16,14 @@
 #define TYPE_REVOLT	 'r'
 #define TYPE_IT  	 'i'
 #define TYPE_FTZ     'Z'
-
-#define REP_KNOWN    _BV(0)
-#define REP_REPEATED _BV(1)
-#define REP_BITS     _BV(2)
-#define REP_MONITOR  _BV(3)
-#define REP_BINTIME  _BV(4)
-#define REP_RSSI     _BV(5)
-#define REP_FHTPROTO _BV(6)
+                            // X21 X67 X3F X35
+#define REP_KNOWN    _BV(0) //  x   x   x   x
+#define REP_REPEATED _BV(1) //      x   x
+#define REP_BITS     _BV(2) //      x   x  
+#define REP_MONITOR  _BV(3) //          x   x
+#define REP_BINTIME  _BV(4) //          x   x
+#define REP_RSSI     _BV(5) //  x   x   x   x
+#define REP_FHTPROTO _BV(6) //      x 
 #define REP_LCDMON   _BV(7)
 
 
@@ -59,6 +59,7 @@
 
 class RfReceiveClass {
 public:
+	RfReceiveClass(): debugLast(0), debugNext(0) {};
 	void set_txreport(char *in);
 	void set_txrestore(void);
 	void tx_init(void);
@@ -102,18 +103,20 @@ private:
 	uint8_t oby, obuf[MAXMSG], nibble; // parity-stripped output
 	uint8_t roby, robuf[MAXMSG];       // for Repeat check: buffer and time
 	uint32_t reptime;
-#ifdef LONG_PULSE
-	uint16_t hightime, lowtime;
-#else
-	uint8_t hightime, lowtime;
-#endif
+	#ifdef LONG_PULSE
+		uint16_t hightime, lowtime;
+	#else
+		uint8_t hightime, lowtime;
+	#endif
 
-uint32_t silence;
-uint32_t overflow;
-uint32_t pulseTooShort;
-uint32_t shortMax;
-uint32_t longMin;
-uint32_t pulseTooLong;
+	uint32_t silence;
+	uint32_t overflow;
+	uint32_t pulseTooShort;
+	uint32_t shortMax;
+	uint32_t longMin;
+	uint32_t pulseTooLong;
+	uint8_t debugLast;
+	uint8_t debugNext;
 
 	void addbit(bucket_t *b, uint8_t bit);
 	void delbit(bucket_t *b);

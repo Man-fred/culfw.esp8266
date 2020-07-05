@@ -14,7 +14,7 @@
 #define VERSION_1               1          // original CUN
 #define VERSION_2               67         // original CUN
 #define VERSION                 "1.67"
-#define VERSION_OTA             "V01-67-00" // for OTA
+#define VERSION_OTA             "V01-67-01" // for OTA
 #define CUL_V3
 
 // Feature definitions
@@ -320,6 +320,7 @@ extern unsigned char OCIE1A;
 //#  define CUL_HW_REVISION "CUL_V2"    // No more mem for this feature
 #endif
 
+// only multifrequence-devices?
 #define MARK433_PORT            PORTB
 #define MARK433_PIN             PINB
 #define MARK433_BIT             6
