@@ -47,6 +47,7 @@
 //  FHT:    362/368  730    565/586 1151
 //  FS20:   376/357  733    592/578 1170
 //  Revolt:  96/208  304    224/208  432
+//  IT:     500/1000 1500   1000/500 1500
 
 
 #define TSCALE(x)  (x/16)      // Scaling time to enable 8bit arithmetic
@@ -486,22 +487,22 @@ uint8_t RfReceiveClass::analyze_revolt(bucket_t *b)
  * with the same message. Otherwise the package are ignored.
  */
 void RfReceiveClass::checkForRepeatedPackage(uint8_t *datatype, bucket_t *b) {
-#if defined (HAS_IT) || defined (HAS_TCM97001)
-  if (*datatype == TYPE_IT || (*datatype == TYPE_TCM97001)) {
-      if (packetCheckValues.isrep == 1 && packetCheckValues.isnotrep == 0) { 
-        packetCheckValues.isnotrep = 1;
-        packetCheckValues.packageOK = 1;
-      } else if (packetCheckValues.isrep == 1) {
-        packetCheckValues.packageOK = 0;
-      }
-  } else {
-#endif
-      if (!packetCheckValues.isrep) {
-        packetCheckValues.packageOK = 1;
-      }
-#if defined (HAS_IT) || defined (HAS_TCM97001)
-  }
-#endif
+	#if defined (HAS_IT) || defined (HAS_TCM97001)
+		if (*datatype == TYPE_IT || (*datatype == TYPE_TCM97001)) {
+				if (packetCheckValues.isrep == 1 && packetCheckValues.isnotrep == 0) { 
+					packetCheckValues.isnotrep = 1;
+					packetCheckValues.packageOK = 1;
+				} else if (packetCheckValues.isrep == 1) {
+					packetCheckValues.packageOK = 0;
+				}
+		} else {
+	#endif
+			if (!packetCheckValues.isrep) {
+				packetCheckValues.packageOK = 1;
+			}
+  #if defined (HAS_IT) || defined (HAS_TCM97001)
+    }
+  #endif
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -510,41 +511,46 @@ void RfReceiveClass::RfAnalyze_Task(void)
   uint8_t datatype = 0;
   bucket_t *b;
 
+  b = bucket_array + bucket_out;
+
   if(lowtime) {
-#ifndef NO_RF_DEBUG
-    //DH(tx_report,1);
-    //tx_report = 0xff;
-    if(tx_report & REP_LCDMON) {
-#ifdef HAS_LCD
-      lcd_txmon(hightime, lowtime);
-#else
-      uint8_t rssi = CC1100.readStatus(CC1100_RSSI);    //  0..256
-      rssi = (rssi >= 128 ? rssi-128 : rssi+128);    // Swap
-      if(rssi < 64)                                  // Drop low and high 25%
-        rssi = 0;
-      else if(rssi >= 192)
-        rssi = 15;
-      else 
-        rssi = (rssi-80)>>3;
-      DC('a'+rssi);
-#endif
-    }
-    if(tx_report & REP_MONITOR) {
-      DC('r'); if(tx_report & REP_BINTIME) DU(hightime*16,4);
-      DC('f'); if(tx_report & REP_BINTIME) DU(lowtime*16,4);
-			if(silence == 1) {
-				DC('.');
-				DNL();
-				silence = 2;
+    #ifndef NO_RF_DEBUG
+			//DH(tx_report,1);
+			//tx_report = 0xff;
+			if(tx_report & REP_LCDMON) {
+				#ifdef HAS_LCD
+					lcd_txmon(hightime, lowtime);
+				#else
+					uint8_t rssi = CC1100.readStatus(CC1100_RSSI);    //  0..256
+					rssi = (rssi >= 128 ? rssi-128 : rssi+128);    // Swap
+					if(rssi < 64)                                  // Drop low and high 25%
+						rssi = 0;
+					else if(rssi >= 192)
+						rssi = 15;
+					else 
+						rssi = (rssi-80)>>3;
+					DC('a'+rssi);
+				#endif
 			}
-    }
-	if( (tx_report & REP_BITS) && overflow) {
-		//DS_P(PSTR("BOVF\r\n"));            
-		DS("BOVF");
-		DNL();
-		overflow = 0;
-	}
-#endif // NO_RF_DEBUG
+			if((tx_report & REP_MONITOR) && (b->state == STATE_IT) && (debugNext > debugLast)) {
+				DC('.');
+				DH2(debugNext);
+				debugLast = debugNext;
+				DC('r'); if(tx_report & REP_BINTIME) DU(hightime*16,4);
+				DC('f'); if(tx_report & REP_BINTIME) DU(lowtime*16,4);
+				if(silence == 1) {
+					DC('.');
+					DNL();
+					silence = 2;
+				}
+			}
+			if( (tx_report & REP_BITS) && overflow) {
+				//DS_P(PSTR("BOVF\r\n"));            
+				DS("BOVF");
+				DNL();
+				overflow = 0;
+			}
+		#endif // NO_RF_DEBUG
     lowtime = 0;
   }
 
@@ -553,8 +559,6 @@ void RfReceiveClass::RfAnalyze_Task(void)
     return;
 
   LED_ON();
-
-  b = bucket_array + bucket_out;
 
 #ifdef HAS_IT
   if(b->state == STATE_IT || b->state == STATE_ITV3) {
@@ -675,12 +679,13 @@ void RfReceiveClass::RfAnalyze_Task(void)
 
     checkForRepeatedPackage(&datatype, b);
 
-#if defined(HAS_RF_ROUTER) && defined(HAS_FHT_80b)
-    if(datatype == TYPE_FHT && RfRouter.rf_router_target && !FHT.fht_hc0) // Forum #50756
-      packetCheckValues.packageOK = 0;
-#endif
-Serial.print("packageOK ");Serial.println(packetCheckValues.packageOK);
-    if(packetCheckValues.packageOK) {
+		#if defined(HAS_RF_ROUTER) && defined(HAS_FHT_80b)
+			if(datatype == TYPE_FHT && RfRouter.rf_router_target && !FHT.fht_hc0) // Forum #50756
+				packetCheckValues.packageOK = 0;
+		#endif
+		
+		Serial.print("packageOK ");Serial.print(packetCheckValues.isrep);Serial.print(packetCheckValues.isnotrep);Serial.println(packetCheckValues.packageOK);
+    //if(packetCheckValues.packageOK) {
       DC(datatype);
       if(nibble)
         oby--;
@@ -691,7 +696,7 @@ Serial.print("packageOK ");Serial.println(packetCheckValues.packageOK);
       if(tx_report & REP_RSSI)
         DH2(CC1100.readStatus(CC1100_RSSI));
       DNL();
-    }
+    //}
 
   }
 
@@ -968,6 +973,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
   }
 
   lowtime = c-hightime;
+	debugNext++;
 #ifdef ESP8266
   timer1_write(OCR1A); // restart timer
 #else
