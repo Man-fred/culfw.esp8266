@@ -190,7 +190,7 @@ void CC1100Class::ccInitChip(uint8_t cfg){
 
 //esp8266  EIMSK &= ~_BV(CC1100_INT);                 
 //esp8266    SET_BIT( CC1100_CS_DDR, CC1100_CS_PIN ); // CS as output
-  uint8_t cfg2 = cfg;
+  //debug uint8_t cfg2 = cfg;
   pinMode(CC1100_CS_PIN, OUTPUT);
   digitalWrite(CC1100_CS_PIN,HIGH);    
   delayMicroseconds(1);
@@ -215,9 +215,9 @@ void CC1100Class::ccInitChip(uint8_t cfg){
   }
   while(digitalRead(SPI_MISO));
   digitalWrite(CC1100_CS_PIN,HIGH);  
-  for(uint8_t i = 0; i < EE_CC1100_CFG_SIZE; i++) {
-    DH2(FNcol.erb(cfg2++));
-  }
+  //for(uint8_t i = 0; i < EE_CC1100_CFG_SIZE; i++) {
+  //  DH2(FNcol.erb(cfg2++));
+  //}
 
   delayMicroseconds(10);
   uint8_t pa = EE_CC1100_PA;

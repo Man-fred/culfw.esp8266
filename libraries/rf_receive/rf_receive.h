@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define RF_DEBUG
+
 #define TYPE_EM      'E'
 #define TYPE_HMS     'H'
 #define TYPE_FHT     'T'
@@ -15,7 +17,7 @@
 
 #define TYPE_REVOLT	 'r'
 #define TYPE_IT  	 'i'
-#define TYPE_FTZ     'Z'
+#define TYPE_FAZ     'Z'
 
 #define REP_KNOWN    _BV(0)
 #define REP_REPEATED _BV(1)
@@ -25,7 +27,6 @@
 #define REP_RSSI     _BV(5)
 #define REP_FHTPROTO _BV(6)
 #define REP_LCDMON   _BV(7)
-
 
 #ifdef ESP8266
 #  define TWRAP		100000
@@ -37,12 +38,17 @@
 #  define REPTIME      38
 #endif
 
-/* public prototypes */
-#ifdef HAS_ESA
-#  define MAXMSG 20               // ESA messages
+#ifdef RF_DEBUG
+#  define MAXBIT 500               // for debugging timing high/low
+#  define MAXMSG 100
 #else
+/* public prototypes */
+#  ifdef HAS_ESA
+#    define MAXMSG 20               // ESA messages
+#  else
 //esp8266#  define MAXMSG 12               // EMEM messages
-#  define MAXMSG 20               // EMEM messages
+#    define MAXMSG 20               // EMEM messages
+#  endif
 #endif
 
 #ifdef HAS_IT
@@ -93,9 +99,18 @@ private:
 	  uint8_t state, byteidx, sync, bitidx; 
 	  uint8_t data[MAXMSG];         // contains parity and checksum, but no sync
 	  wave_t zero, one; 
-	} bucket_t;
+#ifdef RF_DEBUG
+	  uint8_t bithigh[MAXBIT]; // debug timing
+	  uint8_t bitlow[MAXBIT]; // debug timing
+	  uint8_t bitused;
+#endif
+#ifdef HAS_TOOM
+	  uint8_t bit2;
+	  uint8_t bitsaved;
+//	  uint8_t bitrepeated;
+#endif
+	  } bucket_t;
     bucket_t bucket_array[RCV_BUCKETS];
-
 	uint8_t bucket_in;                 // Pointer to the in(terrupt) queue
 	uint8_t bucket_out;                // Pointer to the out (analyze) queue
 	uint8_t bucket_nrused;             // Number of unprocessed buckets
@@ -133,14 +148,17 @@ uint32_t pulseTooLong;
 	uint8_t analyze_it(bucket_t *b);
 	uint8_t wave_equals_itV3(uint8_t htime, uint8_t ltime);
 #endif
+#ifdef HAS_TOOM
+	uint8_t analyze_toom(bucket_t *b);
+#endif
 #ifdef HAS_TCM97001
     uint8_t analyze_tcm97001(bucket_t *b);
 #endif
 #ifdef HAS_REVOLT
 	uint8_t analyze_revolt(bucket_t *b);
 #endif
-#ifdef HAS_FTZ
-	uint8_t analyze_ftz(bucket_t *b);
+#ifdef HAS_FAZ
+	uint8_t analyze_faz(bucket_t *b);
 #endif
 	void checkForRepeatedPackage(uint8_t *datatype, bucket_t *b);
 	void reset_input(void);

@@ -34,7 +34,7 @@
 #endif
 
 #if defined(CUL_V3) || defined(CUL_V4)
-#  define HAS_FTZ
+#  define HAS_FAZ
 #  define HAS_FHT_8v                    // PROGMEM:  586b  RAM: 23b
 #  define HAS_FHT_TF
 #  define FHTBUF_SIZE          174      //                 RAM: 174b
@@ -48,7 +48,9 @@
 //#  define HAS_MORITZ                    // PROGMEM: 1696
 //#  define HAS_ESA                       // PROGMEM:  286
 //#  define HAS_TX3                       // PROGMEM:  168
-//#  define HAS_INTERTECHNO               // PROGMEM: 1352
+#  define HAS_INTERTECHNO               // PROGMEM: 1352
+#  define HAS_IT                       
+#  define HAS_TOOM                       
 //#  define HAS_TCM97001                  // PROGMEM:  264
 //#  define HAS_UNIROLL                   // PROGMEM:   92
 //#  define HAS_HOERMANN
@@ -143,6 +145,15 @@
 #  define INT2 PD2 //nodemcu int wie GPO		0x02
 
 #define EIMSK GPIE //ESP8266_REG(0x31C) //GPIO_STATUS R/W (Interrupt Enable)
+// ------------------begin ESP8266'centric----------------------------------
+// https://www.hackster.io/rayburne/esp8266-turn-off-wifi-reduce-current-big-time-1df8ae
+//#define FREQUENCY    80                  // valid 80, 160
+//
+//??#include "ESP8266WiFi.h"
+//??extern "C" {
+//??#include "user_interface.h"
+//??}
+// ------------------end ESP8266'centric------------------------------------
 //------------- speziell esp8266 ------------------
 //dummy esp8266
 extern unsigned char PORTB;  //unbenutzt wg. Anpassung in cc1100_cs
@@ -157,6 +168,11 @@ extern unsigned char TIMSK1;
 extern unsigned char TIFR1;
 #ifdef ESP8266
 extern unsigned int  TCNT1;
+#  define DIGITAL_HIGH(a,b) digitalWrite(b,1);   // GPOS = (1 << b)            
+#  define DIGITAL_LOW(a,b) digitalWrite(b,0);    // GPOC = (1 << b)  
+#else
+#  define DIGITAL_HIGH(a,b) a |= _BV(b);         // High
+#  define DIGITAL_LOW(a,b) a &= ~_BV(b);       // Low
 #endif
 
 extern unsigned int  OCR1A;

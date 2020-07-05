@@ -35,36 +35,36 @@ unsigned long Timer125Hz;
 unsigned long Timer1Hz;
 unsigned long Timer20s = 0;
 unsigned long Timer0Cycles = 0;
-unsigned long timer0count=0;
-unsigned long timer1count=0;
-unsigned long gdo2count=0;
+unsigned long timer0count = 0;
+unsigned long timer1count = 0;
+unsigned long gdo2count = 0;
 byte CheckGDO(void)
 {
-  if(GDO0state) {    //receive data
-    GDO0state = digitalRead(CC1100_OUT_PIN); 
+  if (GDO0state) {   //receive data
+    GDO0state = digitalRead(CC1100_OUT_PIN);
     // fallende Flanke: Daten vorhanden
     if (GDO0state == 0)
-      GDO0Toggle++; 
+      GDO0Toggle++;
     //return (CheckReceiveFlag0Toggle == 0);
   } else {             // no data
-    GDO0state = digitalRead(CC1100_OUT_PIN); 
+    GDO0state = digitalRead(CC1100_OUT_PIN);
     if (GDO0state)
-      GDO0Toggle++; 
+      GDO0Toggle++;
     //return 0;
   }
-  if(GDO2state)     //receive data
+  if (GDO2state)    //receive data
   {
-    GDO2state = digitalRead(CC1100_IN_PIN); 
+    GDO2state = digitalRead(CC1100_IN_PIN);
     // fallende Flanke: Daten vorhanden
     if (GDO2state == 0)
-      GDO2Toggle++; 
+      GDO2Toggle++;
     //return (CheckReceiveFlag2Toggle == 0);
   }
   else              // no data
   {
-    GDO2state = digitalRead(CC1100_IN_PIN); 
+    GDO2state = digitalRead(CC1100_IN_PIN);
     if (GDO2state == 1)
-      GDO2Toggle++; 
+      GDO2Toggle++;
   }
   return 0;
 }
@@ -86,7 +86,7 @@ byte CheckGDO(void)
 #include "clock.h"
 //#include "delay.h"
 #include "led.h"    // ledfunc
-#include "rf_receive.h" 
+#include "rf_receive.h"
 #include "rf_send.h"    // fs20send u.a
 #include "fht.h"    // fhtsend
 //#include "fastrf.h"   // fastrf_func
@@ -131,8 +131,8 @@ void start_bootloader(void)
   cli();
 
   /* move interrupt vectors to bootloader section and jump to bootloader */
-//AVR?  MCUCR = _BV(IVCE);
-//AVR?  MCUCR = _BV(IVSEL);
+  //AVR?  MCUCR = _BV(IVCE);
+  //AVR?  MCUCR = _BV(IVSEL);
 
 #if defined(CUL_V3) || defined(CUL_V4)
 #  define jump_to_bootloader ((void(*)(void))0x3800)
@@ -140,7 +140,7 @@ void start_bootloader(void)
 #if defined(CUL_V2)
 #  define jump_to_bootloader ((void(*)(void))0x1800)
 #endif
-//AVR?  jump_to_bootloader();
+  //AVR?  jump_to_bootloader();
 }
 
 void spi_init() {
@@ -162,7 +162,7 @@ void Serial_Task() {
 // count & compute in the interrupt, else long runnning tasks would block
 // a "minute" task too long
 //ISR(TIMER0_COMPA_vect, ISR_BLOCK)
-void inline IsrTimer0 (void){
+void inline IsrTimer0 (void) {
   timer0count++;
   Timer0Cycles = Timer0Cycles + 640000;
   timer0_write(Timer0Cycles);
@@ -172,7 +172,7 @@ void inline IsrTimer0 (void){
 //////////////////////////////////////////////////////////////////////
 // "Edge-Detected" Interrupt Handler
 //ISR(CC1100_INTVECT)
-void inline IsrHandler (void){
+void inline IsrHandler (void) {
   gdo2count++;
   RfReceive.IsrHandler();
 }
@@ -220,25 +220,68 @@ void loop1Hz(unsigned long counter) {
 void loop125Hz(unsigned long counter) {
 }
 
-void ccreg(char *data)                {CC1100.ccreg(data); };
-void ccsetpa(char *data)              { CC1100.ccsetpa(data); };
-void eeprom_factory_reset(char *data) { FNcol.eeprom_factory_reset(data); };
-void em_send(char *data)              { RfSend.em_send(data); };
-void fhtsend(char *data)              { FHT.fhtsend(data); };
-void fs20send(char *data)             { RfSend.fs20send(data); };
-void ftz_send(char *data)             { RfSend.ftz_send(data); };
-void gettime(char *data)              { CLOCK.gettime(data); };
-void ks_send(char *data)              { RfSend.ks_send(data); };
-void ledfunc(char *data)              { FNcol.ledfunc(data); };
-void native_func(char *data)          { RfNative.native_func(data); };
-void prepare_boot(char *data)         { FNcol.prepare_boot(data); }
-void rawsend(char *data)              { RfSend.rawsend(data); };
-void read_eeprom(char *data)          { FNcol.read_eeprom(data); };
-void rf_mbus_func(char *data)         { Serial.println("rf_mbus_func"); };
-void rf_router_func(char *data)       { RfRouter.func(data); }
-void set_txreport(char *data)         { RfReceive.set_txreport(data); };
-void version(char *data)              { FNcol.version(data); };
-void write_eeprom(char *data)         { FNcol.write_eeprom(data); };
+void ccreg(char *data)                {
+  CC1100.ccreg(data);
+};
+void ccsetpa(char *data)              {
+  CC1100.ccsetpa(data);
+};
+void eeprom_factory_reset(char *data) {
+  FNcol.eeprom_factory_reset(data);
+};
+void em_send(char *data)              {
+  RfSend.em_send(data);
+};
+void fhtsend(char *data)              {
+  FHT.fhtsend(data);
+};
+void fs20send(char *data)             {
+  RfSend.fs20send(data);
+};
+void faz_send(char *data)             {
+  RfSend.faz_send(data);
+};
+void gettime(char *data)              {
+  CLOCK.gettime(data);
+};
+#ifdef HAS_INTERTECHNO
+  void it_func(char *data)              {
+    InterTechno.func(data);
+  };
+#endif
+void ks_send(char *data)              {
+  RfSend.ks_send(data);
+};
+void ledfunc(char *data)              {
+  FNcol.ledfunc(data);
+};
+void native_func(char *data)          {
+  RfNative.native_func(data);
+};
+void prepare_boot(char *data)         {
+  FNcol.prepare_boot(data);
+}
+void rawsend(char *data)              {
+  RfSend.rawsend(data);
+};
+void read_eeprom(char *data)          {
+  FNcol.read_eeprom(data);
+};
+void rf_mbus_func(char *data)         {
+  Serial.println("rf_mbus_func");
+};
+void rf_router_func(char *data)       {
+  RfRouter.func(data);
+}
+void set_txreport(char *data)         {
+  RfReceive.set_txreport(data);
+};
+void version(char *data)              {
+  FNcol.version(data);
+};
+void write_eeprom(char *data)         {
+  FNcol.write_eeprom(data);
+};
 
 void setup() {
   // put your setup code here, to run once:
@@ -246,91 +289,90 @@ void setup() {
 
   int i = 0;
   TTYdata.fntab[i++] = { 'B', prepare_boot };
-  #ifdef HAS_MBUS
-    TTYdata.fntab[i++] = { 'b', rf_mbus_func };
-  #endif
+#ifdef HAS_MBUS
+  TTYdata.fntab[i++] = { 'b', rf_mbus_func };
+#endif
   TTYdata.fntab[i++] = { 'C', ccreg };
   TTYdata.fntab[i++] = { 'F', fs20send };
-  TTYdata.fntab[i++] = { 'Z', ftz_send };
-  #ifdef HAS_INTERTECHNO
-    { 'i', it_func },
-  #endif
-  #ifdef HAS_ASKSIN
-    { 'A', asksin_func },
-  #endif
-  #ifdef HAS_MORITZ
-    { 'Z', moritz_func },
-  #endif
-  #ifdef HAS_RFNATIVE
-    TTYdata.fntab[i++] = { 'N', native_func };
-  #endif
-  #ifdef HAS_RWE
-    { 'E', rwe_func },
-  #endif
-  #ifdef HAS_KOPP_FC
-    { 'k', kopp_fc_func },
-  #endif
-  #ifdef HAS_RAWSEND
-    TTYdata.fntab[i++] = { 'G', rawsend };
-    TTYdata.fntab[i++] = { 'M', em_send };
-    TTYdata.fntab[i++] = { 'K', ks_send };
-  #endif
-  #ifdef HAS_UNIROLL
-    { 'U', ur_send },
-  #endif
-  #ifdef HAS_SOMFY_RTS
-    { 'Y', somfy_rts_func },
-  #endif
+  TTYdata.fntab[i++] = { 'Z', faz_send };
+#ifdef HAS_INTERTECHNO
+  TTYdata.fntab[i++] = { 'i', it_func };
+#endif
+#ifdef HAS_ASKSIN
+  { 'A', asksin_func },
+#endif
+#ifdef HAS_MORITZ
+  { 'Z', moritz_func },
+#endif
+#ifdef HAS_RFNATIVE
+  TTYdata.fntab[i++] = { 'N', native_func };
+#endif
+#ifdef HAS_RWE
+  { 'E', rwe_func },
+#endif
+#ifdef HAS_KOPP_FC
+  { 'k', kopp_fc_func },
+#endif
+#ifdef HAS_RAWSEND
+  TTYdata.fntab[i++] = { 'G', rawsend };
+  TTYdata.fntab[i++] = { 'M', em_send };
+  TTYdata.fntab[i++] = { 'K', ks_send };
+#endif
+#ifdef HAS_UNIROLL
+  { 'U', ur_send },
+#endif
+#ifdef HAS_SOMFY_RTS
+  { 'Y', somfy_rts_func },
+#endif
   TTYdata.fntab[i++] = { 'R', read_eeprom };
   TTYdata.fntab[i++] = { 'T', fhtsend };
   TTYdata.fntab[i++] = { 'V', version };
   TTYdata.fntab[i++] = { 'W', write_eeprom };
   TTYdata.fntab[i++] = { 'X', set_txreport };
-  
+
   TTYdata.fntab[i++] = { 'e', eeprom_factory_reset };
-  #ifdef HAS_FASTRF
-    { 'f', fastrf_func },
-  #endif
-  #ifdef HAS_MEMFN
-    { 'm', getfreemem },
-  #endif
-  #ifdef HAS_BELFOX
-    { 'L', send_belfox },
-  #endif
+#ifdef HAS_FASTRF
+  { 'f', fastrf_func },
+#endif
+#ifdef HAS_MEMFN
+  { 'm', getfreemem },
+#endif
+#ifdef HAS_BELFOX
+  { 'L', send_belfox },
+#endif
   TTYdata.fntab[i++] = { 'l', ledfunc };
   TTYdata.fntab[i++] = { 't', gettime };
-  #ifdef HAS_RF_ROUTER
-    TTYdata.fntab[i++] = { 'u', rf_router_func };
-  #endif
+#ifdef HAS_RF_ROUTER
+  TTYdata.fntab[i++] = { 'u', rf_router_func };
+#endif
   TTYdata.fntab[i++] = { 'x', ccsetpa };
-  #ifdef HAS_ZWAVE
-    { 'z', zwave_func },
-  #endif
+#ifdef HAS_ZWAVE
+  { 'z', zwave_func },
+#endif
   TTYdata.fntab[i++] = { 0, 0 };
-
-//  wdt_enable(WDTO_2S);
-//esp8266   clock_prescale_set(clock_div_1);
-
-//esp8266   MARK433_PORT |= _BV( MARK433_BIT ); // Pull 433MHz marker
-//esp8266   MARK915_PORT |= _BV( MARK915_BIT ); // Pull 915MHz marker
-
-  // if we had been restarted by watchdog check the REQ BootLoader byte in the
-  // EEPROM ...
-/*esp8266 
-  if(bit_is_set(MCUSR,WDRF) && erb(EE_REQBL)) {
-    ewb( EE_REQBL, 0 ); // clear flag
-    start_bootloader();
-  }
-*/
 
   // Setup the timers. Are needed for watchdog-reset
 #ifndef ESP8266
+  wdt_enable(WDTO_2S);
+  clock_prescale_set(clock_div_1);
+
+  MARK433_PORT |= _BV( MARK433_BIT ); // Pull 433MHz marker
+  MARK915_PORT |= _BV( MARK915_BIT ); // Pull 915MHz marker
+
+  // if we had been restarted by watchdog check the REQ BootLoader byte in the
+  // EEPROM ...
+  if(bit_is_set(MCUSR,WDRF) && erb(EE_REQBL)) {
+      ewb( EE_REQBL, 0 ); // clear flag
+      start_bootloader();
+    }
+  
   OCR0A  = 249;                            // Timer0: 0.008s = 8MHz/256/250
   TCCR0B = _BV(CS02);
   TCCR0A = _BV(WGM01);
   TIMSK0 = _BV(OCIE0A);
   TCCR1A = 0;
-  TCCR1B = _BV(CS11) | _BV(WGM12);         // Timer1: 1us = 8MHz/8 -> 0 bis 4.000 
+  TCCR1B = _BV(CS11) | _BV(WGM12);         // Timer1: 1us = 8MHz/8 -> 0 bis 4.000
+  MCUSR &= ~(1 << WDRF);                   // Enable the watchdog
 #else
   pinMode(CC1100_IN_PIN, INPUT);
   attachInterrupt(digitalPinToInterrupt(CC1100_IN_PIN), IsrHandler, CHANGE);
@@ -344,15 +386,13 @@ void setup() {
   OCR1A = 20000; // SILENCE 4 ms= 4 * 5.000
   timer1_isr_init();
   timer1_enable(TIM_DIV16, TIM_EDGE, TIM_LOOP); // TIM_DIV16 : 80 MHz / 16 -> 5.000.000 Ticks je s
-  timer1_write(OCR1A); 
+  timer1_write(OCR1A);
   timer1_attachInterrupt(IsrTimer1);
   interrupts();
 #endif
 
-//esp8266   MCUSR &= ~(1 << WDRF);                   // Enable the watchdog
-
 #ifdef HAS_RF_ROUTER
-  display.channel = (DISPLAY_USB|DISPLAY_RFROUTER);
+  display.channel = (DISPLAY_USB | DISPLAY_RFROUTER);
   //display.channel = DISPLAY_USB;
 #else
   display.channel = DISPLAY_USB;
@@ -361,7 +401,7 @@ void setup() {
   spi_init();
   FNcol.eeprom_init();
   Serial.println("eeprom_init");
-//  USB_Init();
+  //  USB_Init();
   FHT.fht_init();
   RfReceive.tx_init();
   //???????????????????????????????????ttydata.input_handle_func = *ttydata.analyze_ttydata;
@@ -377,8 +417,8 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   /*
-  TimerMicros = micros();
-  if (TimerMicros/8000 != Timer125Hz) {
+    TimerMicros = micros();
+    if (TimerMicros/8000 != Timer125Hz) {
     Timer125Hz = TimerMicros/8000;
     loop125Hz(Timer125Hz);
     if (Timer125Hz/125 != Timer1Hz) {
@@ -389,39 +429,39 @@ void loop() {
         loop20s(Timer20s);
       }
     }
-  }
-  CheckGDO();
+    }
+    CheckGDO();
   */
   Serial_Task();
-//    USB_USBTask();
-//    CDC_Task();
-    RfReceive.RfAnalyze_Task();
-    CLOCK.Minute_Task();
+  //    USB_USBTask();
+  //    CDC_Task();
+  RfReceive.RfAnalyze_Task();
+  CLOCK.Minute_Task();
 #ifdef HAS_FASTRF
-    FastRF_Task();
+  FastRF_Task();
 #endif
 #ifdef HAS_RF_ROUTER
-    RfRouter.task();
+  RfRouter.task();
 #endif
 #ifdef HAS_ASKSIN
-    rf_asksin_task();
+  rf_asksin_task();
 #endif
 #ifdef HAS_MORITZ
-    rf_moritz_task();
+  rf_moritz_task();
 #endif
 #ifdef HAS_RWE
-    rf_rwe_task();
+  rf_rwe_task();
 #endif
 #ifdef HAS_RFNATIVE
-    RfNative.native_task();
+  RfNative.native_task();
 #endif
 #ifdef HAS_KOPP_FC
-    kopp_fc_task();
+  kopp_fc_task();
 #endif
 #ifdef HAS_MBUS
-    rf_mbus_task();
+  rf_mbus_task();
 #endif
 #ifdef HAS_ZWAVE
-    rf_zwave_task();
+  rf_zwave_task();
 #endif
 }

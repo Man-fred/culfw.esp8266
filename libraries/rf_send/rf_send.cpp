@@ -259,8 +259,8 @@ void RfSendClass::fs20send(char *in)
   addParityAndSend(in, 6, 3);
 }
 
-#ifdef HAS_FTZ
-void RfSendClass::ftz_send(char *in)
+#ifdef HAS_FAZ
+void RfSendClass::faz_send(char *in)
 {
   uint8_t iby, obuf[MAX_SNDRAW], oby;
   int8_t  ibi, obi;

@@ -9,7 +9,7 @@ class RfSendClass {
 public:
 	/* public prototypes */
 	void fs20send(char *in);
-	void ftz_send(char *in);
+	void faz_send(char *in);
 	void rawsend(char *in);
 	void em_send(char *in);
 	void ks_send(char *in);
