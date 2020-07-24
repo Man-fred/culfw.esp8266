@@ -336,9 +336,23 @@ extern unsigned char OCIE1A;
 #define con_cat(first, second) first second
 // helper for lambda-functions
 #ifdef ESP8266
-  #define lambda(obj, func) [&](char *data) { obj . func (data); }
+  #define isrtimer_enable          //timer1_enable{T1C |= (1 << TCTE);timer1_write(OCR1A);}
+  #define isrtimer_disable         //timer1_disable //T1C &= ~(1 << TCTE)
+	#define isrtimer_restart(a)      timer1_write(a) //{T1C |= (1 << TCTE); timer1_write(a);}
+  #define isrtimer_reinitialize(a) timer1_write(a) //{T1C |= (1 << TCTE); timer1_write(a);}
+	#define isrtimer_clear           
+	#define isrtimer_value(a)        OCR1A = a
+  #define isrtimer_set(a)          isrtimer_restart(a)
+	#define lambda(obj, func)        [&](char *data) { obj . func (data); }
 #else
-  #define lambda(obj, func) [& obj](char *data) { obj . func (data); }
+	#define isrtimer_enable          TIMSK1 = _BV(OCIE1A)
+	#define isrtimer_disable         TIMSK1 = 0
+  #define isrtimer_restart(a)      TCNT1=0
+  #define isrtimer_reinitialize(a) TCNT1=a
+	#define isrtimer_clear           TIFR1 = _BV(OCF1A)
+	#define isrtimer_value(a)        OCR1A = a
+	#define isrtimer_set(a)          {isrtimer_value(a); isrtimer_enable;}
+  #define lambda(obj, func)        [& obj](char *data) { obj . func (data); }
 #endif
 
 #endif // __BOARD_H__

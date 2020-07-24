@@ -19,8 +19,8 @@
                             // X21 X67 X3F X35
 #define REP_KNOWN    _BV(0) //  x   x   x   x
 #define REP_REPEATED _BV(1) //      x   x
-#define REP_BITS     _BV(2) //      x   x  
-#define REP_MONITOR  _BV(3) //          x   x
+#define REP_BITS     _BV(2) //      x   x   x
+#define REP_MONITOR  _BV(3) //          x   
 #define REP_BINTIME  _BV(4) //          x   x
 #define REP_RSSI     _BV(5) //  x   x   x   x
 #define REP_FHTPROTO _BV(6) //      x 
@@ -63,6 +63,10 @@
 #  endif
 #endif
 
+extern unsigned long gdo2reset;
+extern boolean       gdo2resetted;
+
+
 class RfReceiveClass {
 public:
 	RfReceiveClass(): debugLast(0), debugNext(0) {};
@@ -101,14 +105,15 @@ private:
 	  uint8_t data[MAXMSG];         // contains parity and checksum, but no sync
 	  wave_t zero, one; 
 		#ifdef RF_DEBUG
-				uint8_t bithigh[MAXBIT]; // debug timing
-				uint8_t bitlow[MAXBIT]; // debug timing
-				uint8_t bitused;
+			uint8_t bithigh[MAXBIT]; // debug timing
+			uint8_t bitlow[MAXBIT];  // debug timing
+			uint8_t bitstate[MAXBIT];// debug state
+			uint8_t bitused;
 		#endif
 		#ifdef HAS_FLAMINGO
-				uint8_t bit2;
-				uint8_t bitsaved;
-		//	  uint8_t bitrepeated;
+			uint8_t bit2;
+			uint8_t bitsaved;
+		  //uint8_t bitrepeated;
 		#endif
 	} bucket_t;
     bucket_t bucket_array[RCV_BUCKETS];
@@ -126,6 +131,7 @@ private:
 	#endif
 
 	uint32_t silence;
+	uint32_t resetCount;
 	uint32_t overflow;
 	uint32_t pulseTooShort;
 	uint32_t shortMax;
@@ -133,7 +139,8 @@ private:
 	uint32_t pulseTooLong;
 	uint8_t debugLast;
 	uint8_t debugNext;
-
+  void IsrReset(void);
+	
 	void addbit(bucket_t *b, uint8_t bit);
 	void delbit(bucket_t *b);
 	uint8_t getbit(input_t *in);

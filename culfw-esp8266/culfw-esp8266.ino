@@ -52,7 +52,7 @@ unsigned long timer1count=0;
 unsigned long gdo2count=0;
 byte CheckGDO(void)
 {
-  if(GDO0state) {    //receive data
+  /*if(GDO0state) {    //receive data
     GDO0state = digitalRead(CC1100_OUT_PIN); 
     // fallende Flanke: Daten vorhanden
     if (GDO0state == 0)
@@ -77,7 +77,7 @@ byte CheckGDO(void)
     GDO2state = digitalRead(CC1100_IN_PIN); 
     if (GDO2state == 1)
       GDO2Toggle++; 
-  }
+  }*/
   return 0;
 }
 
@@ -328,33 +328,35 @@ inline void ICACHE_RAM_ATTR IsrTimer1(void)
 #endif
 
 void loop20s(unsigned long counter) {
-  /* timer/interrupt  debugging
+  //* timer/interrupt  debugging
   Serial.print(micros());    // Chip
+  /*
   Serial.print(" loop ");
   Serial.print(TimerMicros); // last Loop()
   Serial.print(" - ");
   Serial.print(Timer125Hz);  // from last Loop()
-  Serial.print(" - ");
+  */
+  Serial.print(" sec ");
   Serial.print(Timer1Hz);    // from last Loop()
-  Serial.print(" ticks ");
-  Serial.print(CLOCK.ticks); // from interrupt, sould be better than Timer125Hz
-  Serial.print(" T1 ");
-  Serial.print(timer1_read());//break before silence 20000 = 4ms
+  //Serial.print(" ticks ");
+  //Serial.print(CLOCK.ticks); // from interrupt, sould be better than Timer125Hz
+  //Serial.print(" T1 ");
+  //Serial.print(timer1_read());//break before silence 20000 = 4ms
   //Serial.print(" T0c ");
   //Serial.print(timer0count);
-  Serial.print(" T1c ");
+  Serial.print(" silence ");
   Serial.print(timer1count); // count silence
-  Serial.print(" gdo2INT ");
-  Serial.print(gdo2count);   // count gdo2 interrupts
-  Serial.print(" GDO0t ");
-  Serial.print(GDO0Toggle);
-  Serial.print(" GDO2t ");
-  Serial.println(GDO2Toggle);
+  Serial.print(" edge ");
+  Serial.println(gdo2count);   // count gdo2 interrupts
+  //Serial.print(" GDO0t ");
+  //Serial.print(GDO0Toggle);
+  //Serial.print(" GDO2t ");
+  //Serial.println(GDO2Toggle);
   GDO0Toggle = 0;
   GDO2Toggle = 0;
   timer1count = 0;
   gdo2count = 0;
-  */
+  // timer/interrupt  debugging */
 }
 
 void loop1Hz(unsigned long counter) {
@@ -466,7 +468,7 @@ void loop() {
     #ifdef ESP8266
     CLOCK.IsrHandler();
     #endif
-    /*/loop125Hz(Timer125Hz);
+    //loop125Hz(Timer125Hz);
     temp = Timer125Hz/125;
     if (temp != Timer1Hz) {
       Timer1Hz = temp;

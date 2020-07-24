@@ -548,13 +548,14 @@ void RfReceiveClass::checkForRepeatedPackage(uint8_t *datatype, bucket_t *b) {
 //////////////////////////////////////////////////////////////////////
 void RfReceiveClass::RfAnalyze_Task(void)
 {
-  uint8_t datatype = 0;
-  bucket_t *b;
+	// IsrTimer1 set bucket_in++
+	uint8_t datatype = 0;
+	bucket_t *b;
+	
+	b = bucket_array + bucket_out; // Todo
 
-  b = bucket_array + bucket_out;
-
-  if(lowtime) {
-    #ifndef NO_RF_DEBUG
+	if(lowtime) {
+		#ifndef NO_RF_DEBUG
 			//DH(tx_report,1);
 			//tx_report = 0xff;
 			if(tx_report & REP_LCDMON) {
@@ -572,6 +573,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
 					DC('a'+rssi);
 				#endif
 			}
+			/* loose too many packets
 			if((tx_report & REP_MONITOR) && (b->state == STATE_IT) && (debugNext > debugLast)) {
 				DC('.');
 				DH2(debugNext);
@@ -584,6 +586,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
 					silence = 2;
 				}
 			}
+			*/
 			if( (tx_report & REP_BITS) && overflow) {
 				//DS_P(PSTR("BOVF\r\n"));            
 				DS("BOVF");
@@ -591,140 +594,156 @@ void RfReceiveClass::RfAnalyze_Task(void)
 				overflow = 0;
 			}
 		#endif // NO_RF_DEBUG
-    lowtime = 0;
-  }
+		lowtime = 0;
+	}
 
 
-  if(bucket_nrused == 0)
-    return;
+	if(bucket_nrused == 0)
+		return;
 
-  LED_ON();
+	#ifdef RF_DEBUG
+		uint8_t state = 255;
+		Serial.print("RfAnalyseTask, Rests ");Serial.print(resetCount);Serial.println("");
+		for(uint8_t i=0; i < b->bitused; i++) {
+			if(state != b->bitstate[i]){
+				DNL();DC('p');DC('S');DU(b->bitstate[i],2);
+				state = b->bitstate[i];
+				wdt_reset();
+			}
+			DC(' H');DU(b->bithigh[i]*16,5);
+			DC(' L');DU(b->bitlow[i]*16,5);
+		}
+		DNL();
+		wdt_reset();
+	#endif
+
+	LED_ON();
 
 #ifdef HAS_FLAMINGO
-  if(b->state == STATE_FLAMINGO) {
-    if(!datatype && analyze_flamingo(b)) { 
-      datatype = TYPE_IT;
-    }
-  }
+	if(b->state == STATE_FLAMINGO) {
+		if(!datatype && analyze_flamingo(b)) { 
+			datatype = TYPE_IT;
+		}
+	}
 #endif
 #ifdef HAS_IT
-  if(b->state == STATE_IT || b->state == STATE_ITV3) {
-    if(!datatype && analyze_it(b)) { 
-    datatype = TYPE_IT;
-    }
-  }
+	if(b->state == STATE_IT || b->state == STATE_ITV3) {
+		if(!datatype && analyze_it(b)) { 
+		datatype = TYPE_IT;
+		}
+	}
 #endif
 #ifdef HAS_TCM97001
-  if(!datatype && analyze_tcm97001(b))
-    datatype = TYPE_TCM97001;
+	if(!datatype && analyze_tcm97001(b))
+		datatype = TYPE_TCM97001;
 #endif
 #ifdef HAS_REVOLT
-  if(!datatype && analyze_revolt(b))
-    datatype = TYPE_REVOLT;
+	if(!datatype && analyze_revolt(b))
+		datatype = TYPE_REVOLT;
 #endif
 #ifdef LONG_PULSE
-  if(b->state != STATE_REVOLT && b->state != STATE_IT && b->state != STATE_TCM97001) {
+	if(b->state != STATE_REVOLT && b->state != STATE_IT && b->state != STATE_TCM97001) {
 #endif
 #ifdef HAS_ESA
-  if(!datatype && analyze_esa(b))
-    datatype = TYPE_ESA;
+	if(!datatype && analyze_esa(b))
+		datatype = TYPE_ESA;
 #endif
-  if(!datatype && analyze(b, TYPE_FS20)) { // Can be FS10 (433Mhz) or FS20 (868MHz)
-    oby--;                                  // Separate the checksum byte
-    uint8_t fs_csum = cksum1(6,obuf,oby);
-    if(fs_csum == obuf[oby] && oby >= 4) {
-      datatype = TYPE_FS20;
+	if(!datatype && analyze(b, TYPE_FS20)) { // Can be FS10 (433Mhz) or FS20 (868MHz)
+		oby--;                                  // Separate the checksum byte
+		uint8_t fs_csum = cksum1(6,obuf,oby);
+		if(fs_csum == obuf[oby] && oby >= 4) {
+			datatype = TYPE_FS20;
 
-    } else if(fs_csum+1 == obuf[oby] && oby >= 4) {     // Repeater
-      datatype = TYPE_FS20;
-      obuf[oby] = fs_csum;                  // do not report if we get both
+		} else if(fs_csum+1 == obuf[oby] && oby >= 4) {     // Repeater
+			datatype = TYPE_FS20;
+			obuf[oby] = fs_csum;                  // do not report if we get both
 
-    } else if(cksum1(12, obuf, oby) == obuf[oby] && oby >= 4) {
-      datatype = TYPE_FHT;
-    } else {
-      datatype = 0;
-    }
-  }
+		} else if(cksum1(12, obuf, oby) == obuf[oby] && oby >= 4) {
+			datatype = TYPE_FHT;
+		} else {
+			datatype = 0;
+		}
+	}
 
-  if(!datatype && analyze(b, TYPE_EM)) {
-    oby--;                                 
-    if(oby == 9 && cksum2(obuf, oby) == obuf[oby])
-      datatype = TYPE_EM;
-  }
+	if(!datatype && analyze(b, TYPE_EM)) {
+		oby--;                                 
+		if(oby == 9 && cksum2(obuf, oby) == obuf[oby])
+			datatype = TYPE_EM;
+	}
 
-  if(!datatype && analyze_hms(b))
-    datatype = TYPE_HMS;
+	if(!datatype && analyze_hms(b))
+		datatype = TYPE_HMS;
 
 #ifdef HAS_TX3
-  if(!datatype && analyze_TX3(b)) // Can be 433Mhz or 868MHz
-    datatype = TYPE_TX3;
+	if(!datatype && analyze_TX3(b)) // Can be 433Mhz or 868MHz
+		datatype = TYPE_TX3;
 #endif
 #ifdef HAS_FTZ
-  if(!datatype && analyze_ftz(b)) // 868MHz
-    datatype = TYPE_FTZ;
+	if(!datatype && analyze_ftz(b)) // 868MHz
+		datatype = TYPE_FTZ;
 #endif
 
-  if(!datatype) {
-    // As there is no last rise, we have to add the last bit by hand
-    addbit(b, wave_equals(&b->one, hightime, b->one.lowtime, b->state));
-    if(analyze(b, TYPE_KS300)) {
-      oby--;                                 
-      if(cksum3(obuf, oby) == obuf[oby-nibble])
-        datatype = TYPE_KS300;
-    }
-    if(!datatype)
-      delbit(b);
-  }
+	if(!datatype) {
+		// As there is no last rise, we have to add the last bit by hand
+		addbit(b, wave_equals(&b->one, hightime, b->one.lowtime, b->state));
+		if(analyze(b, TYPE_KS300)) {
+			oby--;                                 
+			if(cksum3(obuf, oby) == obuf[oby-nibble])
+				datatype = TYPE_KS300;
+		}
+		if(!datatype)
+			delbit(b);
+	}
 
 #ifdef HAS_HOERMANN
-  // This protocol is not yet understood. It should be last in the row!
-  if(!datatype && b->byteidx == 4 && b->bitidx == 4 &&
-     wave_equals(&b->zero, TSCALE(960), TSCALE(480), b->state)) {
+	// This protocol is not yet understood. It should be last in the row!
+	if(!datatype && b->byteidx == 4 && b->bitidx == 4 &&
+		 wave_equals(&b->zero, TSCALE(960), TSCALE(480), b->state)) {
 
-    addbit(b, wave_equals(&b->one, hightime, TSCALE(480), b->state));
-    for(oby=0; oby < 5; oby++)
-      obuf[oby] = b->data[oby];
-    datatype = TYPE_HRM;
-  }
+		addbit(b, wave_equals(&b->one, hightime, TSCALE(480), b->state));
+		for(oby=0; oby < 5; oby++)
+			obuf[oby] = b->data[oby];
+		datatype = TYPE_HRM;
+	}
 #endif
 #ifdef LONG_PULSE
-  }
+	}
 #endif
 
-  if(datatype && (tx_report & REP_KNOWN)) {
+	if(datatype && (tx_report & REP_KNOWN)) {
 
-    packetCheckValues.isrep = 0;
-    packetCheckValues.packageOK = 0; 
-    if(!(tx_report & REP_REPEATED)) {      // Filter repeated messages
-      
-      // compare the data
-      if(roby == oby) {
-        for(roby = 0; roby < oby; roby++)
-          if(robuf[roby] != obuf[roby]) {
-            packetCheckValues.isnotrep = 0;
-            break;
-          }
+		packetCheckValues.isrep = 0;
+		packetCheckValues.packageOK = 0; 
+		if(!(tx_report & REP_REPEATED)) {      // Filter repeated messages
+			
+			// compare the data
+			if(roby == oby) {
+				for(roby = 0; roby < oby; roby++)
+					if(robuf[roby] != obuf[roby]) {
+						packetCheckValues.isnotrep = 0;
+						break;
+					}
 
-        if(roby == oby && (CLOCKClass::ticks - reptime < REPTIME)) // 38/125 = 0.3 sec
-          packetCheckValues.isrep = 1;
-      }
+				if(roby == oby && (CLOCKClass::ticks - reptime < REPTIME)) // 38/125 = 0.3 sec
+					packetCheckValues.isrep = 1;
+			}
 
-      // save the data
-      for(roby = 0; roby < oby; roby++)
-        robuf[roby] = obuf[roby];
-      reptime = CLOCKClass::ticks;
+			// save the data
+			for(roby = 0; roby < oby; roby++)
+				robuf[roby] = obuf[roby];
+			reptime = CLOCKClass::ticks;
 
-    }
+		}
 
-    if(datatype == TYPE_FHT && !(tx_report & REP_FHTPROTO) &&
-       oby > 4 &&
-       (obuf[2] == FHT_ACK        || obuf[2] == FHT_ACK2    ||
-        obuf[2] == FHT_CAN_XMIT   || obuf[2] == FHT_CAN_RCV ||
-        obuf[2] == FHT_START_XMIT || obuf[2] == FHT_END_XMIT ||
-        (obuf[3] & 0x70) == 0x70))
-      packetCheckValues.isrep = 1;
+		if(datatype == TYPE_FHT && !(tx_report & REP_FHTPROTO) &&
+			 oby > 4 &&
+			 (obuf[2] == FHT_ACK        || obuf[2] == FHT_ACK2    ||
+				obuf[2] == FHT_CAN_XMIT   || obuf[2] == FHT_CAN_RCV ||
+				obuf[2] == FHT_START_XMIT || obuf[2] == FHT_END_XMIT ||
+				(obuf[3] & 0x70) == 0x70))
+			packetCheckValues.isrep = 1;
 
-    checkForRepeatedPackage(&datatype, b);
+		checkForRepeatedPackage(&datatype, b);
 
 		#if defined(HAS_RF_ROUTER) && defined(HAS_FHT_80b)
 			if(datatype == TYPE_FHT && RfRouter.rf_router_target && !FHT.fht_hc0) // Forum #50756
@@ -741,79 +760,69 @@ void RfReceiveClass::RfAnalyze_Task(void)
 			#endif		
 		#endif		
 		Serial.print("packageOK ");Serial.print(b->state);Serial.print(datatype);Serial.print(packetCheckValues.isrep);Serial.print(packetCheckValues.isnotrep);Serial.println(packetCheckValues.packageOK);
-    if(packetCheckValues.packageOK) {
-      DC(datatype);
-      if(nibble)
-        oby--;
-      for(uint8_t i=0; i < oby; i++)
-        DH2(obuf[i]);
-      if(nibble)
-        DH(obuf[oby]&0xf,1);
-      if(tx_report & REP_RSSI)
-        DH2(CC1100.readStatus(CC1100_RSSI));
-      DNL();
-    }
+		if(packetCheckValues.packageOK) {
+			DC(datatype);
+			if(nibble)
+				oby--;
+			for(uint8_t i=0; i < oby; i++)
+				DH2(obuf[i]);
+			if(nibble)
+				DH(obuf[oby]&0xf,1);
+			if(tx_report & REP_RSSI)
+				DH2(CC1100.readStatus(CC1100_RSSI));
+			DNL();
+		}
 
-  }
+	}
 
-#ifndef NO_RF_DEBUG
-  if(tx_report & REP_BITS) {
-		#ifdef RF_DEBUG
-			for(uint8_t i=0; i < b->bitused+5; i++) {
-				DC('H');
-				DU(b->bithigh[i]*16,5);
-				DC('L');
-				DU(b->bitlow[i]*16,5);
-				if ( b->bitlow[i]*16 > 1500) {
-					DNL();DC('p');
-					wdt_reset();
-				}
+	#ifndef NO_RF_DEBUG
+		if(tx_report & REP_BITS) {
+			DNL();
+			DC('p');
+			DU(b->state,        2);
+			DU(b->zero.hightime*16, 5);
+			DU(b->zero.lowtime *16, 5);
+			DU(b->one.hightime *16, 5);
+			DU(b->one.lowtime  *16, 5);
+			DU(b->sync,         3);
+			DU(b->byteidx,      3);
+			DU(7-b->bitidx,     2);
+			DC(' ');
+			if(tx_report & REP_RSSI) {
+				DH2(CC1100.readStatus(CC1100_RSSI));
+				DC(' ');
 			}
-		#endif
-    DNL();
-    DC('p');
-    DU(b->state,        2);
-    DU(b->zero.hightime*16, 5);
-    DU(b->zero.lowtime *16, 5);
-    DU(b->one.hightime *16, 5);
-    DU(b->one.lowtime  *16, 5);
-    DU(b->sync,         3);
-    DU(b->byteidx,      3);
-    DU(7-b->bitidx,     2);
-    DC(' ');
-    if(tx_report & REP_RSSI) {
-      DH2(CC1100.readStatus(CC1100_RSSI));
-      DC(' ');
-    }
-    if(b->bitidx != 7)
-      b->byteidx++;
+			if(b->bitidx != 7)
+				b->byteidx++;
 
-    for(uint8_t i=0; i < b->byteidx; i++)
-       DH2(b->data[i]);
-    DNL();
+			for(uint8_t i=0; i < b->byteidx; i++)
+				 DH2(b->data[i]);
+			DNL();
 
-  }
-#endif
+		}
+	#endif
 
-  b->state = STATE_RESET;
-  bucket_nrused--;
-  bucket_out++;
-  if(bucket_out == RCV_BUCKETS)
-    bucket_out = 0;
+	b->state = STATE_RESET;
+	b->bitused = 0;
+	b->bitsaved = 0;
+	bucket_nrused--;
+	bucket_out++;
+	if(bucket_out == RCV_BUCKETS)
+		bucket_out = 0;
 
-  LED_OFF();
+	LED_OFF();
 
-#ifdef HAS_FHT_80b
-  if(datatype == TYPE_FHT) {
-    FHT.fht_hook(obuf);
-  }
-#endif
-}
+	#ifdef HAS_FHT_80b
+		if(datatype == TYPE_FHT) {
+			FHT.fht_hook(obuf);
+		}
+	#endif
+} //RfAnalyseTask
 
 void ICACHE_RAM_ATTR RfReceiveClass::reset_input(void)
 {
-	
-  TIMSK1 = 0;
+	//todo isrtimer_disable;
+	resetCount++;
   bucket_array[bucket_in].state = STATE_RESET;
 	#ifdef RF_DEBUG
 		bucket_array[bucket_in].bitused = 0;
@@ -830,19 +839,14 @@ void ICACHE_RAM_ATTR RfReceiveClass::reset_input(void)
 //esp8266 ISR(TIMER1_COMPA_vect)
 void ICACHE_RAM_ATTR RfReceiveClass::IsrTimer1(void)
 {
-#ifdef LONG_PULSE
-  uint16_t tmp;
-#endif
-  TIMSK1 = 0;                           // Disable "us"
-#ifdef LONG_PULSE
-  tmp=OCR1A;
-  OCR1A = TWRAP;                        // Wrap Timer
-# ifdef ESP8266
-  //timer1_write(tmp); // restart timer
-# else
-  TCNT1=tmp;                            // reinitialize timer to measure times > SILENCE
-# endif
-#endif
+	//todo isrtimer_disable;                     // Disable "us"
+	/*
+	#ifdef LONG_PULSE
+		uint16_t tmp=OCR1A;
+		OCR1A = TWRAP;                        // Wrap Timer
+	  isrtimer_restart(tmp); // reinitialize timer to measure times > SILENCE
+	#endif
+	*/
   if(!silence) {
 	  silence = 1;
   }
@@ -852,23 +856,15 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrTimer1(void)
     reset_input();
     return;
   }
- #ifndef NO_RF_DEBUG
-  if(tx_report & REP_MONITOR)
-   DC('+');
-#endif
-
   if(bucket_nrused+1 == RCV_BUCKETS) {   // each bucket is full: reuse the last
+    #ifndef NO_RF_DEBUG
+			if(tx_report & REP_BITS)
+				DS_P(PSTR("BOVF\r\n"));            // Bucket overflow
+		#endif
 
-#ifndef NO_RF_DEBUG
-    if(tx_report & REP_BITS)
-      DS_P(PSTR("BOVF\r\n"));            // Bucket overflow
-#endif
-
-	overflow = 1; // Bucket overflow
-	reset_input();
-
+		overflow = 1; // Bucket overflow
+		reset_input();
   } else {
-
     bucket_nrused++;
     bucket_in++;
     if(bucket_in == RCV_BUCKETS)
@@ -879,7 +875,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrTimer1(void)
 		#endif
   }
 
-}
+} // IsrTimer1
 
 uint8_t RfReceiveClass::wave_equals(wave_t *a, uint8_t htime, uint8_t ltime, uint8_t state)
 {
@@ -953,36 +949,38 @@ void RfReceiveClass::delbit(bucket_t *b)
 void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 {  
   silence = 0;
+/*********************************************
+	#ifdef HAS_FASTRF
+		if(FastRF.fastrf_on) {
+			FastRF.fastrf_on = 2;
+			return;
+		}
+	#endif
 
-#ifdef HAS_FASTRF
-  if(FastRF.fastrf_on) {
-    FastRF.fastrf_on = 2;
-    return;
-  }
-#endif
+	#ifdef HAS_RF_ROUTER
+		if(RfRouter.rf_router_status == RF_ROUTER_DATA_WAIT) {
+			RfRouter.rf_router_status = RF_ROUTER_GOT_DATA;
+			return;
+		}
+	#endif
+****************************/
+	#ifdef ESP8266
+	# ifdef LONG_PULSE
+			uint16_t c = ((((T1L) - timer1_read())/5)>>4);               // catch the time and make it smaller
+	# else
+			uint8_t c = ((((T1L) - timer1_read())/5)>>4);               // catch the time and make it smaller
+	# endif
+	#else
+	# ifdef LONG_PULSE
+			uint16_t c = (TCNT1>>4);               // catch the time and make it smaller
+	# else
+			uint8_t c = (TCNT1>>4);               // catch the time and make it smaller
+	# endif
+	#endif
 
-#ifdef HAS_RF_ROUTER
-  if(RfRouter.rf_router_status == RF_ROUTER_DATA_WAIT) {
-    RfRouter.rf_router_status = RF_ROUTER_GOT_DATA;
-    return;
-  }
-#endif
-#ifdef ESP8266
-# ifdef LONG_PULSE
-    uint16_t c = ((((T1L) - timer1_read())/5)>>4);               // catch the time and make it smaller
-# else
-    uint8_t c = ((((T1L) - timer1_read())/5)>>4);               // catch the time and make it smaller
-# endif
-#else
-# ifdef LONG_PULSE
-    uint16_t c = (TCNT1>>4);               // catch the time and make it smaller
-# else
-    uint8_t c = (TCNT1>>4);               // catch the time and make it smaller
-# endif
-#endif
+  bucket_t *b = bucket_array + bucket_in; // ToDo: where to fill in the bit
 
-  bucket_t *b = bucket_array+bucket_in; // where to fill in the bit
-
+/*********************************************
   if ( b->state == STATE_HMS ) {
     if(c < TSCALE(750))
       return;
@@ -1023,43 +1021,35 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
     }
   }
 #endif
-
+****************************/
   //////////////////
   // Falling edge
   if(!bit_is_set(CC1100_IN_PORT,CC1100_IN_PIN)) {
     if( (b->state == STATE_HMS)
-#ifdef HAS_ESA
-     || (b->state == STATE_ESA) 
-#endif
-#ifdef HAS_FTZ
-     || (b->state == STATE_FTZ) 
-#endif
-    ) {
+			#ifdef HAS_ESA
+					 || (b->state == STATE_ESA) 
+			#endif
+			#ifdef HAS_FTZ
+					 || (b->state == STATE_FTZ) 
+			#endif
+		) {
       addbit(b, 1);
-#ifdef ESP8266
-      timer1_write(OCR1A); // restart timer
-#else
-      TCNT1 = 0;
-#endif
     }
+	isrtimer_restart(OCR1A); // restart timer
     hightime = c;
     return;
   }
 
   lowtime = c-hightime;
-	debugNext++;
-#ifdef ESP8266
-  timer1_write(OCR1A); // restart timer
-#else
-  TCNT1 = 0;
-#endif
+  isrtimer_restart(OCR1A); // restart timer
 
-#ifdef RF_DEBUG
-	if (b->bitused < MAXBIT) {	
-	  b->bithigh[b->bitused] = hightime;
-	  b->bitlow[b->bitused++] = lowtime;
-	}
-#endif
+	#ifdef RF_DEBUG
+		if (b->bitused < MAXBIT) {	
+		  b->bitstate[b->bitused] = b->state;
+			b->bithigh[b->bitused] = hightime;
+			b->bitlow[b->bitused++] = lowtime;
+		}
+	#endif
 # ifdef HAS_FLAMINGO
 	if(b->state == STATE_FLAMINGO) {
 		if (b->sync && (hightime < TSCALE(1400)) && (lowtime < TSCALE(1400)) && (b->byteidx < sizeof(b->data))) {
@@ -1095,6 +1085,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 				}
 				b->bitsaved = 0;
 #ifdef RF_DEBUG
+				b->bitstate[b->bitused] = b->state;
 				b->bithigh[b->bitused] = 0;
 				b->bitlow[b->bitused++] = 0;
 #endif
@@ -1114,11 +1105,6 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
       if (lowtime > TSCALE(2400)) { 
         // this should be the start bit for IT V3
         b->state = STATE_ITV3;
-#ifdef ESP8266
-        timer1_write(OCR1A); // restart timer
-#else
-        TCNT1 = 0;
-#endif
         return;
       } else if (b->state == STATE_ITV3) {
         b->sync=1;
@@ -1136,6 +1122,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
         if (hightime*2>lowtime) {
           // No IT, because times to near
           b->state = STATE_RESET;
+					resetCount++;
           return;
         }
         b->zero.hightime = hightime; 
@@ -1174,91 +1161,75 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
     return;
   }
 
-#ifdef HAS_FLAMINGO
-	if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
-								lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
-		TIMSK1 = _BV(OCIE1A);
-		b->state = STATE_FLAMINGO;
-		b->byteidx = 0;
-		b->bitidx  = 7;
-		b->data[0] = 0;
-		b->sync    = 1;
-		//??OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
-        OCR1A = 20000 * 5; //20000; //toom debug
-        return;
-	} 
-#endif
   ///////////////////////
   // http://www.nongnu.org/avr-libc/user-manual/FAQ.html#faq_intbits
-  TIFR1 = _BV(OCF1A);                 // clear Timers flags (?, important!)
+  //todo isrtimer_clear;                 // clear Timers flags (?, important!)
   
-#ifdef HAS_REVOLT
-  if(hightime > TSCALE(9000) && hightime < TSCALE(12000) &&
-     lowtime  > TSCALE(150)  && lowtime  < TSCALE(540)) {
-    b->zero.hightime = 6;
-    b->zero.lowtime = 14;
-    b->one.hightime = 19;
-    b->one.lowtime = 14;
-    b->sync=1;
-    b->state = STATE_REVOLT;
-    b->byteidx = 0;
-    b->bitidx  = 7;
-    b->data[0] = 0;
-    OCR1A = SILENCE;
-    TIMSK1 = _BV(OCIE1A);
-    return;
-  }
-#endif
 
   if(b->state == STATE_RESET) {   // first sync bit, cannot compare yet
 
 retry_sync:
-
-#ifdef HAS_TCM97001
-  if(hightime < TSCALE(530) && hightime > TSCALE(420) &&
-     lowtime  < TSCALE(9000) && lowtime > TSCALE(8500)) {
-    OCR1A = SILENCE_4600L;
-    TIMSK1 = _BV(OCIE1A);
-    b->sync=0;
-    b->state = STATE_TCM97001;
-    b->byteidx = 0;
-    b->bitidx  = 7;
-    b->data[0] = 0;
-    return;
-  }
-#ifdef HAS_IT
-  else 
-#endif
-#endif //HAS_TCM97001
-
-#ifdef HAS_IT
-	#ifdef HAS_FLAMINGO
-		if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
-								lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
-			OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
-			TIMSK1 = _BV(OCIE1A);
-			b->state = STATE_FLAMINGO;
+	#ifdef HAS_REVOLT
+		if(hightime > TSCALE(9000) && hightime < TSCALE(12000) &&
+			 lowtime  > TSCALE(150)  && lowtime  < TSCALE(540)) {
+			b->zero.hightime = 6;
+			b->zero.lowtime = 14;
+			b->one.hightime = 19;
+			b->one.lowtime = 14;
+			b->sync=1;
+			b->state = STATE_REVOLT;
 			b->byteidx = 0;
 			b->bitidx  = 7;
 			b->data[0] = 0;
-			b->sync    = 1;
+			isrtimer_set(SILENCE);
+			return;
+		}
+	#endif
+
+	#ifdef HAS_TCM97001
+		if(hightime < TSCALE(530) && hightime > TSCALE(420) &&
+			 lowtime  < TSCALE(9000) && lowtime > TSCALE(8500)) {
+			b->sync=0;
+			b->state = STATE_TCM97001;
+			b->byteidx = 0;
+			b->bitidx  = 7;
+			b->data[0] = 0;
+			isrtimer_set(SILENCE_4600L);
+			return;
+		}
+		#ifdef HAS_IT
+			else 
+		#endif
+	#endif //HAS_TCM97001
+
+	#ifdef HAS_IT
+		#ifdef HAS_FLAMINGO
+			if(hightime > TSCALE(240)  && hightime < TSCALE(700) &&
+				lowtime  > TSCALE(1900) && lowtime  < TSCALE(2500) ) {
+				b->state = STATE_FLAMINGO;
+				b->byteidx = 0;
+				b->bitidx  = 7;
+				b->data[0] = 0;
+				b->sync    = 1;
+			  isrtimer_set(100000);//:20ms;  5000: 1 ms //SILENCE;
+				return;
+			} else
+		# endif
+		if(hightime > TSCALE(140)   && hightime < TSCALE(600) &&
+			 lowtime  > TSCALE(2500)  && lowtime  < TSCALE(17000) ) {
+			b->sync=0;
+			b->state = STATE_IT;
+			b->byteidx = 0;
+			b->bitidx  = 7;
+			b->data[0] = 0;
+			isrtimer_set(SILENCE);
 			return;
 		} else
-	# endif
-  if(hightime < TSCALE(600)   && hightime > TSCALE(140) &&
-     lowtime  < TSCALE(17000) && lowtime  > TSCALE(2500) ) {
-    OCR1A = SILENCE;
-    TIMSK1 = _BV(OCIE1A);
-    b->sync=0;
-    b->state = STATE_IT;
-    b->byteidx = 0;
-    b->bitidx  = 7;
-    b->data[0] = 0;
-    return;
-  } else
-#endif
-    if(hightime > TSCALE(1600) || lowtime > TSCALE(1600))
-      return;
+	#endif
+		if(hightime > TSCALE(1600) || lowtime > TSCALE(1600)){
+			isrtimer_set(SILENCE);
+			return;
+		}
   
     b->zero.hightime = hightime;
     b->zero.lowtime = lowtime;
@@ -1273,83 +1244,80 @@ retry_sync:
       b->sync++;
 
     } else if(b->sync >= 4 ) {          // the one bit at the end of the 0-sync
-      OCR1A = SILENCE;
-#ifdef HAS_FTZ
-      if (b->sync >= 12 && (b->zero.hightime + b->zero.lowtime) > TSCALE(1600)) {
-        b->state = STATE_FTZ;
-	  } else 
-#endif
-      if (b->sync >= 12 && (b->zero.hightime + b->zero.lowtime) > TSCALE(1600)) {
-        b->state = STATE_HMS;
+      isrtimer_value(SILENCE);
+			#ifdef HAS_FTZ
+				if (b->sync >= 12 && (b->zero.hightime + b->zero.lowtime) > TSCALE(1600)) {
+					b->state = STATE_FTZ;
+			  } else 
+			#endif
+				if (b->sync >= 12 && (b->zero.hightime + b->zero.lowtime) > TSCALE(1600)) {
+					b->state = STATE_HMS;
 
-#ifdef HAS_ESA
-      } else if (b->sync >= 10 && (b->zero.hightime + b->zero.lowtime) < TSCALE(600)) {
-        b->state = STATE_ESA;
-        OCR1A = SILENCE_1000;
-#endif
-#ifdef HAS_RF_ROUTER
-      } else if(RfRouter.rf_router_myid &&
-                check_rf_sync(hightime, lowtime) &&
-                check_rf_sync(b->zero.lowtime, b->zero.hightime)) {
-        RfRouter.rf_router_status = RF_ROUTER_SYNC_RCVD;
-        reset_input();
-        return;
-#endif
+			#ifdef HAS_ESA
+				} else if (b->sync >= 10 && (b->zero.hightime + b->zero.lowtime) < TSCALE(600)) {
+					b->state = STATE_ESA;
+					isrtimer_value(SILENCE_1000);
+			#endif
+			#ifdef HAS_RF_ROUTER
+				} else if(RfRouter.rf_router_myid &&
+									check_rf_sync(hightime, lowtime) &&
+									check_rf_sync(b->zero.lowtime, b->zero.hightime)) {
+					RfRouter.rf_router_status = RF_ROUTER_SYNC_RCVD;
+					reset_input();
+					return;
+			#endif
 
-      } else {
-        b->state = STATE_COLLECT;
-      }
+			} else {
+				b->state = STATE_COLLECT;
+			}
 
-      b->one.hightime = hightime;
-      b->one.lowtime  = lowtime;
-      b->byteidx = 0;
-      b->bitidx  = 7;
-      b->data[0] = 0;
-
-      TIMSK1 = _BV(OCIE1A);             // On timeout analyze the data
-
+			b->one.hightime = hightime;
+			b->one.lowtime  = lowtime;
+			b->byteidx = 0;
+			b->bitidx  = 7;
+			b->data[0] = 0;
     } else {                            // too few sync bits
       b->state = STATE_RESET;
+	  resetCount++;
       goto retry_sync;
-
     }
 
   } else 
-#ifdef HAS_REVOLT
-  if(b->state==STATE_REVOLT) { //STATE_REVOLT
-    if ((hightime < 11)) {
-      addbit(b,0);
-      b->zero.hightime = makeavg(b->zero.hightime, hightime);
-      b->zero.lowtime  = makeavg(b->zero.lowtime,  lowtime);
-    } else {
-      addbit(b,1);
-      b->one.hightime = makeavg(b->one.hightime, hightime);
-      b->one.lowtime  = makeavg(b->one.lowtime,  lowtime);
-    }
-  } else 
-#endif
+  #ifdef HAS_REVOLT
+	if(b->state==STATE_REVOLT) { //STATE_REVOLT
+		if ((hightime < 11)) {
+			addbit(b,0);
+			b->zero.hightime = makeavg(b->zero.hightime, hightime);
+			b->zero.lowtime  = makeavg(b->zero.lowtime,  lowtime);
+		} else {
+			addbit(b,1);
+			b->one.hightime = makeavg(b->one.hightime, hightime);
+			b->one.lowtime  = makeavg(b->one.lowtime,  lowtime);
+		}
+		} else 
+  #endif
 
-#ifdef HAS_TCM97001
-  if(b->state==STATE_TCM97001) {
-    if (lowtime > 110 && lowtime < 140) {
-      addbit(b,0);
-      b->zero.hightime = makeavg(b->zero.hightime, hightime);
-      b->zero.lowtime  = makeavg(b->zero.lowtime,  lowtime);
-    } else if (lowtime > 230 && lowtime < 270) {
-      addbit(b,1);
-      b->one.hightime = makeavg(b->one.hightime, hightime);
-      b->one.lowtime  = makeavg(b->one.lowtime,  lowtime);
-    }
+	#ifdef HAS_TCM97001
+		if(b->state==STATE_TCM97001) {
+			if (lowtime > 110 && lowtime < 140) {
+				addbit(b,0);
+				b->zero.hightime = makeavg(b->zero.hightime, hightime);
+				b->zero.lowtime  = makeavg(b->zero.lowtime,  lowtime);
+			} else if (lowtime > 230 && lowtime < 270) {
+				addbit(b,1);
+				b->one.hightime = makeavg(b->one.hightime, hightime);
+				b->one.lowtime  = makeavg(b->one.lowtime,  lowtime);
+			}
 
-  } else
-#endif
+		} else
+	#endif
   {
-#ifdef HAS_IT
-    if(b->state==STATE_ITV3) {
-      uint8_t value = wave_equals_itV3(hightime, lowtime);
-      addbit(b, value);
-    } else
-#endif 
+		#ifdef HAS_IT
+			if(b->state==STATE_ITV3) {
+				uint8_t value = wave_equals_itV3(hightime, lowtime);
+				addbit(b, value);
+			} else
+		#endif 
 
     // STATE_COLLECT , STATE_IT
     if(wave_equals(&b->one, hightime, lowtime, b->state)) {
@@ -1364,9 +1332,8 @@ retry_sync:
       if (b->state!=STATE_IT) 
         reset_input();
     }
-
   }
-
+  isrtimer_enable;                  // On timeout analyze the data
 }
 
 uint8_t RfReceiveClass::rf_isreceiving()
