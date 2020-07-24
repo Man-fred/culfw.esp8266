@@ -15,7 +15,7 @@
 
 #define TYPE_REVOLT	 'r'
 #define TYPE_IT  	   'i'
-#define TYPE_FTZ     'Z'
+#define TYPE_FAZ     'Z'
                             // X21 X67 X3F X35
 #define REP_KNOWN    _BV(0) //  x   x   x   x
 #define REP_REPEATED _BV(1) //      x   x

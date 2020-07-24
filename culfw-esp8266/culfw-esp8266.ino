@@ -38,48 +38,15 @@ unsigned char OCIE1A;
 #endif
 #include "board.h"
 
-byte GDO0state = 0;
-unsigned long GDO0Toggle = 0;
-byte GDO2state = 0;
-unsigned long GDO2Toggle = 0;
 unsigned long TimerMicros;
 unsigned long Timer125Hz;
 unsigned long Timer1Hz;
 unsigned long Timer20s = 0;
 unsigned long Timer0Cycles = 0;
-unsigned long timer0count=0;
 unsigned long timer1count=0;
 unsigned long gdo2count=0;
-byte CheckGDO(void)
-{
-  /*if(GDO0state) {    //receive data
-    GDO0state = digitalRead(CC1100_OUT_PIN); 
-    // fallende Flanke: Daten vorhanden
-    if (GDO0state == 0)
-      GDO0Toggle++; 
-    //return (CheckReceiveFlag0Toggle == 0);
-  } else {             // no data
-    GDO0state = digitalRead(CC1100_OUT_PIN); 
-    if (GDO0state)
-      GDO0Toggle++; 
-    //return 0;
-  }
-  if(GDO2state)     //receive data
-  {
-    GDO2state = digitalRead(CC1100_IN_PIN); 
-    // fallende Flanke: Daten vorhanden
-    if (GDO2state == 0)
-      GDO2Toggle++; 
-    //return (CheckReceiveFlag2Toggle == 0);
-  }
-  else              // no data
-  {
-    GDO2state = digitalRead(CC1100_IN_PIN); 
-    if (GDO2state == 1)
-      GDO2Toggle++; 
-  }*/
-  return 0;
-}
+unsigned long gdo2reset=0;
+boolean       gdo2resetted=0;
 
 #include <SPI.h>
 
@@ -306,7 +273,7 @@ inline void ICACHE_RAM_ATTR IsrTimer0 (void){
 //////////////////////////////////////////////////////////////////////
 // "Edge-Detected" Interrupt Handler
 #ifndef ESP8266
-//ISR(CC1100_INTVECT)
+  ISR(CC1100_INTVECT)
 #else
 inline void ICACHE_RAM_ATTR IsrHandler (void){
   gdo2count++;
@@ -318,13 +285,14 @@ inline void ICACHE_RAM_ATTR IsrHandler (void){
 // Timer Compare Interrupt Handler. If we are called, then there was no
 // data for SILENCE time, and we can put the data to be analysed
 #ifndef ESP8266
-//ISR(TIMER1_COMPA_vect)
+  ISR(TIMER1_COMPA_vect)
 #else
 inline void ICACHE_RAM_ATTR IsrTimer1(void)
 {
   timer1count++;
   RfReceive.IsrTimer1();
-}
+  gdo2resetted = false;
+ }
 #endif
 
 void loop20s(unsigned long counter) {
@@ -342,20 +310,21 @@ void loop20s(unsigned long counter) {
   //Serial.print(CLOCK.ticks); // from interrupt, sould be better than Timer125Hz
   //Serial.print(" T1 ");
   //Serial.print(timer1_read());//break before silence 20000 = 4ms
-  //Serial.print(" T0c ");
-  //Serial.print(timer0count);
   Serial.print(" silence ");
   Serial.print(timer1count); // count silence
   Serial.print(" edge ");
-  Serial.println(gdo2count);   // count gdo2 interrupts
+  Serial.print(gdo2count);   // count gdo2 interrupts
+  Serial.print(" reset ");
+  Serial.println(gdo2reset);
   //Serial.print(" GDO0t ");
   //Serial.print(GDO0Toggle);
   //Serial.print(" GDO2t ");
   //Serial.println(GDO2Toggle);
-  GDO0Toggle = 0;
-  GDO2Toggle = 0;
+  //GDO0Toggle = 0;
+  //GDO2Toggle = 0;
   timer1count = 0;
   gdo2count = 0;
+  gdo2reset = 0;
   // timer/interrupt  debugging */
 }
 
@@ -480,7 +449,6 @@ void loop() {
       }
     } // 1sec loop */
   }
-  CheckGDO();
   
   Serial_Task();
   #ifndef ESP8266
