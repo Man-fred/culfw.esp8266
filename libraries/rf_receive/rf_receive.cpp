@@ -759,9 +759,13 @@ void RfReceiveClass::RfAnalyze_Task(void)
 			//	}
 			//#endif		
 		#endif		
-		Serial.print("packageOK ");Serial.print(b->state);Serial.print(datatype);Serial.print(packetCheckValues.isrep);Serial.print(packetCheckValues.isnotrep);Serial.println(packetCheckValues.packageOK);
+		if (b->state == STATE_IT || b->state == STATE_ITV3 || b->state == STATE_FLAMINGO){
+		  Serial.print("packageOK ");Serial.print(b->state);Serial.print(datatype);Serial.print(packetCheckValues.isrep);Serial.print(packetCheckValues.isnotrep);Serial.println(packetCheckValues.packageOK);
+		}
 		if(packetCheckValues.packageOK) {
 			DC(datatype);
+			if (b->state == STATE_FLAMINGO)
+				DC('f');
 			if(nibble)
 				oby--;
 			for(uint8_t i=0; i < oby; i++)

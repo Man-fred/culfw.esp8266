@@ -26,7 +26,7 @@
 #define REP_FHTPROTO _BV(6) //      x 
 #define REP_LCDMON   _BV(7)
 
-#define RF_DEBUG
+//#define RF_DEBUG
 
 #ifdef ESP8266
 #  define TWRAP		100000

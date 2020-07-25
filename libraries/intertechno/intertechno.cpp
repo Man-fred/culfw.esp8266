@@ -93,31 +93,31 @@ IntertechnoClass::tunein(void)
     for(i = 0; i < 13; i++) {
       //CC1100.cc1100_sendbyte(__LPM(CC1100_ITCFG+i));
       CC1100.cc1100_sendbyte(pgm_read_byte(&CC1100_ITCFG[i]));
-  		}																										// Tune to standard IT-Frequency
-  		CC1100.cc1100_sendbyte(it_frequency[0]);										// Modify Freq. for 433.92MHZ, or whatever
-	  	CC1100.cc1100_sendbyte(it_frequency[1]);
-	 		CC1100.cc1100_sendbyte(it_frequency[2]);  		
- 			for (i = 16; i<EE_CC1100_CFG_SIZE; i++) {
-      //CC1100.cc1100_sendbyte(__LPM(CC1100_ITCFG+i));
-      CC1100.cc1100_sendbyte(pgm_read_byte(&CC1100_ITCFG[i]));
- 			}
-  		CC1100_DEASSERT;
+		}																										// Tune to standard IT-Frequency
+		CC1100.cc1100_sendbyte(it_frequency[0]);										// Modify Freq. for 433.92MHZ, or whatever
+		CC1100.cc1100_sendbyte(it_frequency[1]);
+		CC1100.cc1100_sendbyte(it_frequency[2]);  		
+		for (i = 16; i<EE_CC1100_CFG_SIZE; i++) {
+		//CC1100.cc1100_sendbyte(__LPM(CC1100_ITCFG+i));
+		CC1100.cc1100_sendbyte(pgm_read_byte(&CC1100_ITCFG[i]));
+		}
+		CC1100_DEASSERT;
 
     // not in c -->
     MYDELAY.my_delay_us(10);
     // not in c <--
 
-  		uint8_t pa = EE_CC1100_PA;
-		  CC1100_ASSERT;                             // setup PA table
-  		CC1100.cc1100_sendbyte( CC1100_PATABLE | CC1100_WRITE_BURST );
-  		for (uint8_t i = 0;i<8;i++) {
-    		CC1100.cc1100_sendbyte(FNcol.erb(pa++));
-  		}
-  		CC1100_DEASSERT;
+		uint8_t pa = EE_CC1100_PA;
+		CC1100_ASSERT;                             // setup PA table
+		CC1100.cc1100_sendbyte( CC1100_PATABLE | CC1100_WRITE_BURST );
+		for (uint8_t i = 0;i<8;i++) {
+			CC1100.cc1100_sendbyte(FNcol.erb(pa++));
+		}
+		CC1100_DEASSERT;
 
-  		CC1100.ccStrobe( CC1100_SCAL );
-  		MYDELAY.my_delay_ms(1);
-  		cc_on = 1;																	// Set CC_ON	
+		CC1100.ccStrobe( CC1100_SCAL );
+		MYDELAY.my_delay_ms(1);
+		cc_on = 1;																	// Set CC_ON	
 
     CC1100.ccRX();
     on = 1;
@@ -246,30 +246,33 @@ IntertechnoClass::send_bit_V3(uint8_t bit)
 */
 
 /*
-    Extracts from the input (28-Bit code needs to be aligned to the right: 0x0.......):
-    button = receiverId
-    value (0=OFF, 1=ON, DIM)
-    rolling code 0..n
-    transmitterId of the remote control.
-    */
+	Extracts from the input (28-Bit code needs to be aligned to the right: 0x0.......):
+	transmitterId of the remote control.
+	button = receiverId
+	value (0=OFF, 1=ON, DIM)
+	rolling code 0..n
+	*/
 void IntertechnoClass::FlamingoDecrypt(uint8_t *in)
 {
-    uint8_t ikey[16] = {7,14,8,3,13,10,2,12,4,5,6,0,9,1,11,15};  //invers cryptokey (exchanged index & value)
-    uint8_t mn[6];	// message separated in nibbles
+	Serial.print("I:");debugHex2(in[0]);debugHex2(in[1]);debugHex2(in[2]);Serial.println("");
+	static uint8_t ikey[16] = { 5, 12, 6, 2, 8, 11, 1, 10, 3, 0, 4, 14, 7, 15, 9, 13 };  //invers cryptokey (exchanged index & value)
 
-    mn[0] = (in[2] & 0x0F);
-    mn[1] = (in[2] & 0xF0) >> 0x4;
-    mn[2] = (in[1] & 0x0F);
-    mn[3] = (in[1] & 0xF0) >> 0x4;
-    mn[4] = (in[0] & 0x0F);
-    mn[5] = (in[0] & 0xF0) >> 0x4;
+	//uint8_t ikey[16] = {7,14,8,3,13,10,2,12,4,5,6,0,9,1,11,15};  //invers cryptokey (exchanged index & value)
+	uint8_t mn[6];	// message separated in nibbles
 
-    //XOR decryption
+	mn[0] = (in[2] & 0x0F);
+	mn[1] = (in[2] & 0xF0) >> 0x4;
+	mn[2] = (in[1] & 0x0F);
+	mn[3] = (in[1] & 0xF0) >> 0x4;
+	mn[4] = (in[0] & 0x0F);
+	mn[5] = (in[0] & 0xF0) >> 0x4;
+
+	//XOR decryption
 	for (uint8_t i = 4; i >= 1; i--)
-	{													// decrypt 4 nibbles
+	{													          // decrypt 4 nibbles
 		mn[i] = ikey[mn[i]] ^ mn[i - 1];	// decrypted with predecessor & key
 	}
-	mn[0] = ikey[mn[0]];					//decrypt first nibble
+	mn[0] = ikey[mn[0]];					      //decrypt first nibble
 
 	//Output decrypted message 
 	in[0] = (mn[5] << 4) + mn[4]; // transmitterId
@@ -277,33 +280,35 @@ void IntertechnoClass::FlamingoDecrypt(uint8_t *in)
 	in[2] =  mn[0] & 0x7;         // receiverId
 	in[3] = (mn[1] >> 1) & 0x1;   // on/off
 	in[4] = (mn[1] >> 2) & 0x3;   // rolling code
+
+	Serial.print("D:");debugHex2(in[0]);debugHex2(in[1]);debugHex2(in[2]);debugHex2(in[3]);debugHex2(in[4]);Serial.println("");
 }
 
 
 /*
-    Encrypts the
-    button = receiverId
-    value (0=OFF, 1=ON; DIM)
-    rolling code 0..n
-    transmitterId of the remote control.
+	Encrypts the
+  transmitterId of the remote control.
+	button = receiverId
+	value (0=OFF, 1=ON; DIM)
+	rolling code 0..n
 	28-Bit code is aligned to the right (0x0.......)!
     */
-void IntertechnoClass::FlamingoEncrypt(uint8_t *transmitterId)
+void IntertechnoClass::FlamingoEncrypt(uint8_t *in)
 {
-	uint8_t key[16] = {11,13,6,3,8,9,10,0,2,12,5,14,7,4,1,15}; //cryptokey 
+static uint8_t key[17] = { 9, 6, 3, 8, 10, 0, 2, 12, 4, 14, 7, 5, 1, 15, 11, 13, 9 }; //cryptokey 
+	//uint8_t key[16] = {11,13,6,3,8,9,10,0,2,12,5,14,7,4,1,15}; //cryptokey 
 	uint8_t mn[6];
-	Serial.print(transmitterId[0],HEX);Serial.print(transmitterId[1],HEX);Serial.print(transmitterId[2],HEX);
-	Serial.print(transmitterId[3],HEX);Serial.println(transmitterId[4],HEX);
-	mn[0] = 8 + transmitterId[2];								// mn[0] = 1iiib i=receiver-ID
-	mn[1] = (transmitterId[4] << 2) & 15; 			// 2 lowest bits of rolling-code
-	if (transmitterId[3] > 0)
+	Serial.print("I:");debugHex2(in[0]);debugHex2(in[1]);debugHex2(in[2]);debugHex2(in[3]);debugHex2(in[4]);Serial.println("");
+	mn[0] = 8 + in[2];								// mn[0] = 1iiib i=receiver-ID
+	mn[1] = (in[4] << 2) & 15; 			// 2 lowest bits of rolling-code
+	if (in[3] > 0)
 	{												                    // ON or OFF
 			mn[1] |= 2;
 	}												                    // mn[1] = rrs0b r=rolling-code, s=ON/OFF, 0=const 0?
-	mn[2] =  transmitterId[1] & 15;						  // mn[2..4] = ttttb t=transmitterId in nibbles -> 4x ttttb
-	mn[3] = (transmitterId[1] >> 4) & 15;				// mn[2..4] = ttttb t=transmitterId in nibbles -> 4x ttttb
-	mn[4] =  transmitterId[0] & 15;
-	mn[5] = (transmitterId[0] >> 4) & 15;
+	mn[2] =  in[1] & 15;						  // mn[2..4] = ttttb t=in in nibbles -> 4x ttttb
+	mn[3] = (in[1] >> 4) & 15;				// mn[2..4] = ttttb t=in in nibbles -> 4x ttttb
+	mn[4] =  in[0] & 15;
+	mn[5] = (in[0] >> 4) & 15;
 
 	//XOR encryption 1 round
 	mn[0] = key[mn[0]];					// encrypt first nibble
@@ -314,11 +319,11 @@ void IntertechnoClass::FlamingoEncrypt(uint8_t *transmitterId)
 	//mn[6] = mn[6] ^ 9;								// no  encryption
 
 	//Output encrypted message 
-	transmitterId[0] = (mn[5] << 4) + mn[4]; // transmitterId
-	transmitterId[1] = (mn[3] << 4) + mn[2]; // transmitterId
-	transmitterId[2] = (mn[1] << 4) + mn[0]; // on/off, rolling code, receiverId
-	transmitterId[3] = 0;
-	Serial.print(transmitterId[0],HEX);Serial.print(transmitterId[1],HEX);Serial.println(transmitterId[2],HEX);
+	in[0] = (mn[5] << 4) + mn[4]; // transmitterId
+	in[1] = (mn[3] << 4) + mn[2]; // transmitterId
+	in[2] = (mn[1] << 4) + mn[0]; // on/off, rolling code, receiverId
+	in[3] = 0;
+	Serial.print("E:");debugHex2(in[0]);debugHex2(in[1]);debugHex2(in[2]);Serial.println("");
 }
 
 void
@@ -329,6 +334,7 @@ IntertechnoClass::send_F (char *in) {
 	FlamingoEncrypt (input+2);
 	send ((char *)input);
   intertek = 0;
+	FlamingoDecrypt (input+2);
 }
 
 void
@@ -337,22 +343,22 @@ IntertechnoClass::send (char *in) {
 
 	LED_ON();
 
-    #if defined (HAS_IRRX) || defined (HAS_IRTX) //Blockout IR_Reception for the moment
-      cli(); 
-    #endif
+	#if defined (HAS_IRRX) || defined (HAS_IRTX) //Blockout IR_Reception for the moment
+		cli(); 
+	#endif
 			
 	// If NOT InterTechno mode
   if(!on)  {
 		#ifdef HAS_ASKSIN
 			if (asksin_on) {
 				restore_asksin = 1;
-					Asksin.on = 0;
-				}
+				Asksin.on = 0;
+			}
 		#endif
 		#ifdef HAS_MORITZ
-				if(Moritz.on()) {
+			if(Moritz.on()) {
 				restore_moritz = 1;
-					Moritz.on(0);
+  			Moritz.on(0);
 			}
 		#endif
 		tunein();

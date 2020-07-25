@@ -332,6 +332,8 @@ extern unsigned char OCIE1A;
 #define MARK915_PORT            PORTB
 #define MARK915_PIN             PINB
 #define MARK915_BIT             5
+// helper or debug
+#define debugHex2(a) { if(a < 0x10) Serial.print("0"); Serial.print(a,HEX); }
 // helper for concatenating two char[]
 #define con_cat(first, second) first second
 // helper for lambda-functions
