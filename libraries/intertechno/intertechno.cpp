@@ -255,9 +255,9 @@ IntertechnoClass::send_bit_V3(uint8_t bit)
 void IntertechnoClass::FlamingoDecrypt(uint8_t *in)
 {
 	Serial.print("I:");debugHex2(in[0]);debugHex2(in[1]);debugHex2(in[2]);Serial.println("");
-	static uint8_t ikey[16] = { 5, 12, 6, 2, 8, 11, 1, 10, 3, 0, 4, 14, 7, 15, 9, 13 };  //invers cryptokey (exchanged index & value)
+	//static uint8_t ikey[16] = { 5, 12, 6, 2, 8, 11, 1, 10, 3, 0, 4, 14, 7, 15, 9, 13 };  //invers cryptokey (exchanged index & value)
 
-	//uint8_t ikey[16] = {7,14,8,3,13,10,2,12,4,5,6,0,9,1,11,15};  //invers cryptokey (exchanged index & value)
+	uint8_t ikey[16] = {7,14,8,3,13,10,2,12,4,5,6,0,9,1,11,15};  //invers cryptokey (exchanged index & value)
 	uint8_t mn[6];	// message separated in nibbles
 
 	mn[0] = (in[2] & 0x0F);
@@ -295,8 +295,8 @@ void IntertechnoClass::FlamingoDecrypt(uint8_t *in)
     */
 void IntertechnoClass::FlamingoEncrypt(uint8_t *in)
 {
-static uint8_t key[17] = { 9, 6, 3, 8, 10, 0, 2, 12, 4, 14, 7, 5, 1, 15, 11, 13, 9 }; //cryptokey 
-	//uint8_t key[16] = {11,13,6,3,8,9,10,0,2,12,5,14,7,4,1,15}; //cryptokey 
+  //static uint8_t key[17] = { 9, 6, 3, 8, 10, 0, 2, 12, 4, 14, 7, 5, 1, 15, 11, 13, 9 }; //cryptokey 
+	uint8_t key[16] = {11,13,6,3,8,9,10,0,2,12,5,14,7,4,1,15}; //cryptokey 
 	uint8_t mn[6];
 	Serial.print("I:");debugHex2(in[0]);debugHex2(in[1]);debugHex2(in[2]);debugHex2(in[3]);debugHex2(in[4]);Serial.println("");
 	mn[0] = 8 + in[2];								// mn[0] = 1iiib i=receiver-ID

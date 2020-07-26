@@ -457,21 +457,22 @@ Serial.print("IT? ");Serial.print(b->state);
 uint8_t RfReceiveClass::analyze_flamingo(bucket_t *b)
 {
 	uint8_t repeat[18];
+	// minimum of 3 x data
 	if (b->state != STATE_FLAMINGO || b->byteidx < 9) {
-        return 0;
-    }
-	// 8 x Daten, mehrfache Übereinstimmung?
+		return 0;
+	}
+	// max 5 x 3 byte data, test for maximum repeats 
 	for (oby=0;oby<b->byteidx;oby++) {
 		repeat[oby] = 1;
-		if (repeat[oby] > repeat[(oby % 3) + 15])
+		if (repeat[oby] > repeat[(oby % 3) + 15] || oby < 3)
 		{
 			obuf[oby % 3]=b->data[oby];
 			repeat[(oby % 3) + 15] = repeat[oby];
 		}
-		for (uint8_t j = 0; j <= 12; j=j+3) {
-			if (oby >= 3+j && b->data[oby % 3 + j] == b->data[oby]) {
-				repeat[oby % 3 + j]++;
-				if (repeat[oby % 3 + j] > repeat[(oby % 3) + 15])
+		for (uint8_t j = oby + 3; j < 15; j=j+3) {
+			if (b->data[j] == b->data[oby]) {
+				repeat[oby]++;
+				if (repeat[oby] > repeat[(oby % 3) + 15])
 				{
 					obuf[oby % 3]=b->data[oby];
 					repeat[(oby % 3) + 15] = repeat[oby % 3 + j];
@@ -480,7 +481,8 @@ uint8_t RfReceiveClass::analyze_flamingo(bucket_t *b)
 		}
 	}
 	if (repeat[15] > 2 && repeat[16] > 2 && repeat[17] > 2) {
-        it.FlamingoDecrypt(obuf);
+	  Serial.print("O:");debugHex2(obuf[0]);debugHex2(obuf[1]);debugHex2(obuf[2]);Serial.println("");
+    it.FlamingoDecrypt(obuf);
 		oby = 5;
 		return 1;
 	}
@@ -759,7 +761,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
 			//	}
 			//#endif		
 		#endif		
-		if (b->state == STATE_IT || b->state == STATE_ITV3 || b->state == STATE_FLAMINGO){
+		if (b->state == STATE_ITV3){
 		  Serial.print("packageOK ");Serial.print(b->state);Serial.print(datatype);Serial.print(packetCheckValues.isrep);Serial.print(packetCheckValues.isnotrep);Serial.println(packetCheckValues.packageOK);
 		}
 		if(packetCheckValues.packageOK) {
@@ -780,7 +782,7 @@ void RfReceiveClass::RfAnalyze_Task(void)
 	}
 
 	#ifndef NO_RF_DEBUG
-		if(tx_report & REP_BITS) {
+		if(tx_report & REP_BITS || b->state == STATE_ITV3){// && b->state != STATE_RESET) {
 			DNL();
 			DC('p');
 			DU(b->state,        2);
@@ -802,7 +804,6 @@ void RfReceiveClass::RfAnalyze_Task(void)
 			for(uint8_t i=0; i < b->byteidx; i++)
 				 DH2(b->data[i]);
 			DNL();
-
 		}
 	#endif
 
@@ -864,8 +865,8 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrTimer1(void)
 #endif
   if(bucket_nrused+1 == RCV_BUCKETS) {   // each bucket is full: reuse the last
     #ifndef NO_RF_DEBUG
-			if(tx_report & REP_BITS)
-				DS_P(PSTR("BOVF\r\n"));            // Bucket overflow
+			//////////////////////////if(tx_report & REP_BITS)
+			//////////////////////////	DS_P(PSTR("BOVF\r\n"));            // Bucket overflow
 		#endif
 
 		overflow = 1; // Bucket overflow
@@ -964,7 +965,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 {  
   silence = 0;
 
-	#ifdef HAS___FASTRF
+	#ifdef HAS_FASTRF //__
 		if(FastRF.fastrf_on) {
 			FastRF.fastrf_on = 2;
 			return;
@@ -1006,7 +1007,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
     }
   }
 
-#ifdef HAS___FAZ
+#ifdef HAS_FAZ  //__
   if ( b->state == STATE_FAZ ) {
     if(c < TSCALE(750))
     {
@@ -1027,7 +1028,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
   }
 #endif //HAS_FAZ
 
-#ifdef HAS___ESA
+#ifdef HAS_ESA  //__
   if (b->state == STATE_ESA) {
     if(c < TSCALE(375))
       return;
@@ -1150,7 +1151,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
   }
 #endif //HAS_IT
 
-#ifdef HAS___TCM97001
+#ifdef HAS_TCM97001  //__
  if (b->state == STATE_TCM97001 && b->sync == 0) {
 	  b->sync=1;
 		b->zero.hightime = hightime;
@@ -1166,10 +1167,10 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 	}
 #endif //HAS_TCM97001
   if((b->state == STATE_HMS)
-#ifdef HAS___ESA
+#ifdef HAS_ESA //__
      || (b->state == STATE_ESA) 
 #endif
-#ifdef HAS___FTZ
+#ifdef HAS_FAZ //__
      || (b->state == STATE_FAZ) 
 #endif
   ) {
@@ -1186,18 +1187,18 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 		b->data[0] = 0;
 		b->sync    = 1;
 		//??OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
-        OCR1A = 20000 * 5; //20000; //toom debug
-        return;
+		OCR1A = 20000 * 5; //20000; //toom debug
+		return;
 	} 
 #endif //HAS_FLAMINGO
   ///////////////////////
   // http://www.nongnu.org/avr-libc/user-manual/FAQ.html#faq_intbits
   isrtimer_clear;                 // clear Timers flags (?, important!)
-return; //von HAS_TOOM !?
+// //__ return; //von HAS_TOOM !?
 
   if(b->state == STATE_RESET) {   // first sync bit, cannot compare yet
 
-# ifdef HAS_FLAMINGO
+# ifdef HAS___FLAMINGO
 	if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
               lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
 		OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
@@ -1207,15 +1208,15 @@ return; //von HAS_TOOM !?
 		b->bitidx  = 7;
 		b->data[0] = 0;
 		b->sync    = 1;
-        return;
+    return;
 	} 
 #endif
 		
-return; //von HAS_TOOM !?
+ return; //von HAS_TOOM !?
 
 
 retry_sync:
-	#ifdef HAS___REVOLT
+	#ifdef HAS_REVOLT //__
 		if(hightime > TSCALE(9000) && hightime < TSCALE(12000) &&
 			 lowtime  > TSCALE(150)  && lowtime  < TSCALE(540)) {
 			b->zero.hightime = 6;
