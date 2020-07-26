@@ -439,16 +439,16 @@ uint8_t RfReceiveClass::analyze_TX3(bucket_t *b)
 #ifdef HAS_IT
 uint8_t RfReceiveClass::analyze_it(bucket_t *b)
 {
-Serial.print("IT? ");Serial.print(b->state);
 
   if ((b->state != STATE_IT || b->byteidx != 3 || b->bitidx != 7) 
-    && (b->state != STATE_ITV3 || b->byteidx != 8 || b->bitidx != 7)) {
-			Serial.println(" failed");
-      return 0;//Todo: 0
+    && (b->state != STATE_ITV3 || (b->byteidx != 8 && b->byteidx != 16) || b->bitidx != 7)) {
+      return 0;
     }
-  for (oby=0;oby<b->byteidx;oby++)
+  // V3 sender with one repeat, without pause
+	if (b->state == STATE_ITV3 && b->byteidx == 16)
+		b->byteidx = 8;
+	for (oby=0;oby<b->byteidx;oby++)
       obuf[oby]=b->data[oby];
-  Serial.println(" ok");
   return 1;
 }
 #endif
@@ -1139,7 +1139,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
         if (hightime*2>lowtime) {
           // No IT, because times to near
           b->state = STATE_RESET;
-		  IsrReset();
+		      IsrReset();
           return;
         }
         b->zero.hightime = hightime; 
@@ -1177,45 +1177,41 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
     addbit(b, 0);
     return;
   }
-# ifdef HAS_FLAMINGO
-	if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
-              lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
-		TIMSK1 = _BV(OCIE1A);
-		b->state = STATE_FLAMINGO;
-		b->byteidx = 0;
-		b->bitidx  = 7;
-		b->data[0] = 0;
-		b->sync    = 1;
-		//??OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
-		OCR1A = 20000 * 5; //20000; //toom debug
-		return;
-	} 
-#endif //HAS_FLAMINGO
+retry_sync:
+	#ifdef HAS_FLAMINGO
+		if(hightime > TSCALE(240)  && hightime < TSCALE(700) &&
+			lowtime  > TSCALE(1900) && lowtime  < TSCALE(2600) ) {
+			b->state = STATE_FLAMINGO;
+			b->byteidx = 0;
+			b->bitidx  = 7;
+			b->data[0] = 0;
+			b->sync    = 1;
+			isrtimer_set(100000);//:20ms;  5000: 1 ms //SILENCE;
+			return;
+		} 
+	#endif //HAS_FLAMINGO
+	
   ///////////////////////
   // http://www.nongnu.org/avr-libc/user-manual/FAQ.html#faq_intbits
   isrtimer_clear;                 // clear Timers flags (?, important!)
-// //__ return; //von HAS_TOOM !?
 
   if(b->state == STATE_RESET) {   // first sync bit, cannot compare yet
 
-# ifdef HAS___FLAMINGO
-	if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
-              lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
-		OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
-		TIMSK1 = _BV(OCIE1A);
-		b->state = STATE_FLAMINGO;
-		b->byteidx = 0;
-		b->bitidx  = 7;
-		b->data[0] = 0;
-		b->sync    = 1;
-    return;
-	} 
-#endif
+	#ifdef HAS___FLAMINGO
+		if(hightime > TSCALE(240)  && hightime < TSCALE(700) &&
+			lowtime  > TSCALE(1900) && lowtime  < TSCALE(2600) ) {
+			b->state = STATE_FLAMINGO;
+			b->byteidx = 0;
+			b->bitidx  = 7;
+			b->data[0] = 0;
+			b->sync    = 1;
+			isrtimer_set(100000);//:20ms;  5000: 1 ms //SILENCE;
+			return;
+		} 
+	#endif //HAS_FLAMINGO
 		
- return; //von HAS_TOOM !?
+  //return; //von HAS_TOOM !?
 
-
-retry_sync:
 	#ifdef HAS_REVOLT //__
 		if(hightime > TSCALE(9000) && hightime < TSCALE(12000) &&
 			 lowtime  > TSCALE(150)  && lowtime  < TSCALE(540)) {
@@ -1233,7 +1229,7 @@ retry_sync:
 		}
 	#endif
 
-	#ifdef HAS___TCM97001
+	#ifdef HAS_TCM97001 //__
 		if(hightime < TSCALE(530) && hightime > TSCALE(420) &&
 			 lowtime  < TSCALE(9000) && lowtime > TSCALE(8500)) {
 			b->sync=0;
@@ -1247,19 +1243,7 @@ retry_sync:
 	#endif //HAS_TCM97001
 
 
-		#ifdef HAS_FLAMINGO
-			if(hightime > TSCALE(240)  && hightime < TSCALE(700) &&
-				lowtime  > TSCALE(1900) && lowtime  < TSCALE(2600) ) {
-				b->state = STATE_FLAMINGO;
-				b->byteidx = 0;
-				b->bitidx  = 7;
-				b->data[0] = 0;
-				b->sync    = 1;
-			  isrtimer_set(100000);//:20ms;  5000: 1 ms //SILENCE;
-				return;
-	} 
-		# endif
-#ifdef HAS_IT
+  #ifdef HAS_IT
 		if(hightime > TSCALE(140)   && hightime < TSCALE(600) &&
 			 lowtime  > TSCALE(2500)  && lowtime  < TSCALE(17000) ) {
 			b->sync=0;
@@ -1269,10 +1253,10 @@ retry_sync:
 			b->data[0] = 0;
 			isrtimer_set(SILENCE);
 			return;
-		} else
+		}
 	#endif
 		if(hightime > TSCALE(1600) || lowtime > TSCALE(1600)){
-			//////// war nicht in HAS_TOOMisrtimer_set(SILENCE);
+			isrtimer_set(SILENCE);
 			return;
 		}
   
@@ -1312,9 +1296,9 @@ retry_sync:
 					return;
 			#endif
 
-		} else {
-			b->state = STATE_COLLECT;
-        }
+			} else {
+				b->state = STATE_COLLECT;
+			}
 
 			b->one.hightime = hightime;
 			b->one.lowtime  = lowtime;
@@ -1322,7 +1306,7 @@ retry_sync:
 			b->bitidx  = 7;
 			b->data[0] = 0;
 
-            isrtimer_enable;                // hier oder weiter unten!? On timeout analyze the data
+			isrtimer_enable;                // hier oder weiter unten!? On timeout analyze the data
 
 		} else {                            // too few sync bits
 			b->state = STATE_RESET;
@@ -1332,16 +1316,16 @@ retry_sync:
 
   } else 
   #ifdef HAS_REVOLT
-	if(b->state==STATE_REVOLT) { //STATE_REVOLT
-		if ((hightime < 11)) {
-			addbit(b,0);
-			b->zero.hightime = makeavg(b->zero.hightime, hightime);
-			b->zero.lowtime  = makeavg(b->zero.lowtime,  lowtime);
-		} else {
-			addbit(b,1);
-			b->one.hightime = makeavg(b->one.hightime, hightime);
-			b->one.lowtime  = makeavg(b->one.lowtime,  lowtime);
-		}
+		if(b->state==STATE_REVOLT) { //STATE_REVOLT
+			if ((hightime < 11)) {
+				addbit(b,0);
+				b->zero.hightime = makeavg(b->zero.hightime, hightime);
+				b->zero.lowtime  = makeavg(b->zero.lowtime,  lowtime);
+			} else {
+				addbit(b,1);
+				b->one.hightime = makeavg(b->one.hightime, hightime);
+				b->one.lowtime  = makeavg(b->one.lowtime,  lowtime);
+			}
 		} else 
   #endif
 
@@ -1359,14 +1343,18 @@ retry_sync:
 
 		} else
 	#endif
-  {
-		#ifdef HAS_IT
-			if(b->state==STATE_ITV3) {
-				uint8_t value = wave_equals_itV3(hightime, lowtime);
-				addbit(b, value);
-			} else
-		#endif 
+	#ifdef HAS_FLAMINGO
+		if(b->state==STATE_FLAMINGO) {
+		} else
+	#endif 
+	#ifdef HAS_IT
+		if(b->state==STATE_ITV3) {
+			uint8_t value = wave_equals_itV3(hightime, lowtime);
+			addbit(b, value);
+		} else
+	#endif 
 
+  {
     // STATE_COLLECT , STATE_IT
     if(wave_equals(&b->one, hightime, lowtime, b->state)) {
       addbit(b, 1);
