@@ -1,12 +1,13 @@
 #ifndef _BOARD_H
-
 #define _BOARD_H
 
 // Ports for esp8266 see
 // esp8266_peri.h - Peripheral registers exposed in more AVR style for esp8266
 #ifndef ESP8266
-#  define ESP8266
-#else
+//#  define ESP8266
+#endif
+
+#ifdef ESP8266
 #  include <Esp.h>
 #endif
 
@@ -26,7 +27,7 @@
 
 #define HAS_USB                  1
 #define USB_BUFSIZE             64      // Must be a supported USB endpoint size
-#define USB_MAX_POWER	         100
+#define USB_MAX_POWER	       100
 #define HAS_FHT_80b                     // PROGMEM: 1374b, RAM: 90b
 #define HAS_RF_ROUTER                   // PROGMEM: 1248b  RAM: 44b
 //1.67 #define RFR_FILTER                      // PROGMEM:   90b  RAM:  4b
@@ -35,6 +36,7 @@
 #define HAS_CC1101_RX_PLL_LOCK_CHECK_TASK_WAIT	// PROGMEM: 118b
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG		// PROGMEM:  22b
 #define HAS_CC1101_PLL_LOCK_CHECK_MSG_SW	// PROGMEM:  22b
+
 #undef  RFR_DEBUG                       // PROGMEM:  354b  RAM: 14b
 #define HAS_FASTRF                      // PROGMEM:  468b  RAM:  1b
 
@@ -71,9 +73,9 @@
 #if defined(CUL_V3)
 #  define TTY_BUFSIZE          128      // RAM: TTY_BUFSIZE*4
 #  undef HAS_MBUS                       // PROGMEM: 4255
-#  if defined(HAS_MBUS)
-#    define MBUS_NO_TX                       // PROGMEM:  962
-#  endif
+#if defined(HAS_MBUS)
+#  define MBUS_NO_TX                    // PROGMEM:  962
+#endif
 #  define HAS_RFNATIVE                  // PROGMEM:  580
 //#  define HAS_KOPP_FC                   // PROGMEM: 3370
 #endif
@@ -129,11 +131,13 @@
 #endif
 
 // Ergaenzung wegen WLAN
-#define BUSWARE_CUNO2
-#define HAS_ETHERNET            1   
-#define HAS_ETHERNET_KEEPALIVE  1
-#define ETHERNET_KEEPALIVE_TIME 30
-//#define HAS_NTP                 1   
+#ifdef ESP8266
+  #define BUSWARE_CUNO2
+  #define HAS_ETHERNET            1   
+  #define HAS_ETHERNET_KEEPALIVE  1
+  #define ETHERNET_KEEPALIVE_TIME 30
+  //#define HAS_NTP                 1   
+#endif
 // WLAN */
 
 /*/ Ergaenzung wegen IR
@@ -149,12 +153,6 @@
 // ONEWIRE */
 
 // No features to define below
-#ifdef ARDUINO_ESP8266_NODEMCU
-#  define VERSION_BOARD ".culfw-esp8266.ino.nodemcu" 
-#elif ARDUINO_ESP8266_WEMOS_D1MINI
-#  define VERSION_BOARD ".culfw-esp8266.ino.d1_mini"
-#endif
-
 #ifndef ESP8266
 #  include <avr/io.h>
 #  include <power.h>
@@ -166,15 +164,23 @@
 #  endif
 #endif
 
-#if defined(CUL_V3)      // not sure why libc is missing those ...
+#ifdef ARDUINO_ESP8266_NODEMCU
+#  define VERSION_BOARD ".culfw-esp8266.ino.nodemcu" 
+#elif ARDUINO_ESP8266_WEMOS_D1MINI
+#  define VERSION_BOARD ".culfw-esp8266.ino.d1_mini"
+#else
+#  define VERSION_BOARD ".culfw-esp8266.ino.arduino"
+#endif
+
+#ifdef ESP8266
 //------------- speziell esp8266/nodemcu ------------------
-#  define PB0 15     //         nodemcu D8 // PORTB0     (Nano PIN 10) // CS
-#  define PB1 14     //         nodemcu D5 // PORTB1     (Nano PIN 13) // CLK
-#  define PB2 13     //         nodemcu D7 // PORTB2     (Nano PIN 11) // MOSI
-#  define PB3 12     //         nodemcu D6 // PORTB3     (Nano PIN 12) // MISO
+#  define PORTB0 15     //         nodemcu D8 // PORTB0     (Nano PIN 10) // CS
+#  define PORTB1 14     //         nodemcu D5 // PORTB1     (Nano PIN 13) // CLK
+#  define PORTB2 13     //         nodemcu D7 // PORTB2     (Nano PIN 11) // MOSI
+#  define PORTB3 12     //         nodemcu D6 // PORTB3     (Nano PIN 12) // MISO
 #  define PB6 PORTB6 //         nodemcu not connected 
-#  define PD2 5      // esp8266/nodemcu D1 // PORTD2     (Nano PIN  2) // GDO2
-#  define PD3 4      // esp8266/nodemcu D2 // PORTD3     (Nano PIN  3) // GDO0
+#  define PORTD2 5      // esp8266/nodemcu D1 // PORTD2     (Nano PIN  2) // GDO2
+#  define PORTD3 4      // esp8266/nodemcu D2 // PORTD3     (Nano PIN  3) // GDO0
 #  define INT2 PD2   // nodemcu int wie GPO		0x02
 
 #define EIMSK GPIE //ESP8266_REG(0x31C) //GPIO_STATUS R/W (Interrupt Enable)
@@ -191,9 +197,7 @@ extern unsigned char EICRA;
 //extern unsigned char EIMSK;
 extern unsigned char TIMSK1;
 extern unsigned char TIFR1;
-#ifdef ESP8266
 extern unsigned int  TCNT1;
-#endif
 
 extern unsigned int  OCR0A;
 extern unsigned int  OCR1A;
@@ -202,7 +206,30 @@ extern unsigned char OCIE1A;
 // SPI-Register
 #define SPDR SPI1W0
 //dummy esp8266
+#else // CUL_V3
+#  define INT2 PORTB2
+#  define BUILTIN_LED 6
+#  define ICACHE_RAM_ATTR 
+#endif
 
+#if defined(CUL_V3)      // not sure why libc is missing those ...
+#  define PB0 PORTB0
+#  define PB1 PORTB1
+#  define PB2 PORTB2
+#  define PB3 PORTB3
+#  define PB6 PORTB6
+#  define PD2 PORTD2
+#  define PD3 PORTD3
+#  define INT2 PB2
+/* External Interrupt Control Register A - EICRA */
+//#define    ISC31        7
+//#define    ISC30        6
+//#define    ISC21        5
+#define    ISC20        4
+//#define    ISC11        3
+//#define    ISC10        2
+//#define    ISC01        1
+//#define    ISC00        0
 #endif  // CUL_V3
 
 #define SPI_PORT		PORTB
@@ -212,14 +239,14 @@ extern unsigned char OCIE1A;
 #define SPI_MOSI		PB2
 #define SPI_SCLK		PB1
 
-#define LED_INV
 #ifndef ESP8266
 #  define bit_is_set(sfr, bit) (_SFR_BYTE(sfr) & _BV(bit))
 #else
+#  define LED_INV
 #  define bit_is_set(sfr, bit) digitalRead(bit)
+#  define USB_IsConnected 1
+#  define __LPM(a) pgm_read_byte(a)
 #endif
-#define USB_IsConnected 1
-#define __LPM(a) pgm_read_byte(a)
 
 #if defined(CUL_V4)
 #  define CC1100_CS_DDR			SPI_DDR
@@ -261,6 +288,25 @@ extern unsigned char OCIE1A;
 #  define LED_PIN               BUILTIN_LED //BUD3 //6
 #endif
 
+#if defined(CUL_V2)
+#  define CC1100_CS_DDR		DDRC
+#  define CC1100_CS_PORT        PORTC
+#  define CC1100_CS_PIN		PC5
+#  define CC1100_IN_DDR		DDRC
+#  define CC1100_IN_PORT        PINC
+#  define CC1100_IN_PIN         PC7
+#  define CC1100_OUT_DDR	DDRC
+#  define CC1100_OUT_PORT       PORTC
+#  define CC1100_OUT_PIN        PC6
+#  define CC1100_INT		INT4
+#  define CC1100_INTVECT        INT4_vect
+#  define CC1100_ISC		ISC40
+#  define CC1100_EICR           EICRB
+#  define LED_DDR               DDRC
+#  define LED_PORT              PORTC
+#  define LED_PIN               PC4
+#endif
+
 #if defined(ESP8266)
 #  define CUL_HW_REVISION "CUL_ESP"
 #elif defined(CUL_V3)
@@ -271,13 +317,19 @@ extern unsigned char OCIE1A;
 //#  define CUL_HW_REVISION "CUL_V2"    // No more mem for this feature
 #endif
 
-#define MARK433_PORT            SPI_PORT
+#define MARK433_PORT            PORTB
 #define MARK433_PIN             PINB
 #define MARK433_BIT             6
-#define MARK915_PORT            SPI_PORT
+#define MARK915_PORT            PORTB
 #define MARK915_PIN             PINB
 #define MARK915_BIT             5
 // helper for concatenating two char[]
-#define concat(first, second) first second
+#define con_cat(first, second) first second
+// helper for lambda-functions
+#ifndef ESP8266
+  #define lambda(obj, func) [&](char *data) { obj . func (data); }
+#else
+  #define lambda(obj, func) [& obj](char *data) { obj . func (data); }
+#endif
 
 #endif // __BOARD_H__

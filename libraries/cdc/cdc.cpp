@@ -1,6 +1,16 @@
+#include "cdc.h"
+
 #include "led.h"
 #include "ringbuffer.h"
-#include "cdc.h"
+/* Includes: */
+#include "Descriptors.h"
+#ifndef ESP8266
+  #include <avr/io.h>
+  #include <avr/interrupt.h>
+	#ifdef USB_IsConnected
+    #include <Drivers/USB/USB.h>     // USB Functionality
+  #endif
+#endif
 
 /* Globals: */
 CDC_Line_Coding_t LineCoding = { BaudRateBPS: 9600,
@@ -61,7 +71,7 @@ HANDLES_EVENT(USB_UnhandledControlPacket)
 ////////////////////
 // Fill data from USB to the RingBuffer and vice-versa
 void
-CDC_Task(void)
+CDCClass::Task(void)
 {
   static char inCDC_TASK = 0;
 
@@ -98,8 +108,13 @@ CDC_Task(void)
 }
 
 void
-cdc_flush()
+CDCClass::flush()
 {
   Endpoint_SelectEndpoint(CDC_TX_EPNUM);
   Endpoint_ClearCurrentBank();
 }
+
+#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_CDC)
+CDCClass CDC;
+#endif
+

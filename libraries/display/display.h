@@ -2,42 +2,6 @@
 #define __DISPLAY_H_
 
 #include "board.h"
-#include <stdint.h>
-#include <pgmspace.h>
-
-#ifndef ESP8266
-	#include "ringbuffer.h"
-	#ifdef HAS_USB
-	  #include "cdc.h"
-	#else
-	  #include "serial.h"
-	#endif
-	#include "led.h"
-	#include "delay.h"
-	#include "pcf8833.h"
-	#include "ttydata.h"            // callfn
-	#include "fht.h"                // fht_hc
-	#include "rf_router.h"
-	#include "clock.h"
-	#include "log.h"
-	#ifdef HAS_ETHERNET
-	  #include "tcplink.h"
-	#endif
-  #include "stringfunc.h"
-#endif
-#ifdef HAS_PRIVATE_CHANNEL
-//#include "private_channel.h"
-#endif
-#ifdef HAS_DOGM
-//#include "dogm16x.h"
-#endif
-
-#include <stdint.h>
-#include <stddef.h>
-#include "WString.h"
-#include "Printable.h"
-
-#include <pgmspace.h>
 
 #define DC display.chr
 #define DS(a) display.string((char*)a)
@@ -58,7 +22,9 @@ public:
 	DisplayClass();
 	void chr(char s);
 	void string(char *s);
-	void string_P(const __FlashStringHelper *s);
+	#ifdef ESP8266
+	  void string_P(const __FlashStringHelper *s);
+	#endif
 	void string_P(const char *s);
 	void udec(uint16_t d, int8_t pad, uint8_t padc);
 	void hex(uint16_t h, int8_t pad, uint8_t padc);

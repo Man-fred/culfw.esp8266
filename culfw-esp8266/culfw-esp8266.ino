@@ -2,15 +2,24 @@
    Released under the GPL Licence, Version 2
    Inpired by the MyUSB USBtoSerial demo, Copyright (C) Dean Camera, 2008.
 */
-// #include <avr/boot.h>
-//#include <power.h>
-// #include <avr/eeprom.h>
-// #include <avr/interrupt.h>
-// #include <avr/io.h>
-//#include <pgmspace.h>
-//#include <avr/wdt.h>
+#ifndef ESP8266
+
+#include <avr/boot.h>
+#include <avr/power.h>
+#include <avr/eeprom.h>
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <avr/pgmspace.h>
+#include <avr/wdt.h>
+
+#include <string.h>
+#ifdef USB_IsConnected
+#  include <Drivers/USB/USB.h>     // USB Functionality
+#endif
+#endif
 #include <stdint.h>
 
+#ifdef ESP8266
 unsigned char PORTB;
 unsigned char PORTD;
 unsigned char PINB;
@@ -26,6 +35,7 @@ unsigned int  OCR0A;     // Divisor für Timer 0, genutzt in clock und ir
 unsigned int  OCR1A;     // Dauer für Timer1: Faktor 5 notwendig, da Timer1 nicht 1MHz sondern 5MHz
 unsigned char OCF1A;
 unsigned char OCIE1A;
+#endif
 #include "board.h"
 
 byte GDO0state = 0;
@@ -71,28 +81,25 @@ byte CheckGDO(void)
   return 0;
 }
 
-// #include <string.h>
-
-//#include <USB.h>     // USB Functionality
-
 #include <SPI.h>
 
 //----#include "ELECHOUSE_CC1101.h"
-#include "ttydata.h"
-//#include "ringbuffer.h"
-#include "display.h"
 #include "cc1100.h"
-
-#include "fncollection.h"
-//#include "cdc.h"
+#ifdef HAS_CDC
+  #include "cdc.h"
+#endif
 #include "clock.h"
-//#include "delay.h"
+#include "delay.h"
+#include "display.h"
+#include "fncollection.h"
 #include "led.h"    // ledfunc
-#include "rf_receive.h" 
-#include "rf_send.h"    // fs20send u.a
+#include "ringbuffer.h"
+#include "rf_receive.h"
+#include "rf_send.h"    // fs20send
+#include "ttydata.h"
 #include "fht.h"    // fhtsend
 #ifdef HAS_FASTRF
-#  include "fastrf.h"
+#  include "fastrf.h"   // fastrf_func
 #endif
 #include "rf_router.h"    // rf_router_func
 
@@ -142,13 +149,120 @@ byte CheckGDO(void)
 #  include "ir.h"
 #endif
 
+
+// https://en.cppreference.com/w/cpp/language/lambda#Lambda_capture
+const PROGMEM t_fntab fntab[] = {
+#ifdef HAS_ASKSIN
+  { 'A', lambda(RfAsksin, func) },
+#endif
+  // 'a' CUR battery
+  { 'B', lambda(FNcol, prepare_boot) },
+  #ifdef HAS_MBUS
+    { 'b', rf_mbus_func },
+  #endif
+  { 'C', lambda(CC1100, ccreg) },
+  #ifdef HAS_NTP
+    { 'c', ntp_func },
+  #endif
+  // 'D' TuxRadio
+  // 'd' CUR LCD
+  #ifdef HAS_RWE
+    // double? (CUN only) eth debugging
+    { 'E', rwe_func },
+  #endif
+  { 'e', lambda(FNcol, eeprom_factory_reset) },
+  { 'F', lambda(RfSend, fs20send) },
+  #ifdef HAS_FASTRF
+    { 'f', lambda(FastRF, func) },
+  #endif
+  #ifdef HAS_RAWSEND
+    { 'G', lambda(RfSend, rawsend) },
+  #endif
+  // 'H' HM485
+  #ifdef HAS_HOERMANN_SEND
+    { 'h', hm_send },
+  #endif
+  #if defined (HAS_IRRX) || defined (HAS_IRTX)
+    { 'I', lambda(IR, func) },
+  #endif
+  #ifdef HAS_INTERTECHNO
+    { 'i', it_func },
+  #endif
+  #ifdef HAS_RAWSEND
+    { 'K', lambda(RfSend, ks_send) },
+  #endif
+  #ifdef HAS_KOPP_FC
+    { 'k', kopp_fc_func },
+  #endif
+  #ifdef HAS_BELFOX
+    { 'L', send_belfox },
+  #endif
+  { 'l', lambda(FNcol, ledfunc) },
+  #ifdef HAS_RAWSEND
+    { 'M', lambda(RfSend, em_send) },
+  #endif
+  #ifdef HAS_MEMFN
+    { 'm', lambda(Memory, getfreemem) },
+  #endif
+  #ifdef HAS_RFNATIVE
+    { 'N', lambda(RfNative, native_func) },
+  #endif
+  #ifdef HAS_ONEWIRE  
+    { 'O', lambda(Onewire, func) },
+  #endif 
+  // 'o' CUNO2 OBIS Command-Set
+  // 'P' CUR picture
+  #ifdef HAS_ETHERNET
+    { 'q', lambda( Ethernet, close) },
+  #endif
+  { 'R', lambda(FNcol, read_eeprom) },
+  // esp8266/CUN-special
+  { 's', lambda(display, func) },
+  { 'T', lambda( FHT, fhtsend) },
+  { 't', lambda(CLOCK, gettime) },
+  #ifdef HAS_UNIROLL
+    { 'U', ur_send },
+  #endif
+  #ifdef HAS_RF_ROUTER
+    { 'u', lambda(RfRouter, func) },
+  #endif
+  { 'V', lambda(FNcol, version) },
+  #ifdef HAS_EVOHOME
+    { 'v', rf_evohome_func },
+  #endif
+  { 'W', lambda(FNcol, write_eeprom) },
+  // 'w' (CUR/CUN) write a file
+  { 'X', lambda(RfReceive, set_txreport) },
+  { 'x', lambda(CC1100, ccsetpa) },
+  #ifdef HAS_SOMFY_RTS
+    { 'Y', somfy_rts_func },
+  #endif
+  #ifdef HAS_FTZ
+    // obsolet
+    { 'Z', lambda(RfSend, ftz_send) },
+  #endif
+  #ifdef HAS_MORITZ
+     { 'Z', lambda(Moritz, func) },
+  #endif
+  #ifdef HAS_ZWAVE
+    { 'z', zwave_func },
+  #endif
+  //doppelt, eigene Kuerzel!
+  #ifdef HAS_ETHERNET
+    { '1', lambda(Ethernet, func) }, //'E'
+  #endif
+  { 0, 0 }
+};
+
 void start_bootloader(void)
 {
   cli();
 
   /* move interrupt vectors to bootloader section and jump to bootloader */
-//AVR?  MCUCR = _BV(IVCE);
-//AVR?  MCUCR = _BV(IVSEL);
+#ifndef ESP8266
+  MCUCR = _BV(IVCE);
+  MCUCR = _BV(IVSEL);
+#endif
 
 #if defined(CUL_V3) || defined(CUL_V4)
 #  define jump_to_bootloader ((void(*)(void))0x3800)
@@ -156,7 +270,9 @@ void start_bootloader(void)
 #if defined(CUL_V2)
 #  define jump_to_bootloader ((void(*)(void))0x1800)
 #endif
-//AVR?  jump_to_bootloader();
+#ifndef ESP8266
+  jump_to_bootloader();
+#endif
 }
 
 void spi_init() {
@@ -179,31 +295,37 @@ void Serial_Task() {
 //////////////////////////////////////////////////////////////////////
 // count & compute in the interrupt, else long runnning tasks would block
 // a "minute" task too long
+#ifndef ESP8266
 //ISR(TIMER0_COMPA_vect, ISR_BLOCK)
+#else
 inline void ICACHE_RAM_ATTR IsrTimer0 (void){
-  //timer0count++;
-  //Timer0Cycles = Timer0Cycles + OCR0A;
-  //timer0_write(Timer0Cycles);
   CLOCK.IsrHandler();
 }
+#endif
 
 //////////////////////////////////////////////////////////////////////
 // "Edge-Detected" Interrupt Handler
+#ifndef ESP8266
 //ISR(CC1100_INTVECT)
+#else
 inline void ICACHE_RAM_ATTR IsrHandler (void){
   gdo2count++;
   RfReceive.IsrHandler();
 }
+#endif
 
 //////////////////////////////////////////////////////////////////////
 // Timer Compare Interrupt Handler. If we are called, then there was no
 // data for SILENCE time, and we can put the data to be analysed
+#ifndef ESP8266
 //ISR(TIMER1_COMPA_vect)
+#else
 inline void ICACHE_RAM_ATTR IsrTimer1(void)
 {
   timer1count++;
   RfReceive.IsrTimer1();
 }
+#endif
 
 void loop20s(unsigned long counter) {
   /* timer/interrupt  debugging
@@ -242,109 +364,6 @@ void loop1Hz(unsigned long counter) {
 void loop125Hz(unsigned long counter) {
 }
 
-// https://en.cppreference.com/w/cpp/language/lambda#Lambda_capture
-const t_fntab fntab[] = {
-#ifdef HAS_ASKSIN
-  { 'A', [&](char *data) { RfAsksin.func(data); } },
-#endif
-  // 'a' CUR battery
-  { 'B', [&](char *data) { FNcol.prepare_boot(data); } },
-  #ifdef HAS_MBUS
-    { 'b', rf_mbus_func },
-  #endif
-  { 'C', [&](char *data) { CC1100.ccreg(data); } },
-  #ifdef HAS_NTP
-    { 'c', ntp_func },
-  #endif
-  // 'D' TuxRadio
-  // 'd' CUR LCD
-  #ifdef HAS_RWE
-    // double? (CUN only) eth debugging
-    { 'E', rwe_func },
-  #endif
-  { 'e', [&](char *data) { FNcol.eeprom_factory_reset(data); } },
-  { 'F', [&](char *data) { RfSend.fs20send(data); } },
-  #ifdef HAS_FASTRF
-    { 'f', [&](char *data) { FastRF.func(data); } },
-  #endif
-  #ifdef HAS_RAWSEND
-    { 'G', [&](char *data) { RfSend.rawsend(data); } },
-  #endif
-  // 'H' HM485
-  #ifdef HAS_HOERMANN_SEND
-    { 'h', hm_send },
-  #endif
-  #if defined (HAS_IRRX) || defined (HAS_IRTX)
-    { 'I', [&](char *data) { IR.func(data); } },
-  #endif
-  #ifdef HAS_INTERTECHNO
-    { 'i', it_func },
-  #endif
-  #ifdef HAS_RAWSEND
-    { 'K', [&](char *data) { RfSend.ks_send(data); } },
-  #endif
-  #ifdef HAS_KOPP_FC
-    { 'k', kopp_fc_func },
-  #endif
-  #ifdef HAS_BELFOX
-    { 'L', send_belfox },
-  #endif
-  { 'l', [&](char *data) { FNcol.ledfunc(data); } },
-  #ifdef HAS_RAWSEND
-    { 'M', [&](char *data) { RfSend.em_send(data); } },
-  #endif
-  #ifdef HAS_MEMFN
-    { 'm', [&](char *data) { Memory.getfreemem(data); } },
-  #endif
-  #ifdef HAS_RFNATIVE
-    { 'N', [&](char *data) { RfNative.native_func(data); } },
-  #endif
-  #ifdef HAS_ONEWIRE  
-    { 'O', [&](char *data) { Onewire.func(data); } },
-  #endif 
-  // 'o' CUNO2 OBIS Command-Set
-  // 'P' CUR picture
-  #ifdef HAS_ETHERNET
-    { 'q', [&](char *data) { Ethernet.close(data); } },
-  #endif
-  { 'R', [&](char *data) { FNcol.read_eeprom(data); } },
-  // esp8266/CUN-special
-  { 's', [&](char *data) { display.func(data); } },
-  { 'T', [&](char *data) { FHT.fhtsend(data); } },
-  { 't', [&](char *data) { CLOCK.gettime(data); } },
-  #ifdef HAS_UNIROLL
-    { 'U', ur_send },
-  #endif
-  #ifdef HAS_RF_ROUTER
-    { 'u', [&](char *data) { RfRouter.func(data); } },
-  #endif
-  { 'V', [&](char *data) { FNcol.version(data); } },
-  #ifdef HAS_EVOHOME
-    { 'v', rf_evohome_func },
-  #endif
-  { 'W', [&](char *data) { FNcol.write_eeprom(data); } },
-  // 'w' (CUR/CUN) write a file
-  { 'X', [&](char *data) { RfReceive.set_txreport(data); } },
-  { 'x', [&](char *data) { CC1100.ccsetpa(data); } },
-  #ifdef HAS_SOMFY_RTS
-    { 'Y', somfy_rts_func },
-  #endif
-  #ifdef HAS_FTZ
-    // obsolet
-    { 'Z', [&](char *data) { RfSend.ftz_send(data); } },
-  #endif
-  #ifdef HAS_MORITZ
-     { 'Z', [&](char *data) { Moritz.func(data); } },
-  #endif
-  #ifdef HAS_ZWAVE
-    { 'z', zwave_func },
-  #endif
-  //doppelt, eigene Kuerzel!
-  #ifdef HAS_ETHERNET
-    { '1', [&](char *data) { Ethernet.func(data); } }, //'E'
-  #endif
-  { 0, 0 }
-};
 
 void setup() {
   // put your setup code here, to run once:
@@ -362,8 +381,8 @@ void setup() {
 
   // if we had been restarted by watchdog check the REQ BootLoader byte in the
   // EEPROM ...
-  if(bit_is_set(MCUSR,WDRF) && erb(EE_REQBL)) {
-    ewb( EE_REQBL, 0 ); // clear flag
+  if(bit_is_set(MCUSR,WDRF) && FNcol.erb(EE_REQBL)) {
+    FNcol.ewb( EE_REQBL, 0 ); // clear flag
     start_bootloader();
   }
 
@@ -379,8 +398,10 @@ void setup() {
   TCCR0B = _BV(CS02);
   TCCR0A = _BV(WGM01);
   TIMSK0 = _BV(OCIE0A);
+
   TCCR1A = 0;
-  TCCR1B = _BV(CS11) | _BV(WGM12);         // Timer1: 1us = 8MHz/8 -> 0 bis 4.000 
+  TCCR1B = _BV(CS11) | _BV(WGM12);         // Timer1: 1us = 8MHz/8
+
   MCUSR &= ~(1 << WDRF);                   // Enable the watchdog
 #else
   pinMode(CC1100_IN_PIN, INPUT);
@@ -402,19 +423,24 @@ void setup() {
   interrupts();
 #endif
 
+  led_init();
+  spi_init();
+#ifndef ESP8266
+  FNcol.eeprom_init();
+  #ifdef USB_IsConnected
+  USB_Init();
+  #endif
+#endif
+  FHT.fht_init();
+  RfReceive.tx_init();
+#ifndef ESP8266
+  //todo ttydata.input_handle_func = *ttydata.analyze_ttydata;
+#endif
 #ifdef HAS_RF_ROUTER
+  RfRouter.init();
   display.channel = (DISPLAY_USB|DISPLAY_RFROUTER);
 #else
   display.channel = DISPLAY_USB;
-#endif
-  led_init();
-  spi_init();
-//  USB_Init();
-  FHT.fht_init();
-  RfReceive.tx_init();
-  //???????????????????????????????????ttydata.input_handle_func = *ttydata.analyze_ttydata;
-#ifdef HAS_RF_ROUTER
-  RfRouter.init();
 #endif
 #ifdef HAS_ETHERNET
   display.channel |= DISPLAY_TCP;
@@ -437,7 +463,9 @@ void loop() {
   unsigned long temp = TimerMicros/8000;
   if (temp != Timer125Hz) {
     Timer125Hz = temp;
+    #ifdef ESP8266
     CLOCK.IsrHandler();
+    #endif
     /*/loop125Hz(Timer125Hz);
     temp = Timer125Hz/125;
     if (temp != Timer1Hz) {
@@ -454,8 +482,12 @@ void loop() {
   
   Serial_Task();
   #ifndef ESP8266
-    USB_USBTask();
-    CDC_Task();
+    #ifdef USB_IsConnected
+      USB_USBTask();
+    #endif
+    #ifdef HAS_CDC
+      CDC_Task();
+    #endif
   #endif
   RfReceive.RfAnalyze_Task();
   CLOCK.Minute_Task();

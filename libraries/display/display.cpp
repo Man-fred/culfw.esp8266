@@ -5,13 +5,17 @@
 #include "rf_router.h"
 #ifndef ESP8266
 	#ifdef HAS_USB
-	//#include "cdc.h"
+	  #ifdef HAS_CDC
+	    #include "cdc.h"
+		#endif
 	#else
 		#include "serial.h"
 	#endif
 	#include "led.h"
 	#include "delay.h"
-	#include "pcf8833.h"
+	#ifdef HAS_LCD
+	  #include "pcf8833.h"
+	#endif
 	#include "ttydata.h"            // callfn
 	#include "fht.h"                // fht_hc
 	#include "rf_router.h"
@@ -78,14 +82,16 @@ void DisplayClass::chr(char data)
 #endif
 
 #ifdef HAS_USB
-  if(USB_IsConnected && ((channel & DISPLAY_USB) || echo_serial)) {
+  if(/*todo USB_IsConnected && */ ((channel & DISPLAY_USB) || echo_serial)) {
 		#ifndef ESP8266
-		  if(TTY_Tx_Buffer.nbytes >= TTY_BUFSIZE)
-				CDC_Task();
-			TTY_Tx_Buffer.put(data);
-			if(data == '\n')
-				CDC_Task();
-			buffer_used();
+		  #ifdef HAS_CDC
+				if(TTY_Tx_Buffer.nbytes >= TTY_BUFSIZE)
+					CDC_Task();
+				TTY_Tx_Buffer.put(data);
+				if(data == '\n')
+					CDC_Task();
+				buffer_used();
+			#endif
 		#else
 			Serial.print(data);
 		#endif
@@ -177,9 +183,11 @@ void DisplayClass::string(char *s)
     chr(*s++);
 }
 
+#ifdef ESP8266
 void DisplayClass::string_P(const __FlashStringHelper *s) {
 	Serial.print(s);
 }
+#endif
 
 void DisplayClass::string_P(const char *s)
 {

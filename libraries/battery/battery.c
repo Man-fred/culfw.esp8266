@@ -1,11 +1,15 @@
 #include <avr/io.h>
 #include "board.h"
 #include "display.h"
-#include "cdc.h"
-#ifdef HAS_LCD
-#include "pcf8833.h"
+#ifdef HAS_CDC
+  #include "cdc.h"
 #endif
-#include <Drivers/USB/USB.h>     // USB_IsConnected
+#ifdef HAS_LCD
+  #include "pcf8833.h"
+#endif
+#ifdef USB_IS_CONNECTED
+#  include <Drivers/USB/USB.h>     // USB_IsConnected
+#endif
 #include "adcw.h"
 
 uint8_t battery_state;

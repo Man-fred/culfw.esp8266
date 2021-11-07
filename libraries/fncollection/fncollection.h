@@ -2,6 +2,8 @@
 #define __FNCOLLECTION_H_
 
 #include <stdint.h>
+#include <Arduino.h>
+
 
 class FNCOLLECTIONClass {
 public:

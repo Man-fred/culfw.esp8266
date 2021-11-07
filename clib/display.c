@@ -2,13 +2,15 @@
 #include "display.h"
 #include "ringbuffer.h"
 #ifdef HAS_USB
-#include "cdc.h"
+  #include "cdc.h"
 #else
-#include "serial.h"
+  #include "serial.h"
 #endif
 #include "led.h"
 #include "delay.h"
-#include "pcf8833.h"
+#ifdef HAS_LCD
+  #include "pcf8833.h"
+#endif
 #include "ttydata.h"            // callfn
 #include "fht.h"                // fht_hc
 #include "rf_router.h"
@@ -16,13 +18,13 @@
 #include "log.h"
 
 #ifdef HAS_PRIVATE_CHANNEL
-#include "private_channel.h"
+  #include "private_channel.h"
 #endif
 #ifdef HAS_ETHERNET
-#include "tcplink.h"
+  #include "tcplink.h"
 #endif
 #ifdef HAS_DOGM
-#include "dogm16x.h"
+  #include "dogm16x.h"
 #endif
 uint8_t log_enabled = 0;
 

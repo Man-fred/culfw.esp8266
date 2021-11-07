@@ -1,5 +1,5 @@
-#include "board.h"
-#ifdef HAS_MORITZ
+#include "rf_moritz.h"
+
 #include <string.h>
 #ifndef ESP8266
   #include <avr/pgmspace.h>
@@ -14,7 +14,7 @@
 #include "clock.h"
 #include "rf_send.h" //credit_10ms
 
-#include "rf_moritz.h"
+#include "fncollection.h"
 
 
 /*
@@ -456,4 +456,3 @@ void RfMoritzClass::func(char *in)
 RfMoritzClass Moritz;
 #endif
 
-#endif

@@ -1,14 +1,7 @@
 #ifndef _CDC_H_
 #define _CDC_H_
 
-/* Includes: */
-#include "Descriptors.h"
-//esp8266 #include <avr/io.h>
-//esp8266 #include <avr/interrupt.h>
-
-#include "ringbuffer.h"
-
-//esp8266 #include <Drivers/USB/USB.h>     // USB Functionality
+#include "board.h"
 
 /* Macros: */
 #define GET_LINE_CODING			0x21
@@ -48,7 +41,14 @@ enum CDC_Line_Codeing_Parity_t
 
 extern uint8_t cdctask_enabled;
 
-void CDC_Task(void);
-void cdc_flush(void);
+class CDCClass {
+	public:
+    void Task(void);
+    void flush(void);
+};
+
+#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_CDC)
+extern CDCClass CDC;
+#endif
 
 #endif
