@@ -26,7 +26,7 @@
 #  include "pcf8833.h"
 #endif
 #ifdef HAS_FASTRF
-#  include "fastrf.h"
+  #include "fastrf.h"
 #endif
 #include "rf_router.h"
 
@@ -81,7 +81,8 @@
 #define STATE_IT      7
 #define STATE_TCM97001 8
 #define STATE_ITV3     9
-#define STATE_FTZ     10
+#define STATE_FAZ     10
+#define STATE_TOOM   11
 
 uint8_t tx_report;              // global verbose / output-filter
 
@@ -279,8 +280,8 @@ uint8_t RfReceiveClass::analyze_hms(bucket_t *b)
   return 1;
 }
 
-#ifdef HAS_FTZ
-uint8_t RfReceiveClass::analyze_ftz(bucket_t *b)
+#ifdef HAS_FAZ
+uint8_t RfReceiveClass::analyze_faz(bucket_t *b)
 {
   input_t in;
   in.byte = 0;
@@ -290,7 +291,7 @@ uint8_t RfReceiveClass::analyze_ftz(bucket_t *b)
   oby = 0;
   //8*8+5=69/10=6R9, 8*8+6=70/10=6R10 ?, 9*8+7=79/10=7R9 bit
   // 3 Versionen: 8_5, 8_6, 9_7
-  if(b->byteidx*8 + (7-b->bitidx) < 69) 
+  if( (b->byteidx*8 + (7-b->bitidx) < 69) || (b->byteidx*8 + (7-b->bitidx) > 79) ) 
     return 0;
 
   uint8_t crc = 0x55;
@@ -311,25 +312,23 @@ uint8_t RfReceiveClass::analyze_ftz(bucket_t *b)
 
   if(parity_even_bit(CRC) != getbit(&in)) {
 	//obuf[++oby] = CRC;
-	errorParity++; //return 0; //{DS("ce");DU(CRC,3);}//
+	return 0; //errorParity++; //{DS("ce");DU(CRC,3);}// ???
   } else {
 	//obuf[++oby] = 0;
   }
   if(crc!=CRC) {
-	obuf[oby++] = CRC;
-	obuf[oby++] = crc;
-	errorCRC++; //return 0; //{DS("cr");DU(crc,3);DU(CRC,3);}//
+	           //obuf[oby++] = CRC; 
+	           //obuf[oby++] = crc; 
+	return 0;  //errorCRC++; //{DS("cr");DU(crc,3);DU(CRC,3);}//
   } else {
-	obuf[oby++] = 0;
-	obuf[oby++] = 0;
+	           //obuf[oby++] = 0;
+	           //obuf[oby++] = 0;
   }
-  obuf[oby++] = errorParity;
-  obuf[oby++] = errorStopbit;
-  obuf[oby++] = 0xFF;
-  //obuf[++oby] = errorCRC;
-  //obuf[++oby] = CC1100.readStatus(CC1100_RSSI);
+               //obuf[oby++] = errorParity;
+               //obuf[oby++] = errorStopbit;
+               //obuf[oby++] = 0xFF;
   
-  // ftz ok
+  // faz ok
   /* tests
   DS(" sync");DU(b->sync,3);
   DS(" pShort");DU(pulseTooShort,5);
@@ -432,7 +431,6 @@ uint8_t RfReceiveClass::analyze_TX3(bucket_t *b)
   return 1;
 }
 #endif
-
 #ifdef HAS_IT
 uint8_t RfReceiveClass::analyze_it(bucket_t *b)
 {
@@ -445,7 +443,40 @@ uint8_t RfReceiveClass::analyze_it(bucket_t *b)
   return 1;
 }
 #endif
-
+#ifdef HAS_TOOM
+uint8_t RfReceiveClass::analyze_toom(bucket_t *b)
+{
+	uint8_t repeat[18];
+	if (b->state != STATE_TOOM || b->byteidx < 9) {
+        return 0;
+    }
+	// 8 x Daten, mehrfache Übereinstimmung?
+	for (oby=0;oby<b->byteidx;oby++) {
+		repeat[oby] = 1;
+		if (repeat[oby] > repeat[(oby % 3) + 15])
+		{
+			obuf[oby % 3]=b->data[oby];
+			repeat[(oby % 3) + 15] = repeat[oby];
+		}
+		for (uint8_t j = 0; j <= 12; j=j+3) {
+			if (oby >= 3+j && b->data[oby % 3 + j] == b->data[oby]) {
+				repeat[oby % 3 + j]++;
+				if (repeat[oby % 3 + j] > repeat[(oby % 3) + 15])
+				{
+					obuf[oby % 3]=b->data[oby];
+					repeat[(oby % 3) + 15] = repeat[oby % 3 + j];
+				}
+			}
+		}
+	}
+	if (repeat[15] > 2 && repeat[16] > 2 && repeat[17] > 2) {
+        InterTechno.FlamingoDecrypt(obuf);
+		oby = 5;
+		return 1;
+	}
+	return 0;
+}
+#endif
 #ifdef HAS_TCM97001
 uint8_t RfReceiveClass::analyze_tcm97001(bucket_t *b)
 {
@@ -459,7 +490,6 @@ uint8_t RfReceiveClass::analyze_tcm97001(bucket_t *b)
   return 1;
 }
 #endif
-
 #ifdef HAS_REVOLT
 uint8_t RfReceiveClass::analyze_revolt(bucket_t *b)
 {
@@ -528,11 +558,11 @@ void RfReceiveClass::RfAnalyze_Task(void)
     if(tx_report & REP_MONITOR) {
       DC('r'); if(tx_report & REP_BINTIME) DU(hightime*16,4);
       DC('f'); if(tx_report & REP_BINTIME) DU(lowtime*16,4);
-			if(silence == 1) {
-				DC('.');
-				DNL();
-				silence = 2;
-			}
+	  if(silence == 1) {
+		DC('.');
+		DNL();
+		silence = 2;
+	  }
     }
 	if( (tx_report & REP_BITS) && overflow) {
 		//DS_P(PSTR("BOVF\r\n"));            
@@ -552,10 +582,17 @@ void RfReceiveClass::RfAnalyze_Task(void)
 
   b = bucket_array + bucket_out;
 
+#ifdef HAS_TOOM
+  if(b->state == STATE_TOOM) {
+    if(!datatype && analyze_toom(b)) { 
+      datatype = TYPE_IT;
+    }
+  }
+#endif
 #ifdef HAS_IT
   if(b->state == STATE_IT || b->state == STATE_ITV3) {
     if(!datatype && analyze_it(b)) { 
-    datatype = TYPE_IT;
+      datatype = TYPE_IT;
     }
   }
 #endif
@@ -570,10 +607,10 @@ void RfReceiveClass::RfAnalyze_Task(void)
 #ifdef LONG_PULSE
   if(b->state != STATE_REVOLT && b->state != STATE_IT && b->state != STATE_TCM97001) {
 #endif
-#ifdef HAS_ESA
-  if(!datatype && analyze_esa(b))
-    datatype = TYPE_ESA;
-#endif
+# ifdef HAS_ESA
+    if(!datatype && analyze_esa(b))
+      datatype = TYPE_ESA;
+# endif
   if(!datatype && analyze(b, TYPE_FS20)) { // Can be FS10 (433Mhz) or FS20 (868MHz)
     oby--;                                  // Separate the checksum byte
     uint8_t fs_csum = cksum1(6,obuf,oby);
@@ -604,9 +641,9 @@ void RfReceiveClass::RfAnalyze_Task(void)
   if(!datatype && analyze_TX3(b)) // Can be 433Mhz or 868MHz
     datatype = TYPE_TX3;
 #endif
-#ifdef HAS_FTZ
-  if(!datatype && analyze_ftz(b)) // 868MHz
-    datatype = TYPE_FTZ;
+#ifdef HAS_FAZ
+  if(!datatype && analyze_faz(b)) // 868MHz
+    datatype = TYPE_FAZ;
 #endif
 
   if(!datatype) {
@@ -675,6 +712,11 @@ void RfReceiveClass::RfAnalyze_Task(void)
     if(datatype == TYPE_FHT && RfRouter.rf_router_target && !FHT.fht_hc0) // Forum #50756
       packetCheckValues.packageOK = 0;
 #endif
+#ifdef HAS_TOOM
+	if(b->state == STATE_TOOM && datatype == TYPE_IT) {
+		packetCheckValues.packageOK = 1;
+	}
+#endif
 
     if(packetCheckValues.packageOK) {
       DC(datatype);
@@ -694,6 +736,19 @@ void RfReceiveClass::RfAnalyze_Task(void)
 #ifndef NO_RF_DEBUG
   if(tx_report & REP_BITS) {
 
+#ifdef RF_DEBUG
+    DNL();DC('p');
+    for(uint8_t i=0; i < b->bitused+5; i++) {
+	   DC('H');
+	   DU(b->bithigh[i]*16,5);
+       DC('L');
+       DU(b->bitlow[i]*16,5);
+       if ( b->bitlow[i]*16 > 1500) {
+		   DNL();DC('p');
+		   wdt_reset();
+	   }
+    }
+#endif
     DNL();
     DC('p');
     DU(b->state,        2);
@@ -736,9 +791,11 @@ void RfReceiveClass::RfAnalyze_Task(void)
 
 void ICACHE_RAM_ATTR RfReceiveClass::reset_input(void)
 {
-	
   TIMSK1 = 0;
   bucket_array[bucket_in].state = STATE_RESET;
+  bucket_array[bucket_in].bitused = 0;
+  bucket_array[bucket_in].bitsaved = 0;
+
 #if defined (HAS_IT) || defined (HAS_TCM97001)
   packetCheckValues.isnotrep = 0;
 #endif
@@ -758,13 +815,13 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrTimer1(void)
   tmp=OCR1A;
   OCR1A = TWRAP;                        // Wrap Timer
 # ifdef ESP8266
-  //timer1_write(tmp); // restart timer
+  timer1_write(tmp); // restart timer: auskommentiert, unklar?? 
 # else
   TCNT1=tmp;                            // reinitialize timer to measure times > SILENCE
 # endif
 #endif
   if(!silence) {
-	  silence = 1;
+	silence = 1;
   }
 ////////////////////test
   if(bucket_array[bucket_in].state < STATE_COLLECT ||
@@ -772,7 +829,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrTimer1(void)
     reset_input();
     return;
   }
- #ifndef NO_RF_DEBUG
+#ifndef NO_RF_DEBUG
   if(tx_report & REP_MONITOR)
    DC('+');
 #endif
@@ -786,16 +843,14 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrTimer1(void)
 
 	overflow = 1; // Bucket overflow
 	reset_input();
-
   } else {
-
     bucket_nrused++;
     bucket_in++;
     if(bucket_in == RCV_BUCKETS)
       bucket_in = 0;
-
+    bucket_array[bucket_in].bitused = 0;
+    bucket_array[bucket_in].bitsaved = 0;
   }
-
 }
 
 uint8_t RfReceiveClass::wave_equals(wave_t *a, uint8_t htime, uint8_t ltime, uint8_t state)
@@ -886,18 +941,22 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 #endif
 #ifdef ESP8266
 # ifdef LONG_PULSE
-    uint16_t c = ((((T1L) - timer1_read())/5)>>4);               // catch the time and make it smaller
+  uint16_t c = ((((T1L) - timer1_read())/5)>>4);               // catch the time and make it smaller
 # else
-    uint8_t c = ((((T1L) - timer1_read())/5)>>4);               // catch the time and make it smaller
+  uint8_t c = ((((T1L) - timer1_read())/5)>>4);               // catch the time and make it smaller
 # endif
 #else
 # ifdef LONG_PULSE
-    uint16_t c = (TCNT1>>4);               // catch the time and make it smaller
+  uint16_t c = (TCNT1>>4);               // catch the time and make it smaller
 # else
-    uint8_t c = (TCNT1>>4);               // catch the time and make it smaller
+  uint8_t c = (TCNT1>>4);               // catch the time and make it smaller
 # endif
 #endif
-
+  
+  if (c == 0) {
+	  return;
+  }
+  
   bucket_t *b = bucket_array+bucket_in; // where to fill in the bit
 
   if ( b->state == STATE_HMS ) {
@@ -909,8 +968,8 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
     }
   }
 
-//#ifdef HAS_FTZ
-  if ( b->state == STATE_FTZ ) {
+#ifdef HAS_FAZ
+  if ( b->state == STATE_FAZ ) {
     if(c < TSCALE(750))
     {
 		pulseTooShort++;
@@ -928,7 +987,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 		longMin = min(longMin, (uint32_t)c);
 	}
   }
-//#endif //HAS_FTZ
+#endif
 
 #ifdef HAS_ESA
   if (b->state == STATE_ESA) {
@@ -948,8 +1007,8 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 #ifdef HAS_ESA
      || (b->state == STATE_ESA) 
 #endif
-#ifdef HAS_FTZ
-     || (b->state == STATE_FTZ) 
+#ifdef HAS_FAZ
+     || (b->state == STATE_FAZ) 
 #endif
     ) {
       addbit(b, 1);
@@ -964,11 +1023,61 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
   }
 
   lowtime = c-hightime;
+  
 #ifdef ESP8266
   timer1_write(OCR1A); // restart timer
 #else
   TCNT1 = 0;
 #endif
+
+#ifdef RF_DEBUG
+	if (b->bitused < MAXBIT) {	
+	  b->bithigh[b->bitused] = hightime;
+	  b->bitlow[b->bitused++] = lowtime;
+	}
+#endif
+# ifdef HAS_TOOM
+	if(b->state == STATE_TOOM) {
+		if (b->sync && (hightime < TSCALE(1400)) && (lowtime < TSCALE(1400)) && (b->byteidx < sizeof(b->data))) {
+			if (b->bit2) {
+				if (b->one.hightime) {
+				  b->one.hightime = makeavg(b->one.hightime, (hightime > lowtime ? hightime : lowtime));
+				  b->one.lowtime  = makeavg(b->one.lowtime,  (hightime < lowtime ? hightime : lowtime));
+				} else {
+					b->one.hightime = (hightime > lowtime ? hightime : lowtime);
+					b->one.lowtime  = (hightime < lowtime ? hightime : lowtime);
+				}
+			} else {
+				if (b->zero.hightime) {
+				  b->zero.hightime = makeavg(b->zero.hightime, (hightime > lowtime ? hightime : lowtime));
+				  b->zero.lowtime  = makeavg(b->zero.lowtime,  (hightime < lowtime ? hightime : lowtime));
+				} else {
+					b->zero.hightime = (hightime > lowtime ? hightime : lowtime);
+					b->zero.lowtime  = (hightime < lowtime ? hightime : lowtime);
+				}
+			}
+			addbit(b, (hightime > lowtime) );
+			b->bitsaved++;
+		}
+		// phase 1
+		if (lowtime > TSCALE(2000) ) {
+			// phase 2
+			if ( (hightime > TSCALE(2900) ) && (lowtime > TSCALE(2900) ) )
+				b->bit2 = 1;
+			if ((b->bitsaved %24) > 0) {
+				//ergänzen, wenn Paket zu kurz
+				for (uint8_t i = (b->bitsaved %24);i<24;i++) {
+					addbit(b, 0 );
+				}
+				b->bitsaved = 0;
+#ifdef RF_DEBUG
+				b->bithigh[b->bitused] = 0;
+				b->bitlow[b->bitused++] = 0;
+#endif
+			}
+		}
+	}
+# endif
 
 #ifdef HAS_IT
   if(b->state == STATE_IT || b->state == STATE_ITV3) {
@@ -1011,7 +1120,7 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
       }
     }
   }
-#endif //HAS_IT
+#endif
 
 #ifdef HAS_TCM97001
  if (b->state == STATE_TCM97001 && b->sync == 0) {
@@ -1032,18 +1141,52 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
 #ifdef HAS_ESA
      || (b->state == STATE_ESA) 
 #endif
-#ifdef HAS_FTZ
-     || (b->state == STATE_FTZ) 
+#ifdef HAS_FAZ
+     || (b->state == STATE_FAZ) 
 #endif
   ) {
     addbit(b, 0);
     return;
   }
-
+#ifdef HAS_TOOM
+	if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
+              lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
+		TIMSK1 = _BV(OCIE1A);
+		b->state = STATE_TOOM;
+		b->byteidx = 0;
+		b->bitidx  = 7;
+		b->data[0] = 0;
+		b->sync    = 1;
+		//??OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
+        OCR1A = 20000 * 5; //20000; //toom debug
+        return;
+	} 
+#endif
   ///////////////////////
   // http://www.nongnu.org/avr-libc/user-manual/FAQ.html#faq_intbits
   TIFR1 = _BV(OCF1A);                 // clear Timers flags (?, important!)
+
+//// unklar ob stabil! TOOM/Flamingo ==>>
+return;
   
+  if(b->state == STATE_RESET) {   // first sync bit, cannot compare yet
+
+# ifdef HAS_TOOM
+	if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
+              lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
+		OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
+		TIMSK1 = _BV(OCIE1A);
+		b->state = STATE_TOOM;
+		b->byteidx = 0;
+		b->bitidx  = 7;
+		b->data[0] = 0;
+		b->sync    = 1;
+        return;
+	} 
+#endif
+		
+return;
+
 #ifdef HAS_REVOLT
   if(hightime > TSCALE(9000) && hightime < TSCALE(12000) &&
      lowtime  > TSCALE(150)  && lowtime  < TSCALE(540)) {
@@ -1062,8 +1205,6 @@ void ICACHE_RAM_ATTR RfReceiveClass::IsrHandler()
   }
 #endif
 
-  if(b->state == STATE_RESET) {   // first sync bit, cannot compare yet
-
 retry_sync:
 
 #ifdef HAS_TCM97001
@@ -1078,10 +1219,22 @@ retry_sync:
     b->data[0] = 0;
     return;
   }
-#ifdef HAS_IT
-  else 
 #endif
-#endif //HAS_TCM97001
+#ifdef HAS_TOOM
+	if(hightime < TSCALE(700)   && hightime > TSCALE(240) &&
+              lowtime  < TSCALE(2600) && lowtime  > TSCALE(1900) ) {
+		OCR1A = 100000;//:20ms;  5000: 1 ms //SILENCE;
+		TIMSK1 = _BV(OCIE1A);
+		b->state = STATE_TOOM;
+		b->byteidx = 0;
+		b->bitidx  = 7;
+		b->data[0] = 0;
+		b->sync    = 1;
+        return;
+	} 
+# endif
+
+//// unklar ob stabil! TOOM/Flamingo ==<<
 
 #ifdef HAS_IT
   if(hightime < TSCALE(600)   && hightime > TSCALE(140) &&
@@ -1113,9 +1266,9 @@ retry_sync:
 
     } else if(b->sync >= 4 ) {          // the one bit at the end of the 0-sync
       OCR1A = SILENCE;
-#ifdef HAS_FTZ
+#ifdef HAS_FAZ
       if (b->sync >= 12 && (b->zero.hightime + b->zero.lowtime) > TSCALE(1600)) {
-        b->state = STATE_FTZ;
+        b->state = STATE_FAZ;
 	  } else 
 #endif
       if (b->sync >= 12 && (b->zero.hightime + b->zero.lowtime) > TSCALE(1600)) {
