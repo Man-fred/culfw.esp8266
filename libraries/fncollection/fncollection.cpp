@@ -98,10 +98,10 @@ void FNCOLLECTIONClass::ews(uint8_t p, String data, bool commit)
  
 String FNCOLLECTIONClass::ers(uint8_t p)
 {
-  char data[EE_WPA_KEY_MAX]; //Max 63 Bytes at the moment
+  char data[EE_MAX_ENTRY_LEN];
   int len=0;
   unsigned char k = 1;
-  while(k != '\0' && len<(EE_WPA_KEY_MAX-1) )  //Read until null character
+  while(k != '\0' && len< (EE_MAX_ENTRY_LEN - 1))   //Read until null character
   {    
     k=erb(p++);
     data[len++]=k;
@@ -164,7 +164,6 @@ void FNCOLLECTIONClass::read_eeprom(char *in)
     } else if(in[2] == 'p') { DU(erw(EE_IP4_TCPLINK_PORT),0);
     } else if(in[2] == 'N') { display_ee_ip4(EE_IP4_NTPSERVER);
     } else if(in[2] == 'o') { DH2(erb(EE_IP4_NTPOFFSET));
-#   ifdef ESP8266
     } else if(in[2] == 's') { display_string(EE_WPA_SSID, EE_WPA_SSID_MAX);
     } else if(in[2] == 'k') { display_string(EE_WPA_KEY, EE_WPA_KEY_MAX);
     } else if(in[2] == 'D') { display_string(EE_NAME, EE_STR_LEN);
@@ -241,7 +240,7 @@ void FNCOLLECTIONClass::write_eeprom(char *in)
 void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
 {
 #ifdef ESP8266
-  uint8_t hb[EE_WPA_KEY_MAX], d = 0;
+  uint8_t hb[EE_MAX_ENTRY_LEN], d = 0;
 #else
   uint8_t hb[6], d = 0;
 #endif

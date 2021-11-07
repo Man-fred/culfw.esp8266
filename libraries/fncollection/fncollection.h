@@ -74,12 +74,14 @@ extern FNCOLLECTIONClass FNcol;
 # define EE_WPA_SSID_MAX   33
 # define EE_WPA_KEY_MAX    64
 # ifdef ESP8266
+#   define EE_MAX_ENTRY_LEN  64
 #   define EE_WPA_SSID       (EE_IP4_NTPOFFSET+1)
 #   define EE_WPA_KEY        (EE_WPA_SSID+EE_WPA_SSID_MAX)
 #   define EE_NAME           (EE_WPA_KEY+EE_WPA_KEY_MAX)
 #   define EE_OTA_SERVER     (EE_NAME+EE_STR_LEN)
 #   define EE_ETH_LAST       (EE_OTA_SERVER+4)
 # else
+#   define EE_MAX_ENTRY_LEN    EE_STR_LEN
 #   define EE_ETH_LAST       (EE_IP4_NTPOFFSET+1)
 # endif
 #else
