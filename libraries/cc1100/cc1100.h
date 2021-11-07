@@ -30,8 +30,8 @@ public:
 	void set_ccoff(void);
 	void set_ccon(void);
 #ifdef ESP8266
-	void assert(void);
-	void deassert(void);
+	void assert_();
+	void deassert();
 #endif
 private:
     void cc_set_pa(uint8_t idx);
@@ -200,7 +200,7 @@ extern uint8_t cc_on;
 #  define CC1100_ASSERT    CLEAR_BIT( CC1100_CS_PORT, CC1100_CS_PIN )
 #else
 #  define CC1100_DEASSERT  CC1100.deassert()
-#  define CC1100_ASSERT    CC1100.assert()
+#  define CC1100_ASSERT    CC1100.assert_()
 #endif
 
 /******************************************************************************/

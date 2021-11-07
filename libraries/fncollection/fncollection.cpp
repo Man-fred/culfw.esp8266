@@ -98,10 +98,10 @@ void FNCOLLECTIONClass::ews(uint8_t p, String data, bool commit)
  
 String FNCOLLECTIONClass::ers(uint8_t p)
 {
-  char data[20]; //Max 20 Bytes
+  char data[EE_WPA_KEY_MAX]; //Max 63 Bytes at the moment
   int len=0;
   unsigned char k = 1;
-  while(k != '\0' && len<19)   //Read until null character
+  while(k != '\0' && len<(EE_WPA_KEY_MAX-1) )  //Read until null character
   {    
     k=erb(p++);
     data[len++]=k;
@@ -165,8 +165,8 @@ void FNCOLLECTIONClass::read_eeprom(char *in)
     } else if(in[2] == 'N') { display_ee_ip4(EE_IP4_NTPSERVER);
     } else if(in[2] == 'o') { DH2(erb(EE_IP4_NTPOFFSET));
 #   ifdef ESP8266
-    } else if(in[2] == 's') { display_string(EE_WPA_SSID, EE_STR_LEN);
-    } else if(in[2] == 'k') { display_string(EE_WPA_KEY, EE_STR_LEN);
+    } else if(in[2] == 's') { display_string(EE_WPA_SSID, EE_WPA_SSID_MAX);
+    } else if(in[2] == 'k') { display_string(EE_WPA_KEY, EE_WPA_KEY_MAX);
     } else if(in[2] == 'D') { display_string(EE_NAME, EE_STR_LEN);
     } else if(in[2] == 'O') { display_ee_ip4(EE_OTA_SERVER);
 #   endif
@@ -241,7 +241,7 @@ void FNCOLLECTIONClass::write_eeprom(char *in)
 void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
 {
 #ifdef ESP8266
-  uint8_t hb[EE_STR_LEN], d = 0;
+  uint8_t hb[EE_WPA_KEY_MAX], d = 0;
 #else
   uint8_t hb[6], d = 0;
 #endif
@@ -262,8 +262,8 @@ void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
       ntp_gmtoff = hb[0];
 #endif
 #   ifdef ESP8266
-    } else if(in[2] == 's') { d=EE_STR_LEN; STRINGFUNC.fromchars(in+3,hb, EE_STR_LEN); addr=EE_WPA_SSID;
-    } else if(in[2] == 'k') { d=EE_STR_LEN; STRINGFUNC.fromchars(in+3,hb, EE_STR_LEN); addr=EE_WPA_KEY;
+    } else if(in[2] == 's') { d=EE_WPA_SSID_MAX; STRINGFUNC.fromchars(in+3,hb, EE_WPA_SSID_MAX); addr=EE_WPA_SSID;
+    } else if(in[2] == 'k') { d=EE_WPA_KEY_MAX; STRINGFUNC.fromchars(in+3,hb, EE_WPA_KEY_MAX); addr=EE_WPA_KEY;
     } else if(in[2] == 'D') {
 			d=EE_STR_LEN; STRINGFUNC.fromchars(in+3,hb, EE_STR_LEN); addr=EE_NAME;
 			uint8_t len = strlen((const char*)hb);

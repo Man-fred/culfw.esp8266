@@ -254,14 +254,14 @@ void EthernetClass::ota(){
 	char host[16];
 	sprintf(host, "%d.%d.%d.%d", FNcol.erb(EE_OTA_SERVER),FNcol.erb(EE_OTA_SERVER+1),FNcol.erb(EE_OTA_SERVER+2),FNcol.erb(EE_OTA_SERVER+3)); 
 	
-# ifdef ESP32
-		// for documentation an later implementation
+	DS("[update] start ");
+//# ifdef ESP32
+		// new version
 		WiFiClient wifiClient;
-		t_httpUpdate_return ret = httpUpdate.update(wifiClient, para.mqtt_server, 80, "/esp8266/ota.php", tochararray(cstr, mVersionNr, mVersionBoard));
-# else      
-		DS("[update] start ");
-		t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, "/esp8266/ota.php", con_cat(VERSION_OTA, VERSION_BOARD));
-# endif
+		t_httpUpdate_return ret = ESPhttpUpdate.update(wifiClient, host, 80, "/esp8266/ota.php", con_cat(VERSION_OTA, VERSION_BOARD));
+//# else      
+//	t_httpUpdate_return ret = ESPhttpUpdate.update(host, 80, "/esp8266/ota.php", con_cat(VERSION_OTA, VERSION_BOARD));
+//# endif
 	switch (ret) {
 		case HTTP_UPDATE_FAILED:
 			DS("[update] failed");
