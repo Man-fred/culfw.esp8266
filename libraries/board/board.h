@@ -279,5 +279,11 @@ extern unsigned char OCIE1A;
 #define MARK915_BIT             5
 // helper for concatenating two char[]
 #define con_cat(first, second) first second
+// helper for lambda-functions
+#ifndef ESP8266
+  #define lambda(obj, func) [&](char *data) { obj . func (data); }
+#else
+  #define lambda(obj, func) [& obj](char *data) { obj . func (data); }
+#endif
 
 #endif // __BOARD_H__

@@ -152,11 +152,11 @@ const PROGMEM uint8_t FASTRF_CFG[EE_CC1100_CFG_SIZE] = {
 #endif
 
 #ifdef ESP8266
-void CC1100Class::assert(void) {
+void CC1100Class::assert_() {
 	digitalWrite(SPI_SS,0);
 	while(digitalRead(SPI_MISO));
 }
-void CC1100Class::deassert(void) {
+void CC1100Class::deassert() {
 	while(digitalRead(SPI_MISO));
 	digitalWrite(SPI_SS,1);
 }

@@ -70,14 +70,14 @@ extern FNCOLLECTIONClass FNcol;
 # define EE_IP4_NTPSERVER    (EE_IP4_GATEWAY+4)                      
 # define EE_IP4_TCPLINK_PORT (EE_IP4_NTPSERVER+4)               // Offset x79
 # define EE_IP4_NTPOFFSET    (EE_IP4_TCPLINK_PORT+2)
-# define EE_STR_LEN        20
+# define EE_STR_LEN        40
+# define EE_WPA_SSID_MAX   33
+# define EE_WPA_KEY_MAX    64
 # ifdef ESP8266
 #   define EE_MAX_ENTRY_LEN  64
-#   define EE_WPA_KEY_LEN    EE_MAX_ENTRY_LEN
-#   define EE_SSID_LEN       32
 #   define EE_WPA_SSID       (EE_IP4_NTPOFFSET+1)
-#   define EE_WPA_KEY        (EE_WPA_SSID+EE_SSID_LEN)
-#   define EE_NAME           (EE_WPA_KEY+EE_WPA_KEY_LEN)
+#   define EE_WPA_KEY        (EE_WPA_SSID+EE_WPA_SSID_MAX)
+#   define EE_NAME           (EE_WPA_KEY+EE_WPA_KEY_MAX)
 #   define EE_OTA_SERVER     (EE_NAME+EE_STR_LEN)
 #   define EE_ETH_LAST       (EE_OTA_SERVER+4)
 # else
