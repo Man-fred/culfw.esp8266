@@ -72,6 +72,11 @@ boolean       gdo2resetted=0;
 
 #ifdef HAS_ETHERNET
 #  include "ethernet.h"
+#  ifdef HAS_MQTT
+#    include "mqtt.h"
+    WiFiClient wifimqtt;
+    MqttClass mqtt(wifimqtt);
+#  endif
 #endif
 #ifdef HAS_ONEWIRE
 #  include "onewire.h"
@@ -217,6 +222,9 @@ const t_fntab fntab[] = {
   //doppelt, eigene Kuerzel!
   #ifdef HAS_ETHERNET
     { '1', lambda(Ethernet, func) }, //'E'
+  #endif
+  #ifdef HAS_MQTT
+    { '2', lambda(mqtt, func) }, // neu
   #endif
   { 0, 0 }
 };
@@ -417,6 +425,10 @@ void setup() {
   display.channel |= DISPLAY_TCP;
   display.channel &= ~DISPLAY_USB; //USB only when 
   Ethernet.init();
+# ifdef HAS_MQTT
+    mqtt.init();
+    mqtt.setCallback([& mqtt](char* topic, byte* payload, unsigned int mLength) { mqtt.callback (topic, payload, mLength); });
+# endif
 #endif
   Serial.print("\nChannel "); Serial.println(display.channel, BIN);
   Serial.print("CC1100_PARTNUM 0x00: "); Serial.println(CC1100.readStatus(0x30), HEX);
@@ -475,6 +487,16 @@ void loop() {
   #endif
   #ifdef HAS_ETHERNET
     Ethernet.Task();
+  #endif
+  #ifdef HAS_MQTT
+    char* payload = mqtt.Task();
+    yield();
+    unsigned int mLength = strlen(payload);
+    for (unsigned int i=0; i < mLength; i++){
+      TTYdata.rxBuffer.put(payload[i]);
+      Serial.write(payload[i]);
+    }
+    TTYdata.analyze_ttydata(DISPLAY_USB);
   #endif
   #ifdef HAS_MORITZ
     Moritz.task();

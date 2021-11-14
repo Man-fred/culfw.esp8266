@@ -93,6 +93,7 @@ private:
 	  uint8_t state, byteidx, sync, bitidx; 
 	  uint8_t data[MAXMSG];         // contains parity and checksum, but no sync
 	  wave_t zero, one; 
+		uint16_t bitused, bitsaved;
 	} bucket_t;
     bucket_t bucket_array[RCV_BUCKETS];
 

@@ -164,11 +164,24 @@ void FNCOLLECTIONClass::read_eeprom(char *in)
     } else if(in[2] == 'p') { DU(erw(EE_IP4_TCPLINK_PORT),0);
     } else if(in[2] == 'N') { display_ee_ip4(EE_IP4_NTPSERVER);
     } else if(in[2] == 'o') { DH2(erb(EE_IP4_NTPOFFSET));
+#   ifdef ESP8266
     } else if(in[2] == 's') { display_string(EE_WPA_SSID, EE_WPA_SSID_MAX);
     } else if(in[2] == 'k') { display_string(EE_WPA_KEY, EE_WPA_KEY_MAX);
     } else if(in[2] == 'D') { display_string(EE_NAME, EE_STR_LEN);
     } else if(in[2] == 'O') { display_ee_ip4(EE_OTA_SERVER);
 #   endif
+    }
+  } else 
+#endif
+#ifdef HAS_MQTT
+  if(in[1] == 'm') {
+           if(in[2] == 'm') { display_ee_mac(EE_MAC_ADDR);
+    } else if(in[2] == 'd') { DH2(erb(EE_USE_DHCP));
+    } else if(in[2] == 'a') { display_ee_ip4(EE_IP4_ADDR);
+    } else if(in[2] == 'n') { display_ee_ip4(EE_IP4_NETMASK);
+    } else if(in[2] == 'g') { display_ee_ip4(EE_IP4_GATEWAY);
+    } else if(in[2] == 'p') { DU(erw(EE_IP4_TCPLINK_PORT),0);
+    } else if(in[2] == 'N') { display_ee_ip4(EE_IP4_NTPSERVER);
     }
   } else 
 #endif
@@ -256,10 +269,10 @@ void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
     } else if(in[2] == 'p') { d=2; STRINGFUNC.fromdec(in+3,hb);   addr=EE_IP4_TCPLINK_PORT; Serial.print(hb[0]);Serial.print(" ");Serial.println(hb[1]);
     } else if(in[2] == 'N') { d=4; STRINGFUNC.fromip (in+3,hb,4); addr=EE_IP4_NTPSERVER;
     } else if(in[2] == 'o') { d=1; STRINGFUNC.fromhex(in+3,hb,1); addr=EE_IP4_NTPOFFSET;
-#ifdef HAS_NTP
+#   ifdef HAS_NTP
       extern int8_t ntp_gmtoff;
       ntp_gmtoff = hb[0];
-#endif
+#   endif
 #   ifdef ESP8266
     } else if(in[2] == 's') { d=EE_WPA_SSID_MAX; STRINGFUNC.fromchars(in+3,hb, EE_WPA_SSID_MAX); addr=EE_WPA_SSID;
     } else if(in[2] == 'k') { d=EE_WPA_KEY_MAX; STRINGFUNC.fromchars(in+3,hb, EE_WPA_KEY_MAX); addr=EE_WPA_KEY;
@@ -283,6 +296,21 @@ void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
 #   endif
     }
     for(uint8_t i = 0; i < d; i++)
+      ewb(addr++, hb[i], false);
+	  ewc(commit);
+  } else 
+#endif
+#ifdef HAS_MQTT
+  if(in[1] == 'm') {
+    uint8_t addr = 0;
+           if(in[2] == 'm') { d=6; STRINGFUNC.fromhex(in+3,hb,6); addr=EE_MAC_ADDR;
+    } else if(in[2] == 'd') { d=1; STRINGFUNC.fromdec(in+3,hb);   addr=EE_USE_DHCP;
+    } else if(in[2] == 'a') { d=4; STRINGFUNC.fromip (in+3,hb,4); addr=EE_IP4_ADDR;
+    } else if(in[2] == 'n') { d=4; STRINGFUNC.fromip (in+3,hb,4); addr=EE_IP4_NETMASK;
+    } else if(in[2] == 'g') { d=4; STRINGFUNC.fromip (in+3,hb,4); addr=EE_IP4_GATEWAY;
+    } else if(in[2] == 'p') { d=2; STRINGFUNC.fromdec(in+3,hb);   addr=EE_IP4_TCPLINK_PORT; 
+    }
+		for(uint8_t i = 0; i < d; i++)
       ewb(addr++, hb[i], false);
 	  ewc(commit);
   } else 
