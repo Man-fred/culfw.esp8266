@@ -108,7 +108,7 @@ void EthernetClass::init(void)
   }		
   if(!FNcol.erb(EE_USE_DHCP)) {
     set_eeprom_addr();
-    //Serial.println("noDHCP");
+    Serial.println("noDHCP");
   }
 	//Serial.println(FNcol.ers(EE_WPA_SSID));
 	//Serial.println(FNcol.ers(EE_WPA_KEY));

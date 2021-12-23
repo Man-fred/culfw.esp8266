@@ -24,6 +24,9 @@
 #ifdef HAS_ETHERNET
   #include "ethernet.h"
 #endif
+#ifdef HAS_MQTT
+  #include "mqtt.h"
+#endif
 #ifdef HAS_DOGM
   #include "dogm16x.h"
 #endif
@@ -66,6 +69,10 @@ void DisplayClass::chr(char data)
 #ifdef HAS_ETHERNET
   if(channel & DISPLAY_TCP)
     Ethernet.putChar( data );
+#endif
+#ifdef HAS_MQTT
+  if(channel & DISPLAY_MQTT)
+    mqtt.putChar( data );
 #endif
 
 #ifdef HAS_PRIVATE_CHANNEL

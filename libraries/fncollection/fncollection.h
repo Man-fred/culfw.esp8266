@@ -15,9 +15,11 @@ public:
 	void ewb(uint8_t p, uint8_t v, bool commit);
 	void ewc(bool commit);
   void ews(uint8_t p, String data, bool commit = true);
+  void ewch(uint8_t p, char* data, bool commit = true);
 	uint8_t erb(uint8_t p);
   uint16_t erw(uint8_t p);
   String ers(uint8_t p);
+  char* erch(uint8_t p);
 	void ledfunc(char *);
 	void prepare_boot(char *);
 	void version(char *);
@@ -71,6 +73,7 @@ extern FNCOLLECTIONClass FNcol;
 # define EE_IP4_TCPLINK_PORT (EE_IP4_NTPSERVER+4)               // Offset x79
 # define EE_IP4_NTPOFFSET    (EE_IP4_TCPLINK_PORT+2)
 # define EE_STR_LEN        40
+# define EE_STR_MQTT       21
 # define EE_WPA_SSID_MAX   33
 # define EE_WPA_KEY_MAX    64
 # ifdef ESP8266
@@ -81,7 +84,7 @@ extern FNCOLLECTIONClass FNcol;
 #   define EE_OTA_SERVER     (EE_NAME+EE_STR_LEN)
 #   define EE_ETH_LAST       (EE_OTA_SERVER+4)
 # else
-#   define EE_MAX_ENTRY_LEN    EE_STR_LEN
+#   define EE_MAX_ENTRY_LEN   EE_STR_LEN
 #   define EE_ETH_LAST       (EE_IP4_NTPOFFSET+1)
 # endif
 #else
@@ -90,9 +93,9 @@ extern FNCOLLECTIONClass FNcol;
 
 #ifdef HAS_LCD
 # ifdef HAS_ETHERNET
-#   define EE_CONTRAST          EE_ETH_LAST
+#   define EE_CONTRAST        EE_ETH_LAST
 # else
-#   define EE_CONTRAST          (EE_FASTRF_CFG+EE_CC1100_CFG_SIZE)
+#   define EE_CONTRAST        (EE_FASTRF_CFG+EE_CC1100_CFG_SIZE)
 # endif
 # define EE_BRIGHTNESS        (EE_CONTRAST+1)
 # define EE_SLEEPTIME         (EE_BRIGHTNESS+1)
@@ -106,6 +109,20 @@ extern FNCOLLECTIONClass FNcol;
 # define EE_FS_LAST           (EE_LOGENABLED+1)
 #else
 #	define EE_FS_LAST           EE_LCD_LAST
+#endif
+
+#ifdef HAS_MQTT
+# define EE_MQTT_SERVER       EE_FS_LAST
+# define EE_MQTT_PORT         (EE_MQTT_SERVER+EE_STR_MQTT)
+# define EE_MQTT_USER         (EE_MQTT_PORT+4)
+# define EE_MQTT_PASS         (EE_MQTT_USER+EE_STR_MQTT)
+# define EE_MQTT_CLIENT       (EE_MQTT_PASS+EE_STR_MQTT)
+# define EE_MQTT_PRE          (EE_MQTT_CLIENT+EE_STR_MQTT)
+# define EE_MQTT_SUB          (EE_MQTT_PRE+EE_STR_MQTT)
+# define EE_MQTT_LWT          (EE_MQTT_SUB+EE_STR_MQTT)
+# define EE_MQTT_LAST         (EE_MQTT_LWT+EE_STR_MQTT)
+#else
+# define EE_MQTT_LAST         EE_FS_LAST
 #endif
 
 extern uint8_t led_mode;

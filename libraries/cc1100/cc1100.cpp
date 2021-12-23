@@ -209,7 +209,7 @@ void CC1100Class::ccInitChip(uint8_t cfg){
 #ifdef HAS_MORITZ
   Moritz.on(0); //loading this configuration overwrites moritz cfg
 #endif
-  manualReset();
+  manualReset(1);
   
 	// not in c -->
 	ccStrobe(CC1100_SFRX);
@@ -256,7 +256,7 @@ void CC1100Class::ccInitChip(uint8_t cfg){
   ccStrobe(CC1100_SRES);
   delayMicroseconds(100);
 	
-	digitalWrite(CC1100_CS_PIN,LOW);    
+  digitalWrite(CC1100_CS_PIN,LOW);    
   while(digitalRead(SPI_MISO));
   
   SPI.transfer( 0 | CC1100_WRITE_BURST);

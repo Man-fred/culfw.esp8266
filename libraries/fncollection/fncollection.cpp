@@ -86,7 +86,19 @@ uint16_t FNCOLLECTIONClass::erw(uint8_t p)
 void FNCOLLECTIONClass::ews(uint8_t p, String data, bool commit)
 {
   uint8_t _size = data.length();
-  for(uint8_t i=0;i<_size && i<19;i++)
+  for(uint8_t i=0;i<_size && i<EE_MAX_ENTRY_LEN;i++)
+  {
+    ewb(p++,data[i]);
+  }
+  ewb(p,'\0');   //Add termination null character for String Data
+	if (commit) {
+	  ewc();
+	}
+}
+ 
+void FNCOLLECTIONClass::ewch(uint8_t p, char* data, bool commit)
+{
+  for(uint8_t i=0;i<EE_MAX_ENTRY_LEN && data[i] != 0;i++)
   {
     ewb(p++,data[i]);
   }
@@ -108,6 +120,20 @@ String FNCOLLECTIONClass::ers(uint8_t p)
   }
   data[len]='\0';
   return String(data);
+}
+
+char* FNCOLLECTIONClass::erch(uint8_t p)
+{
+  char data[EE_MAX_ENTRY_LEN];
+  int len=0;
+  unsigned char k = 1;
+  while(k != '\0' && len< (EE_MAX_ENTRY_LEN - 1))   //Read until null character
+  {    
+    k=erb(p++);
+    data[len++]=k;
+  }
+  data[len]='\0';
+  return data;
 }
 
 void FNCOLLECTIONClass::display_string(uint8_t a, uint8_t cnt)
@@ -175,13 +201,14 @@ void FNCOLLECTIONClass::read_eeprom(char *in)
 #endif
 #ifdef HAS_MQTT
   if(in[1] == 'm') {
-           if(in[2] == 'm') { display_ee_mac(EE_MAC_ADDR);
-    } else if(in[2] == 'd') { DH2(erb(EE_USE_DHCP));
-    } else if(in[2] == 'a') { display_ee_ip4(EE_IP4_ADDR);
-    } else if(in[2] == 'n') { display_ee_ip4(EE_IP4_NETMASK);
-    } else if(in[2] == 'g') { display_ee_ip4(EE_IP4_GATEWAY);
-    } else if(in[2] == 'p') { DU(erw(EE_IP4_TCPLINK_PORT),0);
-    } else if(in[2] == 'N') { display_ee_ip4(EE_IP4_NTPSERVER);
+           if(in[2] == 'a') { display_string(EE_MQTT_SERVER, EE_STR_MQTT);
+    } else if(in[2] == 'p') { DU(erw(EE_MQTT_PORT),0);
+    } else if(in[2] == 'u') { display_string(EE_MQTT_USER, EE_STR_MQTT);
+    } else if(in[2] == 'P') { display_string(EE_MQTT_PASS, EE_STR_MQTT);
+    } else if(in[2] == 'c') { display_string(EE_MQTT_CLIENT, EE_STR_MQTT);
+    } else if(in[2] == 'm') { display_string(EE_MQTT_PRE, EE_STR_MQTT);
+    } else if(in[2] == 's') { display_string(EE_MQTT_SUB, EE_STR_MQTT);
+    } else if(in[2] == 'l') { display_string(EE_MQTT_LWT, EE_STR_MQTT);
     }
   } else 
 #endif
@@ -303,12 +330,14 @@ void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
 #ifdef HAS_MQTT
   if(in[1] == 'm') {
     uint8_t addr = 0;
-           if(in[2] == 'm') { d=6; STRINGFUNC.fromhex(in+3,hb,6); addr=EE_MAC_ADDR;
-    } else if(in[2] == 'd') { d=1; STRINGFUNC.fromdec(in+3,hb);   addr=EE_USE_DHCP;
-    } else if(in[2] == 'a') { d=4; STRINGFUNC.fromip (in+3,hb,4); addr=EE_IP4_ADDR;
-    } else if(in[2] == 'n') { d=4; STRINGFUNC.fromip (in+3,hb,4); addr=EE_IP4_NETMASK;
-    } else if(in[2] == 'g') { d=4; STRINGFUNC.fromip (in+3,hb,4); addr=EE_IP4_GATEWAY;
-    } else if(in[2] == 'p') { d=2; STRINGFUNC.fromdec(in+3,hb);   addr=EE_IP4_TCPLINK_PORT; 
+           if(in[2] == 'a') { d=EE_STR_MQTT; STRINGFUNC.fromchars(in+3,hb, EE_MQTT_USER); addr=EE_MQTT_SERVER;
+    } else if(in[2] == 'p') { d=4; STRINGFUNC.fromdec(in+3,hb);   addr=EE_MQTT_PORT;
+    } else if(in[2] == 'u') { d=EE_STR_MQTT; STRINGFUNC.fromchars(in+3,hb, EE_MQTT_USER); addr=EE_MQTT_USER;
+    } else if(in[2] == 'P') { d=EE_STR_MQTT; STRINGFUNC.fromchars(in+3,hb, EE_MQTT_USER); addr=EE_MQTT_PASS;
+    } else if(in[2] == 'c') { d=EE_STR_MQTT; STRINGFUNC.fromchars(in+3,hb, EE_MQTT_USER); addr=EE_MQTT_CLIENT;
+    } else if(in[2] == 'm') { d=EE_STR_MQTT; STRINGFUNC.fromchars(in+3,hb, EE_MQTT_USER);   addr=EE_MQTT_PRE; 
+    } else if(in[2] == 's') { d=EE_STR_MQTT; STRINGFUNC.fromchars(in+3,hb, EE_MQTT_USER);   addr=EE_MQTT_SUB; 
+    } else if(in[2] == 'l') { d=EE_STR_MQTT; STRINGFUNC.fromchars(in+3,hb, EE_MQTT_USER);   addr=EE_MQTT_LWT; 
     }
 		for(uint8_t i = 0; i < d; i++)
       ewb(addr++, hb[i], false);
@@ -342,7 +371,8 @@ void FNCOLLECTIONClass::write_eeprom(char *in, bool commit)
 void FNCOLLECTIONClass::eeprom_init(void)
 {
 #ifdef ESP8266
-  EEPROM.begin(0xFF);
+  EEPROM.begin(512);
+	Serial.print("EEPROM bytes "); Serial.println(EE_MQTT_LAST);
 #endif
   if(erb(EE_MAGIC_OFFSET)   != VERSION_1 ||
      erb(EE_MAGIC_OFFSET+1) != VERSION_2)

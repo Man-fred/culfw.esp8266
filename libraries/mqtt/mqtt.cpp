@@ -10,15 +10,14 @@ const byte hex[17] = "0123456789ABCDEF";
 
 void MqttClass::init()
 {
-	// IPAddress ip, uint16_t port
-  strcpy(_server, "192.168.178.88");
-  _port = 1883;
-  strcpy(_user, "culfw01");
-  strcpy(_pass, "tCc7hTXoEOrMHpXSyOKe");
-  strcpy(_clientname, "culfw01");
-	strcpy(_pre, "esp/");
-  strcpy(_sub, "set");
-  strcpy(_lwt, "lwt");
+  strcpy(_server, "192.168.178.88"); // FNcol.erch(EE_MQTT_SERVER)); // 
+  _port = 1883; // FNcol.erw(EE_MQTT_PORT); // 
+  strcpy(_user, "culfw01"); // FNcol.erch(EE_MQTT_USER)); // 
+  strcpy(_pass, "tCc7hTXoEOrMHpXSyOKe"); // FNcol.erch(EE_MQTT_PASS)); // 
+  strcpy(_clientname,  "culfw01"); // FNcol.erch(EE_MQTT_CLIENT)); // 
+	strcpy(_pre, "esp/"); // FNcol.erch(EE_MQTT_PRE)); // 
+  strcpy(_sub, "set"); // FNcol.erch(EE_MQTT_SUB)); // 
+  strcpy(_lwt, "lwt"); // FNcol.erch(EE_MQTT_LWT)); // 
 
   //DEBUG1_PRINTLN(para.mqtt_server);
 	//setClient(WiFi);

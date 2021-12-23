@@ -3,6 +3,7 @@
 
 #include "board.h"
 #include <ESP8266WiFi.h>
+#include "fncollection.h"
 
 #define MAX_MESSAGES 40
 #define MQTT_MAX_TOPIC_SIZE 50
@@ -35,15 +36,15 @@ private:
 	//PubSubClient client;
   boolean isConnected;
 
-  char _server[20];
+  char _server[EE_STR_LEN];
   int  _port;
-  char _user[20];
-  char _pass[20];
-  char _clientname[20];
+  char _user[EE_STR_LEN];
+  char _pass[EE_STR_LEN];
+  char _clientname[EE_STR_LEN];
   
-  char _pre[10];
-  char _sub[10];
-  char _lwt[10];
+  char _pre[EE_STR_LEN];
+  char _sub[EE_STR_LEN];
+  char _lwt[EE_STR_LEN];
 
 	// buffers for receiving and sending data
 	char mPayloadKey[MAX_MESSAGES][MQTT_MAX_TOPIC_SIZE];

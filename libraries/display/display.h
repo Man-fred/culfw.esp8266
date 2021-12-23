@@ -52,6 +52,7 @@
 #define DISPLAY_TCP      (1<<2)
 #define DISPLAY_RFROUTER (1<<3)
 #define DISPLAY_DOGM     (1<<4)
+#define DISPLAY_MQTT     (1<<5)
 
 class DisplayClass {
 public:
