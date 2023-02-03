@@ -1,7 +1,7 @@
 // Copyright 2019 Fabien Valthier
-/*
-Node MCU/ESP8266 Sketch to emulate Teco
-*/
+
+/// @file
+/// @brief Support for Teco protocols.
 
 #include "ir_Teco.h"
 #include <algorithm>
@@ -27,16 +27,13 @@ using irutils::addIntToString;
 using irutils::addLabeledString;
 using irutils::addModeToString;
 using irutils::addTempToString;
-using irutils::setBit;
-using irutils::setBits;
 
 #if SEND_TECO
-// Send a Teco A/C message.
-//
-// Args:
-//   data:   Contents of the message to be sent.
-//   nbits:  Nr. of bits of data to be sent. Typically kTecoBits.
-//   repeat: Nr. of additional times the message is to be sent.
+/// Send a Teco A/C message.
+/// Status: Beta / Probably working.
+/// @param[in] data The message to be sent.
+/// @param[in] nbits The number of bits of message to be sent.
+/// @param[in] repeat The number of times the command is to be repeated.
 void IRsend::sendTeco(const uint64_t data, const uint16_t nbits,
                       const uint16_t repeat) {
   sendGeneric(kTecoHdrMark, kTecoHdrSpace, kTecoBitMark, kTecoOneSpace,
@@ -45,53 +42,74 @@ void IRsend::sendTeco(const uint64_t data, const uint16_t nbits,
 }
 #endif  // SEND_TECO
 
-// Class for decoding and constructing Teco AC messages.
+/// Class constructor
+/// @param[in] pin GPIO to be used when sending.
+/// @param[in] inverted Is the output signal to be inverted?
+/// @param[in] use_modulation Is frequency modulation to be used?
 IRTecoAc::IRTecoAc(const uint16_t pin, const bool inverted,
                    const bool use_modulation)
-    : _irsend(pin, inverted, use_modulation) { this->stateReset(); }
+    : _irsend(pin, inverted, use_modulation) { stateReset(); }
 
+/// Set up hardware to be able to send a message.
 void IRTecoAc::begin(void) { _irsend.begin(); }
 
 #if SEND_TECO
+/// Send the current internal state as an IR message.
+/// @param[in] repeat Nr. of times the message will be repeated.
 void IRTecoAc::send(const uint16_t repeat) {
-  _irsend.sendTeco(remote_state, kTecoBits, repeat);
+  _irsend.sendTeco(_.raw, kTecoBits, repeat);
 }
 #endif  // SEND_TECO
 
+/// Reset the internal state of the emulation.
+/// @note Mode:auto, Power:Off, fan:auto, temp:16, swing:off, sleep:off
 void IRTecoAc::stateReset(void) {
-  // Mode:auto, Power:Off, fan:auto, temp:16, swing:off, sleep:off
-  remote_state = kTecoReset;
+  _.raw = kTecoReset;
 }
 
-uint64_t IRTecoAc::getRaw(void) { return remote_state; }
+/// Get a copy of the internal state/code for this protocol.
+/// @return A code for this protocol based on the current internal state.
+uint64_t IRTecoAc::getRaw(void) const { return _.raw; }
 
-void IRTecoAc::setRaw(const uint64_t new_code) { remote_state = new_code; }
+/// Set the internal state from a valid code for this protocol.
+/// @param[in] new_code A valid code for this protocol.
+void IRTecoAc::setRaw(const uint64_t new_code) { _.raw = new_code; }
 
+/// Set the requested power state of the A/C to on.
 void IRTecoAc::on(void) { setPower(true); }
 
+/// Set the requested power state of the A/C to off.
 void IRTecoAc::off(void) { setPower(false); }
 
+/// Change the power setting.
+/// @param[in] on true, the setting is on. false, the setting is off.
 void IRTecoAc::setPower(const bool on) {
-  setBit(&remote_state, kTecoPowerOffset, on);
+  _.Power = on;
 }
 
-bool IRTecoAc::getPower(void) {
-  return GETBIT64(remote_state, kTecoPowerOffset);
+/// Get the value of the current power setting.
+/// @return true, the setting is on. false, the setting is off.
+bool IRTecoAc::getPower(void) const {
+  return _.Power;
 }
 
+/// Set the temperature.
+/// @param[in] temp The temperature in degrees celsius.
 void IRTecoAc::setTemp(const uint8_t temp) {
   uint8_t newtemp = temp;
   newtemp = std::min(newtemp, kTecoMaxTemp);
   newtemp = std::max(newtemp, kTecoMinTemp);
-  setBits(&remote_state, kTecoTempOffset, kTecoTempSize,
-          newtemp - kTecoMinTemp);
+  _.Temp = newtemp - kTecoMinTemp;
 }
 
-uint8_t IRTecoAc::getTemp(void) {
-  return GETBITS64(remote_state, kTecoTempOffset, kTecoTempSize) + kTecoMinTemp;
+/// Get the current temperature setting.
+/// @return The current setting for temp. in degrees celsius.
+uint8_t IRTecoAc::getTemp(void) const {
+  return _.Temp + kTecoMinTemp;
 }
 
-// Set the speed of the fan
+/// Set the speed of the fan.
+/// @param[in] speed The desired setting.
 void IRTecoAc::setFan(const uint8_t speed) {
   uint8_t newspeed = speed;
   switch (speed) {
@@ -101,13 +119,17 @@ void IRTecoAc::setFan(const uint8_t speed) {
     case kTecoFanLow: break;
     default: newspeed = kTecoFanAuto;
   }
-  setBits(&remote_state, kTecoFanOffset, kTecoFanSize, newspeed);
+  _.Fan = newspeed;
 }
 
-uint8_t IRTecoAc::getFan(void) {
-  return GETBITS64(remote_state, kTecoFanOffset, kTecoFanSize);
+/// Get the current fan speed setting.
+/// @return The current fan speed/mode.
+uint8_t IRTecoAc::getFan(void) const {
+  return _.Fan;
 }
 
+/// Set the operating mode of the A/C.
+/// @param[in] mode The desired operating mode.
 void IRTecoAc::setMode(const uint8_t mode) {
   uint8_t newmode = mode;
   switch (mode) {
@@ -118,89 +140,108 @@ void IRTecoAc::setMode(const uint8_t mode) {
     case kTecoHeat: break;
     default: newmode = kTecoAuto;
   }
-  setBits(&remote_state, kTecoModeOffset, kModeBitsSize, newmode);
+  _.Mode = newmode;
 }
 
-uint8_t IRTecoAc::getMode(void) {
-  return GETBITS64(remote_state, kTecoModeOffset, kModeBitsSize);
+/// Get the operating mode setting of the A/C.
+/// @return The current operating mode setting.
+uint8_t IRTecoAc::getMode(void) const {
+  return _.Mode;
 }
 
+/// Set the (vertical) swing setting of the A/C.
+/// @param[in] on true, the setting is on. false, the setting is off.
 void IRTecoAc::setSwing(const bool on) {
-  setBit(&remote_state, kTecoSwingOffset, on);
+  _.Swing = on;
 }
 
-bool IRTecoAc::getSwing(void) {
-  return GETBIT64(remote_state, kTecoSwingOffset);
+/// Get the (vertical) swing setting of the A/C.
+/// @return true, the setting is on. false, the setting is off.
+bool IRTecoAc::getSwing(void) const {
+  return _.Swing;
 }
 
+/// Set the Sleep setting of the A/C.
+/// @param[in] on true, the setting is on. false, the setting is off.
 void IRTecoAc::setSleep(const bool on) {
-  setBit(&remote_state, kTecoSleepOffset, on);
+  _.Sleep = on;
 }
 
-bool IRTecoAc::getSleep(void) {
-  return GETBIT64(remote_state, kTecoSleepOffset);
+/// Get the Sleep setting of the A/C.
+/// @return true, the setting is on. false, the setting is off.
+bool IRTecoAc::getSleep(void) const {
+  return _.Sleep;
 }
 
+/// Set the Light (LED/Display) setting of the A/C.
+/// @param[in] on true, the setting is on. false, the setting is off.
 void IRTecoAc::setLight(const bool on) {
-  setBit(&remote_state, kTecoLightOffset, on);
+  _.Light = on;
 }
 
-bool IRTecoAc::getLight(void) {
-  return GETBIT64(remote_state,  kTecoLightOffset);
+/// Get the Light (LED/Display) setting of the A/C.
+/// @return true, the setting is on. false, the setting is off.
+bool IRTecoAc::getLight(void) const {
+  return _.Light;
 }
 
+/// Set the Humid setting of the A/C.
+/// @param[in] on true, the setting is on. false, the setting is off.
 void IRTecoAc::setHumid(const bool on) {
-  setBit(&remote_state, kTecoHumidOffset, on);
+  _.Humid = on;
 }
 
-bool IRTecoAc::getHumid(void) {
-  return GETBIT64(remote_state, kTecoHumidOffset);
+/// Get the Humid setting of the A/C.
+/// @return true, the setting is on. false, the setting is off.
+bool IRTecoAc::getHumid(void) const {
+  return _.Humid;
 }
 
+/// Set the Save setting of the A/C.
+/// @param[in] on true, the setting is on. false, the setting is off.
 void IRTecoAc::setSave(const bool on) {
-  setBit(&remote_state, kTecoSaveOffset, on);
+  _.Save = on;
 }
 
-bool IRTecoAc::getSave(void) {
-  return GETBIT64(remote_state, kTecoSaveOffset);
+/// Get the Save setting of the A/C.
+/// @return true, the setting is on. false, the setting is off.
+bool IRTecoAc::getSave(void) const {
+  return _.Save;
 }
 
-bool IRTecoAc::getTimerEnabled(void) {
-  return GETBIT64(remote_state, kTecoTimerOnOffset);
+/// Is the timer function enabled?
+/// @return true, the setting is on. false, the setting is off.
+inline bool IRTecoAc::getTimerEnabled(void) const {
+  return _.TimerOn;
 }
 
-uint16_t IRTecoAc::getTimer(void) {
+/// Get the timer time for when the A/C unit will switch power state.
+/// @return The number of minutes left on the timer. `0` means off.
+uint16_t IRTecoAc::getTimer(void) const {
   uint16_t mins = 0;
   if (getTimerEnabled()) {
-    mins = GETBITS64(remote_state, kTecoTimerTensHoursOffset,
-                     kTecoTimerTensHoursSize) * 60 * 10 +
-        GETBITS64(remote_state, kTecoTimerUnitHoursOffset,
-                  kTecoTimerUnitHoursSize) * 60;
-    if (GETBIT64(remote_state, kTecoTimerHalfHourOffset)) mins += 30;
+    mins = (_.TensHours * 10 + _.UnitHours) * 60;
+    if (_.HalfHour) mins += 30;
   }
   return mins;
 }
 
-// Set the timer for when the A/C unit will switch power state.
-// Args:
-//   nr_mins: Number of minutes before power state change.
-//            `0` will clear the timer. Max is 24 hrs.
-//            Time is stored internaly in increments of 30 mins.
+/// Set the timer for when the A/C unit will switch power state.
+/// @param[in] nr_mins Number of minutes before power state change.
+///   `0` will clear the timer. Max is 24 hrs.
+/// @note Time is stored internally in increments of 30 mins.
 void IRTecoAc::setTimer(const uint16_t nr_mins) {
   uint16_t mins = std::min(nr_mins, (uint16_t)(24 * 60));  // Limit to 24 hrs.
   uint8_t hours = mins / 60;
-  setBit(&remote_state, kTecoTimerOnOffset, mins);  // Set the timer flag.
-  // Set the half hour bit.
-  setBit(&remote_state, kTecoTimerHalfHourOffset, (mins % 60) >= 30);
-  // Set the unit hours.
-  setBits(&remote_state, kTecoTimerUnitHoursOffset, kTecoTimerUnitHoursSize,
-          hours % 10);
-  // Set the tens of hours.
-  setBits(&remote_state, kTecoTimerTensHoursOffset, kTecoTimerTensHoursSize,
-          hours / 10);
+  _.TimerOn = mins > 0;  // Set the timer flag.
+  _.HalfHour = (mins % 60) >= 30;
+  _.UnitHours = hours % 10;
+  _.TensHours = hours / 10;
 }
 
-// Convert a standard A/C mode into its native mode.
+/// Convert a stdAc::opmode_t enum into its native mode.
+/// @param[in] mode The enum to be converted.
+/// @return The native equivalent of the enum.
 uint8_t IRTecoAc::convertMode(const stdAc::opmode_t mode) {
   switch (mode) {
     case stdAc::opmode_t::kCool: return kTecoCool;
@@ -211,7 +252,9 @@ uint8_t IRTecoAc::convertMode(const stdAc::opmode_t mode) {
   }
 }
 
-// Convert a standard A/C Fan speed into its native fan speed.
+/// Convert a stdAc::fanspeed_t enum into it's native speed.
+/// @param[in] speed The enum to be converted.
+/// @return The native equivalent of the enum.
 uint8_t IRTecoAc::convertFan(const stdAc::fanspeed_t speed) {
   switch (speed) {
     case stdAc::fanspeed_t::kMin:
@@ -223,7 +266,9 @@ uint8_t IRTecoAc::convertFan(const stdAc::fanspeed_t speed) {
   }
 }
 
-// Convert a native mode to it's common equivalent.
+/// Convert a native mode into its stdAc equivalent.
+/// @param[in] mode The native setting to be converted.
+/// @return The stdAc equivalent of the native setting.
 stdAc::opmode_t IRTecoAc::toCommonMode(const uint8_t mode) {
   switch (mode) {
     case kTecoCool: return stdAc::opmode_t::kCool;
@@ -234,7 +279,9 @@ stdAc::opmode_t IRTecoAc::toCommonMode(const uint8_t mode) {
   }
 }
 
-// Convert a native fan speed to it's common equivalent.
+/// Convert a native fan speed into its stdAc equivalent.
+/// @param[in] speed The native setting to be converted.
+/// @return The stdAc equivalent of the native setting.
 stdAc::fanspeed_t IRTecoAc::toCommonFanSpeed(const uint8_t speed) {
   switch (speed) {
     case kTecoFanHigh: return stdAc::fanspeed_t::kMax;
@@ -244,20 +291,20 @@ stdAc::fanspeed_t IRTecoAc::toCommonFanSpeed(const uint8_t speed) {
   }
 }
 
-// Convert the A/C state to it's common equivalent.
-stdAc::state_t IRTecoAc::toCommon(void) {
-  stdAc::state_t result;
+/// Convert the current internal state into its stdAc::state_t equivalent.
+/// @return The stdAc equivalent of the native settings.
+stdAc::state_t IRTecoAc::toCommon(void) const {
+  stdAc::state_t result{};
   result.protocol = decode_type_t::TECO;
   result.model = -1;  // Not supported.
-  result.power = this->getPower();
-  result.mode = this->toCommonMode(this->getMode());
+  result.power = _.Power;
+  result.mode = toCommonMode(_.Mode);
   result.celsius = true;
-  result.degrees = this->getTemp();
-  result.fanspeed = this->toCommonFanSpeed(this->getFan());
-  result.swingv = this->getSwing() ? stdAc::swingv_t::kAuto :
-                                     stdAc::swingv_t::kOff;
-  result.sleep = this->getSleep() ? 0 : -1;
-  result.light = this->getLight();
+  result.degrees = getTemp();
+  result.fanspeed = toCommonFanSpeed(_.Fan);
+  result.swingv = _.Swing ? stdAc::swingv_t::kAuto : stdAc::swingv_t::kOff;
+  result.sleep = _.Sleep ? 0 : -1;
+  result.light = _.Light;
   // Not supported.
   result.swingh = stdAc::swingh_t::kOff;
   result.turbo = false;
@@ -270,21 +317,22 @@ stdAc::state_t IRTecoAc::toCommon(void) {
   return result;
 }
 
-// Convert the internal state into a human readable string.
-String IRTecoAc::toString(void) {
+/// Convert the current internal state into a human readable string.
+/// @return A human readable string.
+String IRTecoAc::toString(void) const {
   String result = "";
   result.reserve(100);  // Reserve some heap for the string to reduce fragging.
-  result += addBoolToString(getPower(), kPowerStr, false);
-  result += addModeToString(getMode(), kTecoAuto, kTecoCool, kTecoHeat,
+  result += addBoolToString(_.Power, kPowerStr, false);
+  result += addModeToString(_.Mode, kTecoAuto, kTecoCool, kTecoHeat,
                             kTecoDry, kTecoFan);
   result += addTempToString(getTemp());
-  result += addFanToString(getFan(), kTecoFanHigh, kTecoFanLow,
+  result += addFanToString(_.Fan, kTecoFanHigh, kTecoFanLow,
                            kTecoFanAuto, kTecoFanAuto, kTecoFanMed);
-  result += addBoolToString(getSleep(), kSleepStr);
-  result += addBoolToString(getSwing(), kSwingStr);
-  result += addBoolToString(getLight(), kLightStr);
-  result += addBoolToString(getHumid(), kHumidStr);
-  result += addBoolToString(getSave(), kSaveStr);
+  result += addBoolToString(_.Sleep, kSleepStr);
+  result += addBoolToString(_.Swing, kSwingStr);
+  result += addBoolToString(_.Light, kLightStr);
+  result += addBoolToString(_.Humid, kHumidStr);
+  result += addBoolToString(_.Save, kSaveStr);
   if (getTimerEnabled())
     result += addLabeledString(irutils::minsToString(getTimer()),
                                kTimerStr);
@@ -294,18 +342,14 @@ String IRTecoAc::toString(void) {
 }
 
 #if DECODE_TECO
-// Decode the supplied Teco message.
-//
-// Args:
-//   results: Ptr to the data to decode and where to store the decode result.
-//   offset:  The starting index to use when attempting to decode the raw data.
-//            Typically/Defaults to kStartOffset.
-//   nbits:   The number of data bits to expect. Typically kTecoBits.
-//   strict:  Flag indicating if we should perform strict matching.
-// Returns:
-//   boolean: True if it can decode it, false if it can't.
-//
-// Status: STABLE / Tested.
+/// Decode the supplied Teco message.
+/// Status: STABLE / Tested.
+/// @param[in,out] results Ptr to the data to decode & where to store the result
+/// @param[in] offset The starting index to use when attempting to decode the
+///   raw data. Typically/Defaults to kStartOffset.
+/// @param[in] nbits The number of data bits to expect.
+/// @param[in] strict Flag indicating if we should perform strict matching.
+/// @return True if it can decode it, false if it can't.
 bool IRrecv::decodeTeco(decode_results* results, uint16_t offset,
                         const uint16_t nbits, const bool strict) {
   if (strict && nbits != kTecoBits) return false;  // Not what is expected

@@ -191,7 +191,7 @@ TEST(TestSendHitachiAC, SendUnexpectedSizes) {
 
 // Tests for IRHitachiAc class.
 TEST(TestIRHitachiAcClass, SetAndGetPower) {
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
   ac.on();
   EXPECT_TRUE(ac.getPower());
   ac.off();
@@ -203,7 +203,7 @@ TEST(TestIRHitachiAcClass, SetAndGetPower) {
 }
 
 TEST(TestIRHitachiAcClass, SetAndGetSwing) {
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
   ac.setSwingVertical(true);
   ac.setSwingHorizontal(true);
   EXPECT_TRUE(ac.getSwingVertical());
@@ -222,7 +222,7 @@ TEST(TestIRHitachiAcClass, SetAndGetSwing) {
 }
 
 TEST(TestIRHitachiAcClass, SetAndGetTemp) {
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
   ac.setTemp(25);
   EXPECT_EQ(25, ac.getTemp());
   ac.setTemp(kHitachiAcMinTemp);
@@ -238,7 +238,7 @@ TEST(TestIRHitachiAcClass, SetAndGetTemp) {
 }
 
 TEST(TestIRHitachiAcClass, SetAndGetMode) {
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
   ac.setMode(kHitachiAcCool);
   ac.setFan(kHitachiAcFanAuto);
   EXPECT_EQ(kHitachiAcCool, ac.getMode());
@@ -261,7 +261,7 @@ TEST(TestIRHitachiAcClass, SetAndGetMode) {
 }
 
 TEST(TestIRHitachiAcClass, SetAndGetFan) {
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
   ac.setMode(kHitachiAcCool);  // All fan options are available in this mode.
   ac.setFan(kHitachiAcFanAuto);
   EXPECT_EQ(kHitachiAcFanAuto, ac.getFan());
@@ -293,7 +293,7 @@ TEST(TestIRHitachiAcClass, SetAndGetFan) {
 }
 
 TEST(TestIRHitachiAcClass, HumanReadable) {
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
 
   ac.setMode(kHitachiAcHeat);
   ac.setTemp(kHitachiAcMaxTemp);
@@ -316,7 +316,7 @@ TEST(TestIRHitachiAcClass, HumanReadable) {
 }
 
 TEST(TestIRHitachiAcClass, ChecksumCalculation) {
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
 
   const uint8_t originalstate[kHitachiAcStateLength] = {
       0x80, 0x08, 0x0C, 0x02, 0xFD, 0x80, 0x7F, 0x88, 0x48, 0x80,
@@ -426,7 +426,7 @@ TEST(TestDecodeHitachiAC, NormalRealExample1) {
   EXPECT_EQ(HITACHI_AC, irsend.capture.decode_type);
   ASSERT_EQ(kHitachiAcBits, irsend.capture.bits);
   EXPECT_STATE_EQ(hitachi_code, irsend.capture.state, kHitachiAcBits);
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
   ac.setRaw(irsend.capture.state);
   EXPECT_EQ(
       "Power: On, Mode: 4 (Cool), Temp: 16C, Fan: 1 (Auto), "
@@ -494,7 +494,7 @@ TEST(TestDecodeHitachiAC, NormalRealExample2) {
   EXPECT_EQ(HITACHI_AC, irsend.capture.decode_type);
   ASSERT_EQ(kHitachiAcBits, irsend.capture.bits);
   EXPECT_STATE_EQ(hitachi_code, irsend.capture.state, kHitachiAcBits);
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
   ac.setRaw(irsend.capture.state);
   EXPECT_EQ(
       "Power: On, Mode: 3 (Heat), Temp: 32C, Fan: 5 (High), "
@@ -777,7 +777,7 @@ TEST(TestDecodeHitachiAC2, NormalRealExample) {
 }
 
 TEST(TestIRHitachiAcClass, toCommon) {
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
   ac.setPower(true);
   ac.setMode(kHitachiAcCool);
   ac.setTemp(20);
@@ -811,16 +811,28 @@ TEST(TestUtils, Housekeeping) {
   ASSERT_EQ(decode_type_t::HITACHI_AC, strToDecodeType("HITACHI_AC"));
   ASSERT_TRUE(hasACState(decode_type_t::HITACHI_AC));
   ASSERT_TRUE(IRac::isProtocolSupported(decode_type_t::HITACHI_AC));
+  ASSERT_EQ(kHitachiAcBits,
+            IRsend::defaultBits(decode_type_t::HITACHI_AC));
+  ASSERT_EQ(kNoRepeat,
+            IRsend::minRepeats(decode_type_t::HITACHI_AC));
 
   ASSERT_EQ("HITACHI_AC1", typeToString(decode_type_t::HITACHI_AC1));
   ASSERT_EQ(decode_type_t::HITACHI_AC1, strToDecodeType("HITACHI_AC1"));
   ASSERT_TRUE(hasACState(decode_type_t::HITACHI_AC1));
   ASSERT_TRUE(IRac::isProtocolSupported(decode_type_t::HITACHI_AC1));
+  ASSERT_EQ(kHitachiAc1Bits,
+            IRsend::defaultBits(decode_type_t::HITACHI_AC1));
+  ASSERT_EQ(kNoRepeat,
+            IRsend::minRepeats(decode_type_t::HITACHI_AC1));
 
   ASSERT_EQ("HITACHI_AC2", typeToString(decode_type_t::HITACHI_AC2));
   ASSERT_EQ(decode_type_t::HITACHI_AC2, strToDecodeType("HITACHI_AC2"));
   ASSERT_TRUE(hasACState(decode_type_t::HITACHI_AC2));
   ASSERT_FALSE(IRac::isProtocolSupported(decode_type_t::HITACHI_AC2));
+  ASSERT_EQ(kHitachiAc2Bits,
+            IRsend::defaultBits(decode_type_t::HITACHI_AC2));
+  ASSERT_EQ(kNoRepeat,
+            IRsend::minRepeats(decode_type_t::HITACHI_AC2));
 
   ASSERT_EQ("HITACHI_AC3", typeToString(decode_type_t::HITACHI_AC3));
   ASSERT_EQ(decode_type_t::HITACHI_AC3, strToDecodeType("HITACHI_AC3"));
@@ -831,6 +843,37 @@ TEST(TestUtils, Housekeeping) {
   ASSERT_EQ(decode_type_t::HITACHI_AC424, strToDecodeType("HITACHI_AC424"));
   ASSERT_TRUE(hasACState(decode_type_t::HITACHI_AC424));
   ASSERT_TRUE(IRac::isProtocolSupported(decode_type_t::HITACHI_AC424));
+  ASSERT_EQ(kHitachiAc424Bits,
+            IRsend::defaultBits(decode_type_t::HITACHI_AC424));
+  ASSERT_EQ(kNoRepeat,
+            IRsend::minRepeats(decode_type_t::HITACHI_AC424));
+
+  ASSERT_EQ("HITACHI_AC344", typeToString(decode_type_t::HITACHI_AC344));
+  ASSERT_EQ(decode_type_t::HITACHI_AC344, strToDecodeType("HITACHI_AC344"));
+  ASSERT_TRUE(hasACState(decode_type_t::HITACHI_AC344));
+  ASSERT_TRUE(IRac::isProtocolSupported(decode_type_t::HITACHI_AC344));
+  ASSERT_EQ(kHitachiAc344Bits,
+            IRsend::defaultBits(decode_type_t::HITACHI_AC344));
+  ASSERT_EQ(kNoRepeat,
+            IRsend::minRepeats(decode_type_t::HITACHI_AC344));
+
+  ASSERT_EQ("HITACHI_AC264", typeToString(decode_type_t::HITACHI_AC264));
+  ASSERT_EQ(decode_type_t::HITACHI_AC264, strToDecodeType("HITACHI_AC264"));
+  ASSERT_TRUE(hasACState(decode_type_t::HITACHI_AC264));
+  ASSERT_TRUE(IRac::isProtocolSupported(decode_type_t::HITACHI_AC264));
+  ASSERT_EQ(kHitachiAc264Bits,
+            IRsend::defaultBits(decode_type_t::HITACHI_AC264));
+  ASSERT_EQ(kNoRepeat,
+            IRsend::minRepeats(decode_type_t::HITACHI_AC264));
+
+  ASSERT_EQ("HITACHI_AC296", typeToString(decode_type_t::HITACHI_AC296));
+  ASSERT_EQ(decode_type_t::HITACHI_AC296, strToDecodeType("HITACHI_AC296"));
+  ASSERT_TRUE(hasACState(decode_type_t::HITACHI_AC296));
+  ASSERT_TRUE(IRac::isProtocolSupported(decode_type_t::HITACHI_AC296));
+  ASSERT_EQ(kHitachiAc296Bits,
+            IRsend::defaultBits(decode_type_t::HITACHI_AC296));
+  ASSERT_EQ(kNoRepeat,
+            IRsend::minRepeats(decode_type_t::HITACHI_AC296));
 }
 
 // Decode a 'real' HitachiAc424 message.
@@ -920,11 +963,11 @@ TEST(TestDecodeHitachiAc424, RealExample) {
   EXPECT_EQ(HITACHI_AC424, irsend.capture.decode_type);
   ASSERT_EQ(kHitachiAc424Bits, irsend.capture.bits);
   EXPECT_STATE_EQ(expected, irsend.capture.state, kHitachiAc424Bits);
-  IRHitachiAc ac(0);
+  IRHitachiAc ac(kGpioUnused);
   ac.setRaw(irsend.capture.state);
   EXPECT_EQ(
       "Power: On, Mode: 3 (Cool), Temp: 23C, Fan: 5 (Auto), "
-      "Swing(V) Toggle: Off, Button: 19 (Power/Mode)",
+      "Button: 19 (Power/Mode), Swing(V) Toggle: Off",
       IRAcUtils::resultAcToString(&irsend.capture));
   stdAc::state_t r, p;
   ASSERT_TRUE(IRAcUtils::decodeToState(&irsend.capture, &r, &p));
@@ -954,7 +997,7 @@ TEST(TestDecodeHitachiAc424, SyntheticExample) {
 
 // Tests for IRHitachiAc424 class.
 TEST(TestIRHitachiAc424Class, SetInvertedStates) {
-  IRHitachiAc424 ac(0);
+  IRHitachiAc424 ac(kGpioUnused);
 
   uint8_t raw[kHitachiAc424StateLength] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -976,7 +1019,7 @@ TEST(TestIRHitachiAc424Class, SetInvertedStates) {
 }
 
 TEST(TestIRHitachiAc424Class, SetAndGetPower) {
-  IRHitachiAc424 ac(0);
+  IRHitachiAc424 ac(kGpioUnused);
   ac.on();
   EXPECT_TRUE(ac.getPower());
   ac.off();
@@ -990,7 +1033,7 @@ TEST(TestIRHitachiAc424Class, SetAndGetPower) {
 }
 
 TEST(TestIRHitachiAc424Class, SetAndGetTemp) {
-  IRHitachiAc424 ac(0);
+  IRHitachiAc424 ac(kGpioUnused);
   ac.setTemp(25);
   EXPECT_EQ(25, ac.getTemp());
   ac.setTemp(kHitachiAc424MinTemp);
@@ -1004,7 +1047,7 @@ TEST(TestIRHitachiAc424Class, SetAndGetTemp) {
 }
 
 TEST(TestIRHitachiAc424Class, SetAndGetMode) {
-  IRHitachiAc424 ac(0);
+  IRHitachiAc424 ac(kGpioUnused);
   ac.setMode(kHitachiAc424Cool);
   ac.setFan(kHitachiAc424FanAuto);
   ac.setTemp(25);
@@ -1024,7 +1067,7 @@ TEST(TestIRHitachiAc424Class, SetAndGetMode) {
 }
 
 TEST(TestIRHitachiAc424Class, SetAndGetFan) {
-  IRHitachiAc424 ac(0);
+  IRHitachiAc424 ac(kGpioUnused);
   ac.setMode(kHitachiAc424Cool);  // All fan options are available in this mode.
   ac.setFan(kHitachiAc424FanAuto);
   EXPECT_EQ(kHitachiAc424FanAuto, ac.getFan());
@@ -1069,7 +1112,7 @@ TEST(TestIRHitachiAc424Class, SetAndGetFan) {
 
 
 TEST(TestIRHitachiAc424Class, SetAndGetButton) {
-  IRHitachiAc424 ac(0);
+  IRHitachiAc424 ac(kGpioUnused);
   ac.on();
   EXPECT_EQ(ac.getButton(), kHitachiAc424ButtonPowerMode);
   ac.setButton(kHitachiAc424ButtonTempUp);
@@ -1079,7 +1122,7 @@ TEST(TestIRHitachiAc424Class, SetAndGetButton) {
 }
 
 TEST(TestIRHitachiAc424Class, ToggleSwingVertical) {
-  IRHitachiAc424 ac(0);
+  IRHitachiAc424 ac(kGpioUnused);
   ac.on();
   EXPECT_EQ(ac.getButton(), kHitachiAc424ButtonPowerMode);
   ac.setSwingVToggle(true);
@@ -1091,7 +1134,7 @@ TEST(TestIRHitachiAc424Class, ToggleSwingVertical) {
 }
 
 TEST(TestIRHitachiAc424Class, HumanReadable) {
-  IRHitachiAc424 ac(0);
+  IRHitachiAc424 ac(kGpioUnused);
 
   ac.setMode(kHitachiAc424Heat);
   ac.setTemp(kHitachiAc424MaxTemp);
@@ -1099,29 +1142,29 @@ TEST(TestIRHitachiAc424Class, HumanReadable) {
   ac.setFan(kHitachiAc424FanHigh);
   EXPECT_EQ(
       "Power: On, Mode: 6 (Heat), Temp: 32C, Fan: 4 (High), "
-      "Swing(V) Toggle: Off, Button: 66 (Fan)",
+      "Button: 66 (Fan), Swing(V) Toggle: Off",
       ac.toString());
   ac.setMode(kHitachiAc424Cool);
   ac.setFan(kHitachiAc424FanMin);
   ac.setTemp(kHitachiAc424MinTemp);
   EXPECT_EQ(
       "Power: On, Mode: 3 (Cool), Temp: 16C, Fan: 1 (Min), "
-      "Swing(V) Toggle: Off, Button: 67 (Temp Down)",
+      "Button: 67 (Temp Down), Swing(V) Toggle: Off",
       ac.toString());
   ac.setSwingVToggle(true);
   EXPECT_EQ(
       "Power: On, Mode: 3 (Cool), Temp: 16C, Fan: 1 (Min), "
-      "Swing(V) Toggle: On, Button: 129 (Swing(V))",
+      "Button: 129 (Swing(V)), Swing(V) Toggle: On",
       ac.toString());
   ac.setTemp(ac.getTemp() + 1);
   EXPECT_EQ(
       "Power: On, Mode: 3 (Cool), Temp: 17C, Fan: 1 (Min), "
-      "Swing(V) Toggle: Off, Button: 68 (Temp Up)",
+      "Button: 68 (Temp Up), Swing(V) Toggle: Off",
       ac.toString());
   ac.setTemp(ac.getTemp() - 1);
   EXPECT_EQ(
       "Power: On, Mode: 3 (Cool), Temp: 16C, Fan: 1 (Min), "
-      "Swing(V) Toggle: Off, Button: 67 (Temp Down)",
+      "Button: 67 (Temp Down), Swing(V) Toggle: Off",
       ac.toString());
 }
 
@@ -1800,4 +1843,569 @@ TEST(TestIRHitachiAc1Class, FanSpeedInDryMode) {
       "Swing(V) Toggle: On, Swing(V): Off, Swing(H): Off, Sleep: Off, "
       "On Timer: Off, Off Timer: Off",
       ac.toString());
+}
+
+// Decode a 'real' HitachiAc344 message.
+TEST(TestDecodeHitachiAc344, RealExample) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+
+  uint8_t expected[kHitachiAc344StateLength] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x98, 0x67, 0x13,
+      0xEC, 0x68, 0x97, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x13, 0xEC, 0xF1, 0x0E, 0x00, 0xFF, 0x00, 0xFF, 0x80, 0x7F, 0x03,
+      0xFC, 0x20, 0xDF, 0x00, 0xFF, 0x00, 0xFF};
+
+  // Ref: https://github.com/crankyoldgit/IRremoteESP8266/issues/1134#issue-622516158
+  const uint16_t rawData[691] = {3410, 1624, 482, 1226, 458, 464, 458, 462, 456,
+      464, 460, 460, 462, 460, 460, 462, 460, 460, 460, 462, 460, 462, 456, 466,
+      458, 462, 456, 1228, 462, 460, 460, 462, 460, 462, 458, 462, 456, 466,
+      456, 464, 458, 464, 456, 466, 460, 460, 460, 462, 460, 460, 458, 464, 456,
+      464, 458, 464, 456, 464, 460, 462, 454, 466, 458, 1226, 460, 462, 456,
+      1226, 456, 1230, 456, 1228, 456, 1230, 458, 1228, 456, 1228, 456, 464,
+      456, 1230, 454, 1230, 458, 1228, 458, 1226, 454, 1230, 454, 1230, 454,
+      1230, 458, 1228, 458, 1230, 452, 468, 456, 464, 454, 468, 456, 464, 418,
+      502, 456, 466, 458, 464, 458, 462, 458, 464, 454, 468, 456, 1230, 454,
+      1230, 454, 466, 456, 464, 456, 1228, 456, 1230, 456, 1230, 456, 1230, 456,
+      464, 458, 464, 458, 1228, 456, 1230, 456, 464, 454, 466, 456, 466, 456,
+      464, 458, 462, 458, 1228, 458, 1228, 458, 464, 454, 468, 456, 1228, 458,
+      1228, 458, 1228, 456, 1228, 456, 464, 454, 468, 456, 1228, 458, 1226, 458,
+      464, 458, 1226, 456, 1230, 454, 468, 458, 462, 452, 1232, 460, 462, 458,
+      460, 460, 462, 456, 466, 458, 462, 456, 1230, 456, 1228, 460, 462, 460,
+      1226, 458, 1228, 458, 1226, 460, 460, 456, 468, 458, 464, 456, 1226, 460,
+      462, 458, 1228, 456, 1228, 458, 462, 462, 1224, 460, 1226, 458, 1226, 460,
+      464, 458, 1228, 456, 462, 460, 462, 460, 1226, 460, 460, 462, 460, 458,
+      462, 458, 462, 456, 464, 460, 460, 462, 460, 462, 460, 460, 1224, 462,
+      1224, 462, 1224, 458, 1226, 462, 1224, 460, 1224, 400, 1284, 446, 1240,
+      446, 476, 458, 462, 464, 458, 462, 460, 460, 460, 458, 462, 462, 462, 456,
+      464, 460, 1226, 460, 1226, 460, 1224, 462, 1224, 460, 1224, 460, 1224,
+      460, 1224, 462, 1224, 462, 460, 460, 462, 460, 460, 458, 464, 458, 462,
+      458, 464, 458, 462, 460, 460, 462, 1224, 460, 1226, 458, 1228, 456, 1226,
+      462, 1222, 460, 1228, 458, 1226, 460, 1226, 460, 460, 458, 462, 460, 462,
+      460, 460, 460, 462, 460, 462, 458, 464, 460, 458, 460, 1226, 456, 1228,
+      462, 1224, 460, 1224, 458, 1228, 458, 1226, 458, 1228, 462, 1224, 460,
+      462, 460, 462, 458, 464, 460, 460, 456, 466, 458, 462, 460, 460, 462,
+      458, 460, 1224, 460, 1224, 458, 1226, 460, 1224, 460, 1226, 460, 1226,
+      458, 1228, 456, 1230, 456, 1228, 462, 1224, 460, 460, 458, 462, 458,
+      1228, 456, 466, 458, 462, 454, 468, 458, 462, 458, 462, 460, 1226, 456,
+      1228, 458, 464, 420, 1264, 458, 1228, 458, 1228, 456, 1228, 454, 468, 456,
+      464, 456, 466, 456, 1228, 460, 1226, 456, 1230, 456, 1228, 456, 464, 456,
+      1230, 458, 1226, 458, 1226, 452, 468, 456, 466, 376, 546, 456, 466, 456,
+      464, 456, 466, 458, 464, 458, 464, 456, 466, 424, 496, 456, 464, 416, 504,
+      454, 1230, 454, 1232, 456, 1228, 456, 1228, 456, 1230, 456, 1230, 454,
+      1230, 460, 1226, 426, 496, 424, 496, 456, 466, 374, 546, 454, 468, 374,
+      544, 458, 464, 456, 464, 458, 1228, 424, 1262, 454, 1232, 426, 1258, 458,
+      1228, 426, 1260, 454, 1230, 456, 1228, 426, 496, 374, 546, 426, 494, 426,
+      496, 424, 496, 426, 496, 424, 496, 456, 1230, 456, 1230, 456, 1228, 458,
+      1228, 456, 1230, 456, 1230, 456, 1230, 424, 1260, 458, 464, 426, 1258,
+      456, 1230, 422, 500, 456, 466, 418, 504, 424, 496, 426, 496, 456, 464,
+      420, 500, 454, 468, 456, 1230, 424, 1260, 420, 1264, 422, 1264, 418,
+      1266, 420, 1264, 420, 500, 456, 466, 426, 494, 454, 468, 456, 464, 420,
+      1266, 452, 470, 454, 466, 374, 1310, 456, 1228, 456, 1230, 452, 1232, 420,
+      1266, 424, 498, 456, 1230, 456, 1230, 456, 466, 450, 470, 456, 464, 376,
+      546, 456, 466, 422, 498, 426, 496, 458, 464, 424, 1260, 454, 1232, 454,
+      1232, 454, 1232, 458, 1228, 422, 1262, 456, 1228, 454, 1230, 456, 468,
+      416, 504, 422, 498, 424, 498, 454, 466, 456, 466, 422, 500, 456, 466, 374,
+      1310, 418, 1266, 424, 1262, 422, 1262, 376, 1310, 376, 1308, 422, 1264,
+      424, 1262, 350};  // UNKNOWN 919B8582
+
+  irsend.reset();
+  irsend.sendRaw(rawData, 691, kHitachiAcFreq);
+  irsend.makeDecodeResult();
+  EXPECT_TRUE(irrecv.decode(&irsend.capture));
+  EXPECT_EQ(HITACHI_AC344, irsend.capture.decode_type);
+  ASSERT_EQ(kHitachiAc344Bits, irsend.capture.bits);
+  EXPECT_STATE_EQ(expected, irsend.capture.state, irsend.capture.bits);
+}
+
+// Decode a synthetic HitachiAc344 message.
+TEST(TestDecodeHitachiAc344, SyntheticExample) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+
+  uint8_t expected[kHitachiAc344StateLength] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x98, 0x67, 0x13,
+      0xEC, 0x68, 0x97, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x13, 0xEC, 0xF1, 0x0E, 0x00, 0xFF, 0x00, 0xFF, 0x80, 0x7F, 0x03,
+      0xFC, 0x20, 0xDF, 0x00, 0xFF, 0x00, 0xFF};
+
+  irsend.reset();
+  irsend.sendHitachiAc344(expected);
+  irsend.makeDecodeResult();
+  EXPECT_TRUE(irrecv.decode(&irsend.capture));
+  EXPECT_EQ(HITACHI_AC344, irsend.capture.decode_type);
+  ASSERT_EQ(kHitachiAc344Bits, irsend.capture.bits);
+  EXPECT_STATE_EQ(expected, irsend.capture.state, irsend.capture.bits);
+  EXPECT_EQ(
+      "Power: On, Mode: 3 (Cool), Temp: 26C, Fan: 1 (Min), "
+      "Button: 19 (Power/Mode), Swing(V): On, Swing(H): 3 (Middle)",
+      IRAcUtils::resultAcToString(&irsend.capture));
+}
+
+TEST(TestDecodeIRHitachiAc344, ExampleMessages) {
+  IRHitachiAc344 ac(kGpioUnused);
+
+  // On, 17, Hot, Auto
+  // Ref: https://docs.google.com/spreadsheets/d/1LPd8K9V437oyEMZT6JDv5LlPXh61RPmgeoVcHLWWr7k/edit#gid=1093727366&range=E21
+  // but bit order revered.
+  const uint8_t state[kHitachiAc344StateLength] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x92, 0x6D, 0x13,
+      0xEC, 0x44, 0xBB, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x56, 0xA9, 0xF1, 0x0E, 0x00, 0xFF, 0x00, 0xFF, 0x80, 0x7F, 0x03,
+      0xFC, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF};
+  ac.setRaw(state);
+  EXPECT_EQ(
+      "Power: On, Mode: 6 (Heat), Temp: 17C, Fan: 5 (Auto), "
+      "Button: 19 (Power/Mode), Swing(V): Off, Swing(H): 3 (Middle)",
+      ac.toString());
+}
+
+TEST(TestIRHitachiAc344Class, ReconstructKnownState) {
+  IRHitachiAc344 ac(kGpioUnused);
+
+  // On, 17, Hot, Auto
+  const uint8_t expected[kHitachiAc344StateLength] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x92, 0x6D, 0x13,
+      0xEC, 0x44, 0xBB, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x56, 0xA9, 0xF1, 0x0E, 0x00, 0xFF, 0x00, 0xFF, 0x80, 0x7F, 0x03,
+      0xFC, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF};
+  ac.setMode(kHitachiAc344Heat);
+  ac.setTemp(17);
+  ac.setFan(kHitachiAc344FanAuto);
+  ac.setButton(kHitachiAc344ButtonPowerMode);
+  EXPECT_STATE_EQ(expected, ac.getRaw(), kHitachiAc344Bits);
+}
+
+TEST(TestIRHitachiAc344Class, SwingV) {
+  IRHitachiAc344 ac(kGpioUnused);
+  // Ref: https://github.com/crankyoldgit/IRremoteESP8266/issues/1134#issuecomment-635760537
+
+  // https://docs.google.com/spreadsheets/d/1LPd8K9V437oyEMZT6JDv5LlPXh61RPmgeoVcHLWWr7k/edit#gid=874235844&range=G4
+  // aka. On 17 Cool Auto SwingV off SwingH off
+  const uint8_t start[43] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x92, 0x6D, 0x44,
+      0xBB, 0x44, 0xBB, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x53, 0xAC, 0xF1, 0x0E, 0x00, 0xFF, 0x00, 0xFF, 0x80, 0x7F, 0x03,
+      0xFC, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF};
+  ac.setRaw(start);
+  EXPECT_FALSE(ac.getSwingV());
+  const uint8_t turn_on_swingv[43] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x92, 0x6D, 0x81,
+      0x7E, 0x44, 0xBB, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x53, 0xAC, 0xF1, 0x0E, 0x00, 0xFF, 0x00, 0xFF, 0x80, 0x7F, 0x03,
+      0xFC, 0x20, 0xDF, 0x00, 0xFF, 0x00, 0xFF};
+  ac.setSwingV(true);  // Turn it on.
+  EXPECT_TRUE(ac.getSwingV());
+  EXPECT_STATE_EQ(turn_on_swingv, ac.getRaw(), kHitachiAc344Bits);
+  ac.setSwingV(false);
+  EXPECT_FALSE(ac.getSwingV());
+}
+
+// Decode a 'real' HitachiAc264 message.
+TEST(TestDecodeHitachiAc264, RealExample) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+
+  const uint8_t expected[kHitachiAc264StateLength] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x92,
+      0x6D, 0x13, 0xEC, 0x6C, 0x93, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x16, 0xE9, 0xC1, 0x3E, 0x00,
+      0xFF, 0x00, 0xFF};
+
+  // Ref: https://github.com/crankyoldgit/IRremoteESP8266/issues/1729#issuecomment-1006938712
+  const uint16_t rawData[531] = {
+      3392, 1752, 372, 1356, 344, 504, 344, 504, 344, 480, 370, 480, 370, 478,
+      370, 478, 372, 480, 370, 478, 370, 480, 370, 478, 370, 480, 370, 1330,
+      370, 478, 370, 480, 370, 478, 370, 478, 370, 480, 370, 478, 370, 480, 370,
+      504, 346, 504, 344, 480, 370, 504, 346, 478, 370, 478, 370, 478, 372, 480,
+      370, 480, 370, 504, 346, 1330, 370, 480, 370, 1356, 346, 1330, 370, 1354,
+      346, 1328, 370, 1330, 370, 1328, 370, 478, 372, 1330, 370, 1328, 370,
+      1356, 346, 1354, 344, 1328, 372, 1354, 344, 1356, 344, 1330, 370, 1328,
+      372, 480, 370, 478, 370, 504, 346, 478, 372, 476, 372, 504, 346, 480, 370,
+      504, 344, 478, 372, 504, 344, 1328, 372, 1328, 372, 478, 370, 504, 346,
+      1330, 370, 1328, 372, 1328, 370, 1356, 344, 478, 370, 478, 370, 1356, 344,
+      1328, 372, 480, 370, 478, 372, 504, 346, 1330, 370, 478, 370, 480, 370,
+      1330, 370, 478, 370, 480, 370, 1328, 370, 1330, 370, 480, 372, 1352, 346,
+      1328, 372, 504, 346, 1328, 370, 1328, 370, 480, 370, 1328, 372, 1328, 370,
+      504, 344, 478, 372, 1330, 370, 478, 370, 480, 370, 480, 370, 478, 370,
+      480, 370, 1356, 346, 1328, 370, 480, 370, 1330, 370, 1330, 370, 1330, 370,
+      478, 370, 506, 344, 1328, 372, 1328, 372, 478, 372, 1330, 370, 1328, 372,
+      478, 370, 1330, 370, 1328, 372, 504, 344, 480, 370, 1330, 370, 504, 344,
+      504, 346, 1354, 346, 504, 346, 478, 372, 478, 370, 480, 370, 478, 370,
+      492, 358, 478, 370, 478, 370, 1328, 372, 1330, 370, 1328, 372, 1354, 346,
+      1328, 372, 1328, 370, 1330, 370, 1328, 372, 476, 372, 504, 346, 478, 372,
+      480, 370, 480, 370, 504, 344, 478, 370, 480, 370, 1328, 370, 1330, 372,
+      1328, 370, 1330, 370, 1330, 370, 1330, 368, 1330, 370, 1330, 370, 480,
+      370, 480, 370, 478, 370, 504, 344, 480, 370, 478, 370, 504, 344, 478, 372,
+      1328, 370, 1330, 370, 1330, 370, 1330, 370, 1328, 372, 1356, 344, 1330,
+      370, 1330, 370, 480, 370, 478, 370, 482, 368, 480, 370, 480, 370, 480,
+      370, 480, 370, 480, 370, 1330, 370, 1354, 346, 1330, 370, 1354, 346, 1330,
+      370, 1330, 370, 1330, 370, 1330, 370, 504, 346, 480, 370, 478, 372, 478,
+      372, 504, 344, 480, 370, 480, 370, 504, 344, 1330, 370, 1328, 370, 1330,
+      372, 1328, 370, 1354, 346, 1328, 370, 1330, 370, 1330, 370, 478, 370,
+      1330, 370, 1328, 372, 480, 370, 1330, 370, 480, 370, 480, 370, 480, 370,
+      1356, 344, 478, 370, 506, 344, 1330, 370, 478, 370, 1330, 372, 1354, 346,
+      1354, 346, 1328, 370, 478, 372, 478, 370, 480, 370, 504, 346, 480, 370,
+      1328, 370, 1330, 370, 478, 370, 1330, 370, 1328, 370, 1330, 372, 1354,
+      344, 1328, 372, 504, 346, 478, 370, 504, 346, 504, 346, 478, 370, 478,
+      370, 482, 368, 480, 370, 478, 370, 480, 370, 1328, 372, 1328, 370, 1330,
+      370, 1328, 370, 1328, 370, 1330, 370, 1354, 346, 1328, 372, 478, 370, 478,
+      370, 478, 372, 478, 372, 478, 372, 478, 372, 478, 370, 478, 372, 1330,
+      370, 1328, 370, 1328, 372, 1328, 372, 1330, 444, 1256, 370, 1330, 370,
+      1330, 442};
+
+  irsend.reset();
+  irsend.sendRaw(rawData, 531, kHitachiAcFreq);
+  irsend.makeDecodeResult();
+  EXPECT_TRUE(irrecv.decode(&irsend.capture));
+  EXPECT_EQ(HITACHI_AC264, irsend.capture.decode_type);
+  ASSERT_EQ(kHitachiAc264Bits, irsend.capture.bits);
+  EXPECT_STATE_EQ(expected, irsend.capture.state, kHitachiAc264Bits);
+  EXPECT_EQ(
+      "Power: Off, Mode: 6 (Heat), Temp: 27C, Fan: 1 (Min), "
+      "Button: 19 (Power/Mode)",
+      IRAcUtils::resultAcToString(&irsend.capture));
+  stdAc::state_t r, p;
+  ASSERT_TRUE(IRAcUtils::decodeToState(&irsend.capture, &r, &p));
+}
+
+// Decode a 'Synthetic' HitachiAc264 message.
+TEST(TestDecodeHitachiAc264, SyntheticExample) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+
+  // Ref: https://github.com/crankyoldgit/IRremoteESP8266/issues/1729#issuecomment-1006938712
+  const uint8_t expected[kHitachiAc264StateLength] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x92,
+      0x6D, 0x13, 0xEC, 0x6C, 0x93, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x16, 0xE9, 0xC1, 0x3E, 0x00,
+      0xFF, 0x00, 0xFF};
+
+  irsend.reset();
+  irsend.sendHitachiAc264(expected);
+  irsend.makeDecodeResult();
+  EXPECT_TRUE(irrecv.decode(&irsend.capture));
+  EXPECT_EQ(HITACHI_AC264, irsend.capture.decode_type);
+  ASSERT_EQ(kHitachiAc264Bits, irsend.capture.bits);
+  EXPECT_STATE_EQ(expected, irsend.capture.state, kHitachiAc264Bits);
+  EXPECT_EQ(
+      "Power: Off, Mode: 6 (Heat), Temp: 27C, Fan: 1 (Min), "
+      "Button: 19 (Power/Mode)",
+      IRAcUtils::resultAcToString(&irsend.capture));
+  stdAc::state_t r, p;
+  ASSERT_TRUE(IRAcUtils::decodeToState(&irsend.capture, &r, &p));
+}
+
+TEST(TestIRHitachiAc264Class, ConstructKnownState) {
+  IRHitachiAc264 ac(kGpioUnused);
+  // hot/power off/ fan 1 /27°C
+  // Ref: https://github.com/crankyoldgit/IRremoteESP8266/issues/1729#issuecomment-1006938712
+  const uint8_t expected[kHitachiAc264StateLength] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x92,
+      0x6D, 0x13, 0xEC, 0x6C, 0x93, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x16, 0xE9, 0xC1, 0x3E, 0x00,
+      0xFF, 0x00, 0xFF};
+  ac.stateReset();
+  ac.setMode(kHitachiAc264Heat);
+  ac.setFan(kHitachiAc264FanMin);
+  ac.setTemp(27);
+  ac.setPower(false);
+  EXPECT_EQ(
+      "Power: Off, Mode: 6 (Heat), Temp: 27C, Fan: 1 (Min), "
+      "Button: 19 (Power/Mode)",
+      ac.toString());
+  EXPECT_STATE_EQ(expected, ac.getRaw(), kHitachiAc264Bits);
+}
+
+TEST(TestIRHitachiAc264Class, Issue1729_PowerOntoOff) {
+  IRHitachiAc264 ac(kGpioUnused);
+
+  const String on_str = "Power: On, Mode: 6 (Heat), Temp: 25C, Fan: 5 (Auto), "
+                        "Button: 19 (Power/Mode)";
+  const String off_str = "Power: Off, Mode: 6 (Heat), Temp: 25C, "
+                         "Fan: 5 (Auto), Button: 19 (Power/Mode)";
+  const uint8_t off_state[kHitachiAc264StateLength] = {
+     0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x92,
+     0x6D, 0x13, 0xEC, 0x64, 0x9B, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+     0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x56, 0xA9, 0xC1, 0x3E, 0x00,
+     0xFF, 0x00, 0xFF};
+  // Simulate at the `IRHitachiAc264` class level.
+  ac.stateReset();
+  // Create an On state.
+  ac.setMode(kHitachiAc264Heat);
+  ac.setTemp(25);
+  ac.setFan(kHitachiAc264FanAuto);
+  ac.setPower(true);
+  EXPECT_EQ(on_str, ac.toString());
+  ac.send();  // Send it
+  EXPECT_EQ(on_str, ac.toString());  // Check it is still the same.
+
+  // Now construct the "Off" state.
+  ac.setMode(kHitachiAc264Heat);
+  ac.setTemp(25);
+  ac.setFan(kHitachiAc264FanAuto);
+  ac.setPower(false);
+
+  EXPECT_EQ(off_str, ac.toString());
+  EXPECT_STATE_EQ(off_state, ac.getRaw(), kHitachiAc264Bits);
+  ac.send();  // Send it
+  EXPECT_EQ(off_str, ac.toString());  // Check it is still the same "off" state.
+  EXPECT_STATE_EQ(off_state, ac.getRaw(), kHitachiAc264Bits);
+
+  // Simulate at the `IRac` class level.
+  IRac irac(kGpioUnused);
+  IRrecv capture(kGpioUnused);
+
+  ac.stateReset();
+  ac._irsend.reset();
+
+  // Create a power on state & send it.
+  irac.hitachi264(&ac,
+                  true,                         // Power
+                  stdAc::opmode_t::kHeat,       // Mode
+                  25,                           // Celsius
+                  stdAc::fanspeed_t::kAuto);    // Fan speed
+
+  ASSERT_EQ(on_str, ac.toString());
+  ac._irsend.makeDecodeResult();
+  EXPECT_TRUE(capture.decode(&ac._irsend.capture));
+  ASSERT_EQ(HITACHI_AC264, ac._irsend.capture.decode_type);
+  ASSERT_EQ(kHitachiAc264Bits, ac._irsend.capture.bits);
+  ASSERT_EQ(on_str, IRAcUtils::resultAcToString(&ac._irsend.capture));
+  stdAc::state_t on, prev;
+  ASSERT_TRUE(IRAcUtils::decodeToState(&ac._irsend.capture, &on, &prev));
+  EXPECT_EQ(decode_type_t::HITACHI_AC264, on.protocol);
+  EXPECT_TRUE(on.power);
+  EXPECT_EQ(stdAc::opmode_t::kHeat, on.mode);
+  EXPECT_EQ(25, on.degrees);
+
+  ac.stateReset();
+  ac._irsend.reset();
+  // Create a power off state & send it.
+  prev = on;
+  irac.hitachi264(&ac,
+                  false,                        // Power
+                  stdAc::opmode_t::kHeat,       // Mode
+                  25,                           // Celsius
+                  stdAc::fanspeed_t::kAuto);    // Fan speed
+
+  ASSERT_EQ(off_str, ac.toString());
+  ac._irsend.makeDecodeResult();
+  EXPECT_TRUE(capture.decode(&ac._irsend.capture));
+  ASSERT_EQ(HITACHI_AC264, ac._irsend.capture.decode_type);
+  ASSERT_EQ(kHitachiAc264Bits, ac._irsend.capture.bits);
+  ASSERT_EQ(off_str, IRAcUtils::resultAcToString(&ac._irsend.capture));
+  EXPECT_STATE_EQ(off_state, ac._irsend.capture.state, ac._irsend.capture.bits);
+  stdAc::state_t off;
+  ASSERT_TRUE(IRAcUtils::decodeToState(&ac._irsend.capture, &off, &prev));
+  EXPECT_EQ(decode_type_t::HITACHI_AC264, off.protocol);
+  EXPECT_FALSE(off.power);
+  EXPECT_EQ(stdAc::opmode_t::kHeat, off.mode);
+  EXPECT_EQ(25, off.degrees);
+
+  // Verify that handleToggles() isn't screwing anything up.
+  stdAc::state_t toggle_state;
+  toggle_state = irac.handleToggles(on, &prev);
+  EXPECT_FALSE(irac.cmpStates(on, prev));  // They are the same.
+  EXPECT_FALSE(irac.cmpStates(on, toggle_state));  // They are the same.
+  toggle_state = irac.handleToggles(off, &on);
+  EXPECT_TRUE(irac.cmpStates(off, on));  // They are different.
+  EXPECT_FALSE(irac.cmpStates(off, toggle_state));  // They are the same.
+  EXPECT_EQ(off.protocol, decode_type_t::HITACHI_AC264);
+  EXPECT_FALSE(off.power);
+  // That confirms handleToggles() isn't causing any grief.
+
+  // Check that IRac copies & modifies the states as we expect.
+  irac.next = on;  // Copy in the "on" state we constructed earlier.
+  irac.sendAc();  // Send it.
+  irac.markAsSent();  // Confirm it was sent.
+  EXPECT_FALSE(irac.cmpStates(on, irac.getStatePrev()));  // They are the same.
+  EXPECT_FALSE(irac.cmpStates(on, irac.getState()));  // They are the same.
+
+  irac.next.power = false;  // Turn off the power.
+  EXPECT_TRUE(irac.cmpStates(on, irac.getState()));  // They are the different.
+  EXPECT_FALSE(off.power);
+  EXPECT_FALSE(irac.cmpStates(off, irac.getState()));  // They are the same.
+  EXPECT_FALSE(irac.cmpStates(off, irac.next));  // They are the same.
+  irac.sendAc();  // Send it.
+  irac.markAsSent();  // Confirm it was sent.
+  EXPECT_FALSE(irac.cmpStates(off, irac.getStatePrev()));  // They are the same.
+  EXPECT_FALSE(irac.cmpStates(off, irac.getState()));  // They are the same.
+  EXPECT_FALSE(irac.cmpStates(off, irac.next));  // They are the same.
+  EXPECT_FALSE(irac.getStatePrev().power);
+  EXPECT_FALSE(irac.getState().power);
+  EXPECT_FALSE(irac.next.power);
+}
+
+// Decode a 'real' HitachiAc296 message.
+TEST(TestDecodeHitachiAc296, RealExample) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+
+  const uint8_t expected[kHitachiAc296StateLength] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x92,
+      0x6D, 0x44, 0xBB, 0x04, 0xFB, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x57, 0xA8, 0xF1, 0x0E, 0x00,
+      0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x03, 0xFC};
+
+  // Ref: https://github.com/crankyoldgit/IRremoteESP8266/pull/1758#issuecomment-1066017940
+  // Power: ON, Temp: -- (not used in auto mode), Fan: Auto, Mode: Auto
+  const uint16_t rawData[595] = {
+      3298, 1712, 358, 1278, 362, 516, 356, 518, 358, 514, 358, 518, 358, 516,
+      360, 516, 358, 520, 362, 514, 358, 516, 360, 514, 362, 514, 360, 1280,
+      358, 518, 358, 514, 362, 518, 360, 516, 358, 516, 358, 516, 360, 516, 358,
+      516, 358, 518, 358, 516, 360, 518, 362, 516, 358, 514, 360, 514, 360, 516,
+      360, 516, 358, 516, 362, 1280, 356, 520, 360, 1276, 362, 1276, 360, 1282,
+      360, 1280, 356, 1280, 358, 1278, 362, 514, 362, 1280, 360, 1280, 360,
+      1278, 358, 1280, 358, 1280, 358, 1278, 360, 1280, 358, 1278, 360, 1282,
+      360, 514, 360, 514, 362, 516, 356, 516, 362, 514, 360, 516, 358, 516, 358,
+      520, 360, 516, 358, 516, 362, 1276, 360, 1278, 360, 514, 358, 516, 360,
+      1278, 360, 1282, 360, 1276, 362, 1278, 360, 514, 358, 518, 358, 1278, 360,
+      1278, 360, 514, 360, 518, 360, 516, 358, 1280, 358, 516, 360, 516, 360,
+      1278, 360, 518, 356, 516, 360, 1282, 360, 1278, 362, 514, 360, 1278, 360,
+      1278, 360, 516, 358, 1278, 360, 1280, 358, 520, 358, 516, 358, 516, 360,
+      1276, 360, 516, 358, 514, 360, 514, 364, 1276, 358, 522, 358, 1278, 360,
+      1280, 358, 516, 360, 1278, 360, 1276, 360, 1278, 362, 514, 358, 1286, 358,
+      514, 358, 514, 362, 1278, 360, 514, 360, 518, 358, 516, 358, 518, 358,
+      518, 360, 1276, 360, 1278, 362, 514, 360, 1276, 360, 1276, 362, 1280, 358,
+      1276, 360, 1284, 358, 516, 358, 516, 360, 516, 360, 514, 360, 516, 358,
+      516, 360, 518, 356, 518, 358, 1280, 358, 1278, 362, 1276, 360, 1280, 360,
+      1276, 360, 1278, 362, 1278, 358, 1282, 358, 516, 358, 518, 358, 514, 360,
+      516, 358, 516, 360, 514, 360, 514, 358, 520, 360, 1278, 360, 1280, 358,
+      1280, 360, 1278, 360, 1278, 358, 1278, 360, 1278, 362, 1282, 360, 516,
+      360, 516, 358, 516, 360, 518, 356, 516, 358, 516, 362, 514, 358, 520, 358,
+      1280, 358, 1278, 362, 1276, 362, 1276, 360, 1276, 360, 1278, 360, 1278,
+      360, 1282, 360, 514, 362, 514, 360, 516, 360, 514, 360, 516, 360, 516,
+      360, 516, 358, 520, 362, 1278, 358, 1278, 362, 1276, 360, 1280, 358, 1276,
+      362, 1276, 362, 1278, 360, 1284, 358, 516, 358, 514, 360, 516, 360, 514,
+      360, 516, 360, 512, 362, 514, 360, 518, 360, 1276, 362, 1276, 362, 1278,
+      358, 1280, 360, 1278, 360, 1278, 360, 1276, 362, 1282, 360, 1278, 362,
+      1278, 362, 1276, 362, 512, 360, 1278, 362, 514, 360, 1278, 358, 520, 358,
+      516, 360, 514, 360, 516, 358, 1278, 362, 514, 360, 1278, 358, 516, 362,
+      1282, 360, 1276, 360, 516, 360, 516, 358, 518, 358, 1276, 362, 1278, 360,
+      1278, 360, 1284, 358, 516, 360, 1278, 362, 1276, 360, 1278, 360, 516, 360,
+      512, 362, 512, 362, 518, 362, 514, 362, 514, 358, 514, 360, 514, 360, 518,
+      358, 514, 358, 516, 360, 518, 360, 1278, 360, 1278, 360, 1276, 362, 1276,
+      362, 1276, 362, 1278, 358, 1278, 362, 1284, 358, 514, 362, 512, 360, 514,
+      362, 516, 360, 514, 360, 514, 360, 512, 362, 520, 360, 1276, 362, 1278,
+      362, 1276, 364, 1274, 360, 1278, 362, 1278, 360, 1278, 360, 1282, 362,
+      512, 360, 514, 362, 512, 362, 514, 360, 516, 362, 512, 362, 516, 360, 518,
+      360, 1278, 360, 1276, 362, 1278, 360, 1274, 364, 1276, 362, 1276, 360,
+      1278, 360, 1280, 362, 1276, 362, 1276, 364, 512, 360, 514, 362, 512, 362,
+      512, 362, 512, 362, 520, 358, 516, 360, 514, 360, 1276, 360, 1276, 362,
+      1276, 362, 1278, 360, 1278, 360, 1280, 362};  // HITACHI_AC296
+
+  irsend.reset();
+  irsend.sendRaw(rawData, 595, kHitachiAcFreq);
+  irsend.makeDecodeResult();
+  EXPECT_TRUE(irrecv.decode(&irsend.capture));
+  EXPECT_EQ(HITACHI_AC296, irsend.capture.decode_type);
+  ASSERT_EQ(kHitachiAc296Bits, irsend.capture.bits);
+  EXPECT_STATE_EQ(expected, irsend.capture.state, irsend.capture.bits);
+  EXPECT_EQ(
+      "Power: On, Mode: 7 (Auto), Temp: 1C, Fan: 5 (Auto)",
+      IRAcUtils::resultAcToString(&irsend.capture));
+  stdAc::state_t r, p;
+  ASSERT_TRUE(IRAcUtils::decodeToState(&irsend.capture, &r, &p));
+}
+
+// Decode a 'Synthetic' HitachiAc296 message.
+TEST(TestDecodeHitachiAc296, SyntheticExample) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+
+  // Ref: https://github.com/crankyoldgit/IRremoteESP8266/pull/1758#issuecomment-1066017940
+  // Power: ON, Temp: 24, Fan: Quiet (1), Mode: Cool
+  const uint8_t expected[kHitachiAc296StateLength] = {
+      0x01, 0x10, 0x00, 0x40, 0xBF, 0xFF, 0x00, 0xCC, 0x33, 0x98,
+      0x67, 0x42, 0xBD, 0x60, 0x9F, 0x00, 0xFF, 0x00, 0xFF, 0x00,
+      0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x13, 0xEC, 0xF1, 0x0E, 0x00,
+      0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x03, 0xFC};
+
+  irsend.reset();
+  irsend.sendHitachiAc296(expected);
+  irsend.makeDecodeResult();
+  EXPECT_TRUE(irrecv.decode(&irsend.capture));
+  EXPECT_EQ(HITACHI_AC296, irsend.capture.decode_type);
+  ASSERT_EQ(kHitachiAc296Bits, irsend.capture.bits);
+  EXPECT_STATE_EQ(expected, irsend.capture.state, kHitachiAc296Bits);
+  EXPECT_EQ(
+      "Power: On, Mode: 3 (Cool), Temp: 24C, Fan: 1 (Quiet)",
+      IRAcUtils::resultAcToString(&irsend.capture));
+  stdAc::state_t r, p;
+  ASSERT_TRUE(IRAcUtils::decodeToState(&irsend.capture, &r, &p));
+}
+
+TEST(TestIRHitachiAc296Class, SetAndGetPower) {
+  IRHitachiAc296 ac(kGpioUnused);
+  ac.on();
+  EXPECT_TRUE(ac.getPower());
+  ac.off();
+  EXPECT_FALSE(ac.getPower());
+  ac.setPower(true);
+  EXPECT_TRUE(ac.getPower());
+  ac.setPower(false);
+  EXPECT_FALSE(ac.getPower());
+}
+
+TEST(TestIRHitachiAc296Class, SetAndGetTemp) {
+  IRHitachiAc296 ac(kGpioUnused);
+  ac.setTemp(25);
+  EXPECT_EQ(25, ac.getTemp());
+  ac.setTemp(kHitachiAc296MinTemp);
+  EXPECT_EQ(kHitachiAc296MinTemp, ac.getTemp());
+  ac.setTemp(kHitachiAc296MinTemp - 1);
+  EXPECT_EQ(kHitachiAc296MinTemp, ac.getTemp());
+  ac.setTemp(kHitachiAc296MaxTemp);
+  EXPECT_EQ(kHitachiAc296MaxTemp, ac.getTemp());
+  ac.setTemp(kHitachiAc296MaxTemp + 1);
+  EXPECT_EQ(kHitachiAc296MaxTemp, ac.getTemp());
+  // Check the handling of the special temp value for auto operation mode,
+  ac.setMode(kHitachiAc296Cool);
+  ac.setTemp(kHitachiAc296TempAuto);
+  EXPECT_EQ(kHitachiAc296MinTemp, ac.getTemp());
+  ac.setMode(kHitachiAc296Auto);
+  EXPECT_EQ(kHitachiAc296TempAuto, ac.getTemp());
+  ac.setTemp(kHitachiAc296TempAuto);
+  EXPECT_EQ(kHitachiAc296TempAuto, ac.getTemp());
+  ac.setTemp(kHitachiAc296MinTemp);
+  EXPECT_EQ(kHitachiAc296TempAuto, ac.getTemp());
+  ac.setMode(kHitachiAc296Cool);
+  EXPECT_NE(kHitachiAc296TempAuto, ac.getTemp());
+}
+
+TEST(TestIRHitachiAc296Class, SetAndGetMode) {
+  IRHitachiAc296 ac(kGpioUnused);
+  ac.setMode(kHitachiAc296Cool);
+  ac.setFan(kHitachiAc296FanAuto);
+  ac.setTemp(25);
+  EXPECT_EQ(25, ac.getTemp());
+  EXPECT_EQ(kHitachiAc296Cool, ac.getMode());
+  EXPECT_EQ(kHitachiAc296FanAuto, ac.getFan());
+  ac.setMode(kHitachiAc296Heat);
+  EXPECT_EQ(25, ac.getTemp());
+  EXPECT_EQ(kHitachiAc296Heat, ac.getMode());
+  ac.setMode(kHitachiAc296Dehumidify);
+  EXPECT_EQ(kHitachiAc296Dehumidify, ac.getMode());
+}
+
+TEST(TestIRHitachiAc296Class, SetAndGetFan) {
+  IRHitachiAc296 ac(kGpioUnused);
+  ac.setMode(kHitachiAc296Cool);
+  ac.setFan(kHitachiAc296FanAuto);
+  EXPECT_EQ(kHitachiAc296FanAuto, ac.getFan());
+  ac.setFan(kHitachiAc296FanLow);
+  EXPECT_EQ(kHitachiAc296FanLow, ac.getFan());
+  ac.setFan(kHitachiAc296FanHigh);
+  EXPECT_EQ(kHitachiAc296FanHigh, ac.getFan());
+  ac.setFan(kHitachiAc296FanAuto + 1);
+  EXPECT_EQ(kHitachiAc296FanAuto, ac.getFan());
+  ac.setFan(kHitachiAc296FanSilent - 1);
+  EXPECT_EQ(kHitachiAc296FanSilent, ac.getFan());
 }

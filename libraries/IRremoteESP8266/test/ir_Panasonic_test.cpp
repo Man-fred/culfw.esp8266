@@ -6,6 +6,7 @@
 #include "IRrecv_test.h"
 #include "IRsend.h"
 #include "IRsend_test.h"
+#include "IRtext.h"
 #include "IRutils.h"
 #include "gtest/gtest.h"
 
@@ -496,7 +497,7 @@ TEST(TestDecodePanasonic, DecodeIssue245) {
 
 // Test sending typical data only.
 TEST(TestSendPanasonicAC, SendDataOnly) {
-  IRsendTest irsend(0);
+  IRsendTest irsend(kGpioUnused);
   irsend.begin();
 
   irsend.reset();
@@ -545,7 +546,7 @@ TEST(TestSendPanasonicAC, SendDataOnly) {
 // Tests for the IRPanasonicAc class.
 
 TEST(TestIRPanasonicAcClass, ChecksumCalculation) {
-  IRPanasonicAc pana(0);
+  IRPanasonicAc ac(kGpioUnused);
 
   const uint8_t originalstate[kPanasonicAcStateLength] = {
       0x02, 0x20, 0xE0, 0x04, 0x00, 0x00, 0x00, 0x06, 0x02,
@@ -562,10 +563,10 @@ TEST(TestIRPanasonicAcClass, ChecksumCalculation) {
   examplestate[kPanasonicAcStateLength - 1] = 0x0;  // Set incorrect checksum.
   EXPECT_FALSE(IRPanasonicAc::validChecksum(examplestate));
   EXPECT_EQ(0x83, IRPanasonicAc::calcChecksum(examplestate));
-  pana.setRaw(examplestate);
+  ac.setRaw(examplestate);
   // Extracting the state from the object should have a correct checksum.
-  EXPECT_TRUE(IRPanasonicAc::validChecksum(pana.getRaw()));
-  EXPECT_STATE_EQ(originalstate, pana.getRaw(), kPanasonicAcBits);
+  EXPECT_TRUE(IRPanasonicAc::validChecksum(ac.getRaw()));
+  EXPECT_STATE_EQ(originalstate, ac.getRaw(), kPanasonicAcBits);
   examplestate[kPanasonicAcStateLength - 1] = 0x83;  // Restore old checksum.
 
   // Change the state to force a different checksum.
@@ -575,181 +576,181 @@ TEST(TestIRPanasonicAcClass, ChecksumCalculation) {
 }
 
 TEST(TestIRPanasonicAcClass, SetAndGetPower) {
-  IRPanasonicAc pana(0);
-  pana.on();
-  EXPECT_TRUE(pana.getPower());
-  pana.off();
-  EXPECT_FALSE(pana.getPower());
-  pana.setPower(true);
-  EXPECT_TRUE(pana.getPower());
-  pana.setPower(false);
-  EXPECT_FALSE(pana.getPower());
+  IRPanasonicAc ac(kGpioUnused);
+  ac.on();
+  EXPECT_TRUE(ac.getPower());
+  ac.off();
+  EXPECT_FALSE(ac.getPower());
+  ac.setPower(true);
+  EXPECT_TRUE(ac.getPower());
+  ac.setPower(false);
+  EXPECT_FALSE(ac.getPower());
 }
 
 TEST(TestIRPanasonicAcClass, SetAndGetModel) {
-  IRPanasonicAc pana(0);
-  EXPECT_EQ(kPanasonicJke, pana.getModel());
-  pana.setModel(kPanasonicDke);
-  EXPECT_EQ(kPanasonicDke, pana.getModel());
-  pana.setModel(kPanasonicLke);
-  EXPECT_EQ(kPanasonicLke, pana.getModel());
-  pana.setModel(kPanasonicNke);
-  EXPECT_EQ(kPanasonicNke, pana.getModel());
-  pana.setModel(kPanasonicUnknown);  // shouldn't change.
-  EXPECT_EQ(kPanasonicNke, pana.getModel());
-  pana.setModel((panasonic_ac_remote_model_t)255);  // shouldn't change.
-  EXPECT_EQ(kPanasonicNke, pana.getModel());
-  pana.setModel(kPanasonicJke);
-  EXPECT_EQ(kPanasonicJke, pana.getModel());
+  IRPanasonicAc ac(kGpioUnused);
+  EXPECT_EQ(kPanasonicJke, ac.getModel());
+  ac.setModel(kPanasonicDke);
+  EXPECT_EQ(kPanasonicDke, ac.getModel());
+  ac.setModel(kPanasonicLke);
+  EXPECT_EQ(kPanasonicLke, ac.getModel());
+  ac.setModel(kPanasonicNke);
+  EXPECT_EQ(kPanasonicNke, ac.getModel());
+  ac.setModel(kPanasonicUnknown);  // shouldn't change.
+  EXPECT_EQ(kPanasonicNke, ac.getModel());
+  ac.setModel((panasonic_ac_remote_model_t)255);  // shouldn't change.
+  EXPECT_EQ(kPanasonicNke, ac.getModel());
+  ac.setModel(kPanasonicJke);
+  EXPECT_EQ(kPanasonicJke, ac.getModel());
 
   // This state tickled a bug in getModel(). Should read as a JKE.
   uint8_t jkeState[27] = {0x02, 0x20, 0xE0, 0x04, 0x00, 0x00, 0x00, 0x06, 0x02,
                           0x20, 0xE0, 0x04, 0x00, 0x32, 0x2E, 0x80, 0xA2, 0x00,
                           0x00, 0x06, 0x60, 0x00, 0x00, 0x80, 0x00, 0x06, 0x74};
-  pana.setModel(kPanasonicDke);  // Make sure it isn't somehow set to JKE
-  pana.setRaw(jkeState);
-  EXPECT_EQ(kPanasonicJke, pana.getModel());
-  EXPECT_STATE_EQ(jkeState, pana.getRaw(), kPanasonicAcBits);
+  ac.setModel(kPanasonicDke);  // Make sure it isn't somehow set to JKE
+  ac.setRaw(jkeState);
+  EXPECT_EQ(kPanasonicJke, ac.getModel());
+  EXPECT_STATE_EQ(jkeState, ac.getRaw(), kPanasonicAcBits);
 
   // This state tickled a bug in getModel(). Should read as CKP.
   uint8_t ckpState[27] = {0x02, 0x20, 0xE0, 0x04, 0x00, 0x00, 0x00, 0x06, 0x02,
                           0x20, 0xE0, 0x04, 0x00, 0x67, 0x2E, 0x80, 0xAF, 0x00,
                           0xC0, 0x6B, 0x98, 0x10, 0x00, 0x81, 0x64, 0x05, 0x87};
-  pana.setModel(kPanasonicDke);  // Make sure it isn't somehow set to CKP
-  pana.setRaw(ckpState);
-  EXPECT_EQ(kPanasonicCkp, pana.getModel());
-  EXPECT_STATE_EQ(ckpState, pana.getRaw(), kPanasonicAcBits);
+  ac.setModel(kPanasonicDke);  // Make sure it isn't somehow set to CKP
+  ac.setRaw(ckpState);
+  EXPECT_EQ(kPanasonicCkp, ac.getModel());
+  EXPECT_STATE_EQ(ckpState, ac.getRaw(), kPanasonicAcBits);
 }
 
 TEST(TestIRPanasonicAcClass, SetAndGetMode) {
-  IRPanasonicAc pana(0);
-  pana.setMode(kPanasonicAcCool);
-  pana.setTemp(21);
-  EXPECT_EQ(kPanasonicAcCool, pana.getMode());
-  pana.setMode(kPanasonicAcHeat);
-  EXPECT_EQ(kPanasonicAcHeat, pana.getMode());
-  pana.setMode(kPanasonicAcAuto);
-  EXPECT_EQ(kPanasonicAcAuto, pana.getMode());
-  pana.setMode(kPanasonicAcDry);
-  EXPECT_EQ(kPanasonicAcDry, pana.getMode());
-  EXPECT_EQ(21, pana.getTemp());  // Temp should be unchanged.
-  pana.setMode(kPanasonicAcFan);
-  EXPECT_EQ(kPanasonicAcFan, pana.getMode());
-  EXPECT_EQ(kPanasonicAcFanModeTemp, pana.getTemp());  // Temp should change.
-  pana.setMode(kPanasonicAcCool);
-  EXPECT_EQ(kPanasonicAcCool, pana.getMode());
+  IRPanasonicAc ac(kGpioUnused);
+  ac.setMode(kPanasonicAcCool);
+  ac.setTemp(21);
+  EXPECT_EQ(kPanasonicAcCool, ac.getMode());
+  ac.setMode(kPanasonicAcHeat);
+  EXPECT_EQ(kPanasonicAcHeat, ac.getMode());
+  ac.setMode(kPanasonicAcAuto);
+  EXPECT_EQ(kPanasonicAcAuto, ac.getMode());
+  ac.setMode(kPanasonicAcDry);
+  EXPECT_EQ(kPanasonicAcDry, ac.getMode());
+  EXPECT_EQ(21, ac.getTemp());  // Temp should be unchanged.
+  ac.setMode(kPanasonicAcFan);
+  EXPECT_EQ(kPanasonicAcFan, ac.getMode());
+  EXPECT_EQ(kPanasonicAcFanModeTemp, ac.getTemp());  // Temp should change.
+  ac.setMode(kPanasonicAcCool);
+  EXPECT_EQ(kPanasonicAcCool, ac.getMode());
   // Temp should be unchanged from the last manual change.
-  EXPECT_EQ(21, pana.getTemp());
+  EXPECT_EQ(21, ac.getTemp());
 }
 
 TEST(TestIRPanasonicAcClass, SetAndGetTemp) {
-  IRPanasonicAc pana(0);
-  pana.setTemp(25);
-  EXPECT_EQ(25, pana.getTemp());
-  pana.setTemp(kPanasonicAcMinTemp);
-  EXPECT_EQ(kPanasonicAcMinTemp, pana.getTemp());
-  pana.setTemp(kPanasonicAcMinTemp - 1);
-  EXPECT_EQ(kPanasonicAcMinTemp, pana.getTemp());
-  pana.setTemp(kPanasonicAcMaxTemp);
-  EXPECT_EQ(kPanasonicAcMaxTemp, pana.getTemp());
-  pana.setTemp(kPanasonicAcMaxTemp + 1);
-  EXPECT_EQ(kPanasonicAcMaxTemp, pana.getTemp());
+  IRPanasonicAc ac(kGpioUnused);
+  ac.setTemp(25);
+  EXPECT_EQ(25, ac.getTemp());
+  ac.setTemp(kPanasonicAcMinTemp);
+  EXPECT_EQ(kPanasonicAcMinTemp, ac.getTemp());
+  ac.setTemp(kPanasonicAcMinTemp - 1);
+  EXPECT_EQ(kPanasonicAcMinTemp, ac.getTemp());
+  ac.setTemp(kPanasonicAcMaxTemp);
+  EXPECT_EQ(kPanasonicAcMaxTemp, ac.getTemp());
+  ac.setTemp(kPanasonicAcMaxTemp + 1);
+  EXPECT_EQ(kPanasonicAcMaxTemp, ac.getTemp());
 }
 
 TEST(TestIRPanasonicAcClass, SetAndGetFan) {
-  IRPanasonicAc pana(0);
-  pana.setFan(kPanasonicAcFanAuto);
-  EXPECT_EQ(kPanasonicAcFanAuto, pana.getFan());
-  pana.setFan(kPanasonicAcFanMin);
-  EXPECT_EQ(kPanasonicAcFanMin, pana.getFan());
-  pana.setFan(kPanasonicAcFanMin - 1);
-  EXPECT_EQ(kPanasonicAcFanAuto, pana.getFan());
-  pana.setFan(kPanasonicAcFanMed);
-  EXPECT_EQ(kPanasonicAcFanMed, pana.getFan());
-  pana.setFan(kPanasonicAcFanMin + 1);
-  EXPECT_EQ(kPanasonicAcFanAuto, pana.getFan());
-  pana.setFan(kPanasonicAcFanMax);
-  EXPECT_EQ(kPanasonicAcFanMax, pana.getFan());
-  pana.setFan(kPanasonicAcFanMax + 1);
-  EXPECT_EQ(kPanasonicAcFanAuto, pana.getFan());
-  pana.setFan(kPanasonicAcFanMax - 1);
-  EXPECT_EQ(kPanasonicAcFanAuto, pana.getFan());
+  IRPanasonicAc ac(kGpioUnused);
+  ac.setFan(kPanasonicAcFanAuto);
+  EXPECT_EQ(kPanasonicAcFanAuto, ac.getFan());
+  ac.setFan(kPanasonicAcFanMin);
+  EXPECT_EQ(kPanasonicAcFanMin, ac.getFan());
+  ac.setFan(kPanasonicAcFanMin - 1);
+  EXPECT_EQ(kPanasonicAcFanAuto, ac.getFan());
+  ac.setFan(kPanasonicAcFanLow);
+  EXPECT_EQ(kPanasonicAcFanLow, ac.getFan());
+  ac.setFan(kPanasonicAcFanMed);
+  EXPECT_EQ(kPanasonicAcFanMed, ac.getFan());
+  ac.setFan(kPanasonicAcFanHigh);
+  EXPECT_EQ(kPanasonicAcFanHigh, ac.getFan());
+  ac.setFan(kPanasonicAcFanMax);
+  EXPECT_EQ(kPanasonicAcFanMax, ac.getFan());
+  ac.setFan(kPanasonicAcFanMax + 1);
+  EXPECT_EQ(kPanasonicAcFanAuto, ac.getFan());
 }
 
 TEST(TestIRPanasonicAcClass, SetAndGetSwings) {
-  IRPanasonicAc pana(0);
+  IRPanasonicAc ac(kGpioUnused);
 
   // Vertical
-  pana.setSwingVertical(kPanasonicAcSwingVAuto);
-  EXPECT_EQ(kPanasonicAcSwingVAuto, pana.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVAuto);
+  EXPECT_EQ(kPanasonicAcSwingVAuto, ac.getSwingVertical());
 
-  pana.setSwingVertical(kPanasonicAcSwingVHighest);
-  EXPECT_EQ(kPanasonicAcSwingVHighest, pana.getSwingVertical());
-  pana.setSwingVertical(kPanasonicAcSwingVHighest - 1);
-  EXPECT_EQ(kPanasonicAcSwingVHighest, pana.getSwingVertical());
-  pana.setSwingVertical(kPanasonicAcSwingVHighest + 1);
-  EXPECT_EQ(kPanasonicAcSwingVHighest + 1, pana.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVHighest);
+  EXPECT_EQ(kPanasonicAcSwingVHighest, ac.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVHighest - 1);
+  EXPECT_EQ(kPanasonicAcSwingVHighest, ac.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVHighest + 1);
+  EXPECT_EQ(kPanasonicAcSwingVHighest + 1, ac.getSwingVertical());
 
-  pana.setSwingVertical(kPanasonicAcSwingVLowest);
-  EXPECT_EQ(kPanasonicAcSwingVLowest, pana.getSwingVertical());
-  pana.setSwingVertical(kPanasonicAcSwingVLowest + 1);
-  EXPECT_EQ(kPanasonicAcSwingVLowest, pana.getSwingVertical());
-  pana.setSwingVertical(kPanasonicAcSwingVLowest - 1);
-  EXPECT_EQ(kPanasonicAcSwingVLowest - 1, pana.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVLowest);
+  EXPECT_EQ(kPanasonicAcSwingVLowest, ac.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVLowest + 1);
+  EXPECT_EQ(kPanasonicAcSwingVLowest, ac.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVLowest - 1);
+  EXPECT_EQ(kPanasonicAcSwingVLowest - 1, ac.getSwingVertical());
 
-  pana.setSwingVertical(kPanasonicAcSwingVAuto);
-  EXPECT_EQ(kPanasonicAcSwingVAuto, pana.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVAuto);
+  EXPECT_EQ(kPanasonicAcSwingVAuto, ac.getSwingVertical());
 
   // Horizontal is model dependant.
-  pana.setModel(kPanasonicNke);  // NKE is always fixed in the middle.
-  EXPECT_EQ(kPanasonicAcSwingHMiddle, pana.getSwingHorizontal());
-  pana.setSwingHorizontal(kPanasonicAcSwingHAuto);
-  EXPECT_EQ(kPanasonicAcSwingHMiddle, pana.getSwingHorizontal());
+  ac.setModel(kPanasonicNke);  // NKE is always fixed in the middle.
+  EXPECT_EQ(kPanasonicAcSwingHMiddle, ac.getSwingHorizontal());
+  ac.setSwingHorizontal(kPanasonicAcSwingHAuto);
+  EXPECT_EQ(kPanasonicAcSwingHMiddle, ac.getSwingHorizontal());
 
-  pana.setModel(kPanasonicJke);  // JKE has no H swing.
-  EXPECT_EQ(0, pana.getSwingHorizontal());
-  pana.setSwingHorizontal(kPanasonicAcSwingHMiddle);
-  EXPECT_EQ(0, pana.getSwingHorizontal());
+  ac.setModel(kPanasonicJke);  // JKE has no H swing.
+  EXPECT_EQ(0, ac.getSwingHorizontal());
+  ac.setSwingHorizontal(kPanasonicAcSwingHMiddle);
+  EXPECT_EQ(0, ac.getSwingHorizontal());
 
-  pana.setModel(kPanasonicLke);  // LKE is always fixed in the middle.
-  EXPECT_EQ(kPanasonicAcSwingHMiddle, pana.getSwingHorizontal());
-  pana.setSwingHorizontal(kPanasonicAcSwingHAuto);
-  EXPECT_EQ(kPanasonicAcSwingHMiddle, pana.getSwingHorizontal());
+  ac.setModel(kPanasonicLke);  // LKE is always fixed in the middle.
+  EXPECT_EQ(kPanasonicAcSwingHMiddle, ac.getSwingHorizontal());
+  ac.setSwingHorizontal(kPanasonicAcSwingHAuto);
+  EXPECT_EQ(kPanasonicAcSwingHMiddle, ac.getSwingHorizontal());
 
-  pana.setModel(kPanasonicDke);  // DKE has full control.
-  ASSERT_EQ(kPanasonicDke, pana.getModel());
+  ac.setModel(kPanasonicDke);  // DKE has full control.
+  ASSERT_EQ(kPanasonicDke, ac.getModel());
   // Auto was last requested.
-  EXPECT_EQ(kPanasonicAcSwingHAuto, pana.getSwingHorizontal());
-  pana.setSwingHorizontal(kPanasonicAcSwingHLeft);
-  EXPECT_EQ(kPanasonicAcSwingHLeft, pana.getSwingHorizontal());
+  EXPECT_EQ(kPanasonicAcSwingHAuto, ac.getSwingHorizontal());
+  ac.setSwingHorizontal(kPanasonicAcSwingHLeft);
+  EXPECT_EQ(kPanasonicAcSwingHLeft, ac.getSwingHorizontal());
   // Changing models from DKE to something else, then back should not change
   // the intended swing.
-  pana.setModel(kPanasonicLke);
-  EXPECT_EQ(kPanasonicAcSwingHMiddle, pana.getSwingHorizontal());
-  pana.setModel(kPanasonicDke);
-  EXPECT_EQ(kPanasonicAcSwingHLeft, pana.getSwingHorizontal());
+  ac.setModel(kPanasonicLke);
+  EXPECT_EQ(kPanasonicAcSwingHMiddle, ac.getSwingHorizontal());
+  ac.setModel(kPanasonicDke);
+  EXPECT_EQ(kPanasonicAcSwingHLeft, ac.getSwingHorizontal());
 }
 
 TEST(TestIRPanasonicAcClass, QuietAndPowerful) {
-  IRPanasonicAc pana(0);
-  pana.setQuiet(false);
-  EXPECT_FALSE(pana.getQuiet());
-  pana.setQuiet(true);
-  EXPECT_TRUE(pana.getQuiet());
-  EXPECT_FALSE(pana.getPowerful());
-  pana.setPowerful(false);
-  EXPECT_FALSE(pana.getPowerful());
-  EXPECT_TRUE(pana.getQuiet());
-  pana.setPowerful(true);
-  EXPECT_TRUE(pana.getPowerful());
-  EXPECT_FALSE(pana.getQuiet());
-  pana.setPowerful(false);
-  EXPECT_FALSE(pana.getPowerful());
-  EXPECT_FALSE(pana.getQuiet());
-  pana.setPowerful(true);
-  pana.setQuiet(true);
-  EXPECT_TRUE(pana.getQuiet());
-  EXPECT_FALSE(pana.getPowerful());
+  IRPanasonicAc ac(kGpioUnused);
+  ac.setQuiet(false);
+  EXPECT_FALSE(ac.getQuiet());
+  ac.setQuiet(true);
+  EXPECT_TRUE(ac.getQuiet());
+  EXPECT_FALSE(ac.getPowerful());
+  ac.setPowerful(false);
+  EXPECT_FALSE(ac.getPowerful());
+  EXPECT_TRUE(ac.getQuiet());
+  ac.setPowerful(true);
+  EXPECT_TRUE(ac.getPowerful());
+  EXPECT_FALSE(ac.getQuiet());
+  ac.setPowerful(false);
+  EXPECT_FALSE(ac.getPowerful());
+  EXPECT_FALSE(ac.getQuiet());
+  ac.setPowerful(true);
+  ac.setQuiet(true);
+  EXPECT_TRUE(ac.getQuiet());
+  EXPECT_FALSE(ac.getPowerful());
 }
 
 TEST(TestIRPanasonicAcClass, SetAndGetIon) {
@@ -773,39 +774,39 @@ TEST(TestIRPanasonicAcClass, SetAndGetIon) {
 }
 
 TEST(TestIRPanasonicAcClass, HumanReadable) {
-  IRPanasonicAc pana(0);
+  IRPanasonicAc ac(kGpioUnused);
   EXPECT_EQ(
       "Model: 4 (JKE), Power: Off, Mode: 0 (Auto), Temp: 0C, "
       "Fan: 253 (UNKNOWN), Swing(V): 0 (UNKNOWN), Quiet: Off, "
       "Powerful: Off, Clock: 00:00, On Timer: Off, Off Timer: Off",
-      pana.toString());
-  pana.setPower(true);
-  pana.setTemp(kPanasonicAcMaxTemp);
-  pana.setMode(kPanasonicAcHeat);
-  pana.setFan(kPanasonicAcFanMax);
-  pana.setSwingVertical(kPanasonicAcSwingVAuto);
-  pana.setPowerful(true);
+      ac.toString());
+  ac.setPower(true);
+  ac.setTemp(kPanasonicAcMaxTemp);
+  ac.setMode(kPanasonicAcHeat);
+  ac.setFan(kPanasonicAcFanMax);
+  ac.setSwingVertical(kPanasonicAcSwingVAuto);
+  ac.setPowerful(true);
   EXPECT_EQ(
       "Model: 4 (JKE), Power: On, Mode: 4 (Heat), Temp: 30C, "
-      "Fan: 4 (High), Swing(V): 15 (Auto), Quiet: Off, "
+      "Fan: 4 (Maximum), Swing(V): 15 (Auto), Quiet: Off, "
       "Powerful: On, Clock: 00:00, On Timer: Off, Off Timer: Off",
-      pana.toString());
-  pana.setQuiet(true);
-  pana.setModel(kPanasonicLke);
+      ac.toString());
+  ac.setQuiet(true);
+  ac.setModel(kPanasonicLke);
   EXPECT_EQ(
       "Model: 1 (LKE), Power: Off, Mode: 4 (Heat), Temp: 30C, "
-      "Fan: 4 (High), Swing(V): 15 (Auto), "
+      "Fan: 4 (Maximum), Swing(V): 15 (Auto), "
       "Swing(H): 6 (Middle), Quiet: On, Powerful: Off, "
       "Clock: 00:00, On Timer: 00:00, Off Timer: Off",
-      pana.toString());
-  pana.setModel(kPanasonicDke);
-  pana.setSwingHorizontal(kPanasonicAcSwingHRight);
+      ac.toString());
+  ac.setModel(kPanasonicDke);
+  ac.setSwingHorizontal(kPanasonicAcSwingHRight);
   EXPECT_EQ(
       "Model: 3 (DKE), Power: Off, Mode: 4 (Heat), Temp: 30C, "
-      "Fan: 4 (High), Swing(V): 15 (Auto), "
+      "Fan: 4 (Maximum), Swing(V): 15 (Auto), "
       "Swing(H): 11 (Right), Quiet: On, Powerful: Off, Ion: Off, "
       "Clock: 00:00, On Timer: Off, Off Timer: Off",
-      pana.toString());
+      ac.toString());
 }
 
 // Tests for decodePanasonicAC().
@@ -872,8 +873,8 @@ TEST(TestDecodePanasonicAC, RealExample) {
 
 // Decode synthetic Panasonic AC message.
 TEST(TestDecodePanasonicAC, SyntheticExample) {
-  IRsendTest irsend(0);
-  IRrecv irrecv(0);
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
   irsend.begin();
 
   // Data from Issue #525
@@ -903,6 +904,7 @@ TEST(TestDecodePanasonicAC, SyntheticExample) {
 TEST(TestGeneralPanasonic, hasACState) {
   EXPECT_TRUE(hasACState(PANASONIC_AC));
   ASSERT_FALSE(hasACState(PANASONIC));
+  ASSERT_FALSE(hasACState(PANASONIC_AC32));
 }
 
 TEST(TestGeneralPanasonic, typeToString) {
@@ -912,8 +914,8 @@ TEST(TestGeneralPanasonic, typeToString) {
 
 // Decode a problematic Panasonic AC message
 TEST(TestDecodePanasonicAC, Issue540) {
-  IRsendTest irsend(0);
-  IRrecv irrecv(0);
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
   irsend.begin();
 
   // Data from Issue #540
@@ -968,15 +970,15 @@ TEST(TestDecodePanasonicAC, Issue540) {
   EXPECT_EQ(kPanasonicAcBits, irsend.capture.bits);
   EXPECT_STATE_EQ(expectedState, irsend.capture.state, irsend.capture.bits);
   EXPECT_FALSE(irsend.capture.repeat);
-  IRPanasonicAc pana(0);
-  pana.setRaw(irsend.capture.state);
+  IRPanasonicAc ac(kGpioUnused);
+  ac.setRaw(irsend.capture.state);
   // TODO(crankyoldgit): Try to figure out what model this should be.
   EXPECT_EQ(
       "Model: 0 (UNKNOWN), Power: On, Mode: 3 (Cool), Temp: 26C, "
       "Fan: 7 (Auto), Swing(V): 15 (Auto), "
       "Swing(H): 13 (Auto), Quiet: Off, Powerful: Off, "
       "Clock: 00:00, On Timer: Off, Off Timer: Off",
-      pana.toString());
+      ac.toString());
 }
 
 TEST(TestIRPanasonicAcClass, TimeBasics) {
@@ -992,78 +994,78 @@ TEST(TestIRPanasonicAcClass, TimeBasics) {
 }
 
 TEST(TestIRPanasonicAcClass, TimersAndClock) {
-  IRPanasonicAc pana(0);
+  IRPanasonicAc ac(kGpioUnused);
   // Data from Issue #544
   uint8_t state[27] = {0x02, 0x20, 0xE0, 0x04, 0x00, 0x00, 0x00, 0x06, 0x02,
                        0x20, 0xE0, 0x04, 0x00, 0x4E, 0x2E, 0x80, 0xAF, 0x00,
                        0xCA, 0x6B, 0x98, 0x10, 0x00, 0x01, 0x48, 0x04, 0xDB};
-  pana.setRaw(state);
-  EXPECT_TRUE(pana.isOnTimerEnabled());
-  EXPECT_EQ(0x3CA, pana.getOnTimer());
-  EXPECT_TRUE(pana.isOffTimerEnabled());
-  EXPECT_EQ(0x186, pana.getOffTimer());
-  EXPECT_EQ(0x448, pana.getClock());
+  ac.setRaw(state);
+  EXPECT_TRUE(ac.isOnTimerEnabled());
+  EXPECT_EQ(0x3CA, ac.getOnTimer());
+  EXPECT_TRUE(ac.isOffTimerEnabled());
+  EXPECT_EQ(0x186, ac.getOffTimer());
+  EXPECT_EQ(0x448, ac.getClock());
 
-  pana.cancelOnTimer();
-  EXPECT_FALSE(pana.isOnTimerEnabled());
-  EXPECT_EQ(0, pana.getOnTimer());
-  EXPECT_TRUE(pana.isOffTimerEnabled());
-  EXPECT_EQ(0x186, pana.getOffTimer());
-  EXPECT_EQ(0x448, pana.getClock());
+  ac.cancelOnTimer();
+  EXPECT_FALSE(ac.isOnTimerEnabled());
+  EXPECT_EQ(0, ac.getOnTimer());
+  EXPECT_TRUE(ac.isOffTimerEnabled());
+  EXPECT_EQ(0x186, ac.getOffTimer());
+  EXPECT_EQ(0x448, ac.getClock());
 
-  pana.cancelOffTimer();
-  EXPECT_FALSE(pana.isOnTimerEnabled());
-  EXPECT_EQ(0, pana.getOnTimer());
-  EXPECT_FALSE(pana.isOffTimerEnabled());
-  EXPECT_EQ(0, pana.getOffTimer());
-  EXPECT_EQ(0x448, pana.getClock());
+  ac.cancelOffTimer();
+  EXPECT_FALSE(ac.isOnTimerEnabled());
+  EXPECT_EQ(0, ac.getOnTimer());
+  EXPECT_FALSE(ac.isOffTimerEnabled());
+  EXPECT_EQ(0, ac.getOffTimer());
+  EXPECT_EQ(0x448, ac.getClock());
 
-  pana.setOnTimer(7 * 60 + 50);
-  EXPECT_TRUE(pana.isOnTimerEnabled());
-  EXPECT_EQ(7 * 60 + 50, pana.getOnTimer());
-  EXPECT_FALSE(pana.isOffTimerEnabled());
-  EXPECT_EQ(0, pana.getOffTimer());
-  EXPECT_EQ(0x448, pana.getClock());
+  ac.setOnTimer(7 * 60 + 50);
+  EXPECT_TRUE(ac.isOnTimerEnabled());
+  EXPECT_EQ(7 * 60 + 50, ac.getOnTimer());
+  EXPECT_FALSE(ac.isOffTimerEnabled());
+  EXPECT_EQ(0, ac.getOffTimer());
+  EXPECT_EQ(0x448, ac.getClock());
 
-  pana.setOnTimer(7 * 60 + 57);  // It should round down.
-  EXPECT_EQ(7 * 60 + 50, pana.getOnTimer());
-  pana.setOnTimer(28 * 60);  // It should round down.
-  EXPECT_EQ(kPanasonicAcTimeMax - 9, pana.getOnTimer());
-  pana.setOnTimer(kPanasonicAcTimeSpecial);
-  EXPECT_EQ(0, pana.getOnTimer());
+  ac.setOnTimer(7 * 60 + 57);  // It should round down.
+  EXPECT_EQ(7 * 60 + 50, ac.getOnTimer());
+  ac.setOnTimer(28 * 60);  // It should round down.
+  EXPECT_EQ(kPanasonicAcTimeMax - 9, ac.getOnTimer());
+  ac.setOnTimer(kPanasonicAcTimeSpecial);
+  EXPECT_EQ(0, ac.getOnTimer());
 
-  pana.setOnTimer(7 * 60 + 50);
-  pana.setOffTimer(19 * 60 + 30);
+  ac.setOnTimer(7 * 60 + 50);
+  ac.setOffTimer(19 * 60 + 30);
 
-  EXPECT_TRUE(pana.isOnTimerEnabled());
-  EXPECT_EQ(7 * 60 + 50, pana.getOnTimer());
-  EXPECT_TRUE(pana.isOffTimerEnabled());
-  EXPECT_EQ(19 * 60 + 30, pana.getOffTimer());
-  EXPECT_EQ(0x448, pana.getClock());
+  EXPECT_TRUE(ac.isOnTimerEnabled());
+  EXPECT_EQ(7 * 60 + 50, ac.getOnTimer());
+  EXPECT_TRUE(ac.isOffTimerEnabled());
+  EXPECT_EQ(19 * 60 + 30, ac.getOffTimer());
+  EXPECT_EQ(0x448, ac.getClock());
 
-  pana.setOffTimer(19 * 60 + 57);  // It should round down.
-  EXPECT_EQ(19 * 60 + 50, pana.getOffTimer());
-  pana.setOffTimer(28 * 60);  // It should round down.
-  EXPECT_EQ(kPanasonicAcTimeMax - 9, pana.getOffTimer());
-  pana.setOffTimer(kPanasonicAcTimeSpecial);
-  EXPECT_EQ(0, pana.getOffTimer());
+  ac.setOffTimer(19 * 60 + 57);  // It should round down.
+  EXPECT_EQ(19 * 60 + 50, ac.getOffTimer());
+  ac.setOffTimer(28 * 60);  // It should round down.
+  EXPECT_EQ(kPanasonicAcTimeMax - 9, ac.getOffTimer());
+  ac.setOffTimer(kPanasonicAcTimeSpecial);
+  EXPECT_EQ(0, ac.getOffTimer());
 
-  pana.setClock(0);
-  EXPECT_EQ(0, pana.getClock());
-  pana.setClock(kPanasonicAcTimeMax);
-  EXPECT_EQ(kPanasonicAcTimeMax, pana.getClock());
-  pana.setClock(kPanasonicAcTimeMax - 1);
-  EXPECT_EQ(kPanasonicAcTimeMax - 1, pana.getClock());
-  pana.setClock(kPanasonicAcTimeMax + 1);
-  EXPECT_EQ(kPanasonicAcTimeMax, pana.getClock());
-  pana.setClock(kPanasonicAcTimeSpecial);
-  EXPECT_EQ(0, pana.getClock());
+  ac.setClock(0);
+  EXPECT_EQ(0, ac.getClock());
+  ac.setClock(kPanasonicAcTimeMax);
+  EXPECT_EQ(kPanasonicAcTimeMax, ac.getClock());
+  ac.setClock(kPanasonicAcTimeMax - 1);
+  EXPECT_EQ(kPanasonicAcTimeMax - 1, ac.getClock());
+  ac.setClock(kPanasonicAcTimeMax + 1);
+  EXPECT_EQ(kPanasonicAcTimeMax, ac.getClock());
+  ac.setClock(kPanasonicAcTimeSpecial);
+  EXPECT_EQ(0, ac.getClock());
 }
 
 // Decode a real short Panasonic AC message
 TEST(TestDecodePanasonicAC, RealExampleOfShortMessage) {
-  IRsendTest irsend(0);
-  IRrecv irrecv(0);
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
   irsend.begin();
 
   // Data from Issue #544 (Odour Wash)
@@ -1107,8 +1109,8 @@ TEST(TestDecodePanasonicAC, RealExampleOfShortMessage) {
 
 // Create and decode a short Panasonic AC message
 TEST(TestDecodePanasonicAC, SyntheticShortMessage) {
-  IRsendTest irsend(0);
-  IRrecv irrecv(0);
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
   irsend.begin();
 
   uint8_t odourWash[kPanasonicAcStateShortLength] = {
@@ -1126,8 +1128,8 @@ TEST(TestDecodePanasonicAC, SyntheticShortMessage) {
 //
 // Test for CKP model / see issue #544
 TEST(TestDecodePanasonicAC, CkpModelSpecifics) {
-  IRsendTest irsend(0);
-  IRrecv irrecv(0);
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
   irsend.begin();
 
   // Data from Issue #544
@@ -1149,25 +1151,25 @@ TEST(TestDecodePanasonicAC, CkpModelSpecifics) {
   EXPECT_STATE_EQ(ckpPowerfulOn, irsend.capture.state, irsend.capture.bits);
   EXPECT_FALSE(irsend.capture.repeat);
 
-  IRPanasonicAc pana(0);
-  pana.setRaw(irsend.capture.state);
+  IRPanasonicAc ac(kGpioUnused);
+  ac.setRaw(irsend.capture.state);
   EXPECT_EQ(
       "Model: 5 (CKP), Power: Off, Mode: 4 (Heat), Temp: 23C, "
       "Fan: 7 (Auto), Swing(V): 15 (Auto), Quiet: Off, "
       "Powerful: On, Clock: 00:00, On Timer: 00:00, Off Timer: 00:00",
-      pana.toString());
+      ac.toString());
 
-  pana.setQuiet(true);
-  EXPECT_FALSE(pana.getPowerful());
-  EXPECT_TRUE(pana.getQuiet());
-  EXPECT_EQ(kPanasonicCkp, pana.getModel());
-  EXPECT_STATE_EQ(ckpQuietOn, pana.getRaw(), kPanasonicAcBits);
+  ac.setQuiet(true);
+  EXPECT_FALSE(ac.getPowerful());
+  EXPECT_TRUE(ac.getQuiet());
+  EXPECT_EQ(kPanasonicCkp, ac.getModel());
+  EXPECT_STATE_EQ(ckpQuietOn, ac.getRaw(), kPanasonicAcBits);
 
-  pana.setPowerful(true);
-  EXPECT_TRUE(pana.getPowerful());
-  EXPECT_FALSE(pana.getQuiet());
-  EXPECT_EQ(kPanasonicCkp, pana.getModel());
-  EXPECT_STATE_EQ(ckpPowerfulOn, pana.getRaw(), kPanasonicAcBits);
+  ac.setPowerful(true);
+  EXPECT_TRUE(ac.getPowerful());
+  EXPECT_FALSE(ac.getQuiet());
+  EXPECT_EQ(kPanasonicCkp, ac.getModel());
+  EXPECT_STATE_EQ(ckpPowerfulOn, ac.getRaw(), kPanasonicAcBits);
 }
 
 TEST(TestIRPanasonicAcClass, toCommon) {
@@ -1219,8 +1221,8 @@ TEST(TestIRPanasonicAcClass, toCommon) {
 //
 // Test for DKE/DKW model / see issue #1024
 TEST(TestDecodePanasonicAC, DkeIonRealMessages) {
-  IRsendTest irsend(0);
-  IRrecv irrecv(0);
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
   irsend.begin();
 
   // Data from Issue #1024
@@ -1248,5 +1250,339 @@ TEST(TestDecodePanasonicAC, DkeIonRealMessages) {
       "Model: 3 (DKE), Power: On, Mode: 4 (Heat), Temp: 25C, Fan: 7 (Auto), "
       "Swing(V): 15 (Auto), Swing(H): 13 (Auto), Quiet: Off, Powerful: Off, "
       "Ion: On, Clock: 00:00, On Timer: 00:00, Off Timer: 00:00",
+      ac.toString());
+}
+
+// General housekeeping
+TEST(TestPanasonic, Housekeeping) {
+  // Simple Panasonic protocol. e.g. TVs etc.
+  ASSERT_EQ(D_STR_PANASONIC, typeToString(decode_type_t::PANASONIC));
+  ASSERT_FALSE(hasACState(decode_type_t::PANASONIC));
+  ASSERT_EQ(decode_type_t::PANASONIC, strToDecodeType(D_STR_PANASONIC));
+  ASSERT_FALSE(IRac::isProtocolSupported(decode_type_t::PANASONIC));
+  ASSERT_EQ(kPanasonicBits, IRsend::defaultBits(decode_type_t::PANASONIC));
+  ASSERT_EQ(kNoRepeat, IRsend::minRepeats(decode_type_t::PANASONIC));
+  // Panasonic A/Cs
+  ASSERT_EQ(D_STR_PANASONIC_AC, typeToString(decode_type_t::PANASONIC_AC));
+  ASSERT_TRUE(hasACState(decode_type_t::PANASONIC_AC));
+  ASSERT_EQ(decode_type_t::PANASONIC_AC, strToDecodeType(D_STR_PANASONIC_AC));
+  ASSERT_TRUE(IRac::isProtocolSupported(decode_type_t::PANASONIC_AC));
+  ASSERT_EQ(kPanasonicAcBits, IRsend::defaultBits(decode_type_t::PANASONIC_AC));
+  ASSERT_EQ(kNoRepeat, IRsend::minRepeats(decode_type_t::PANASONIC_AC));
+  // Panasonic A/Cs (32bit)
+  ASSERT_EQ(D_STR_PANASONIC_AC32, typeToString(decode_type_t::PANASONIC_AC32));
+  ASSERT_EQ(decode_type_t::PANASONIC_AC32,
+            strToDecodeType(D_STR_PANASONIC_AC32));
+  ASSERT_FALSE(hasACState(decode_type_t::PANASONIC_AC32));
+  ASSERT_TRUE(IRac::isProtocolSupported(decode_type_t::PANASONIC_AC32));
+  ASSERT_EQ(kPanasonicAc32Bits,
+            IRsend::defaultBits(decode_type_t::PANASONIC_AC32));
+  ASSERT_EQ(kNoRepeat, IRsend::minRepeats(decode_type_t::PANASONIC_AC32));
+}
+
+// Decode a real Panasonic AC 32 bit message
+TEST(TestDecodePanasonicAC32, RealMessage) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+  // https://github.com/crankyoldgit/IRremoteESP8266/issues/1307#issuecomment-717436003
+  // https://github.com/crankyoldgit/IRremoteESP8266/files/5446781/temp-take3_36khz.txt
+  // # Remote: 17 C, auto mode, auto top swing, auto left/right swing, auto fan
+  const uint16_t rawData[271] = {
+      3544, 3448,
+      922, 830, 918, 2576, 922, 830, 918, 830,
+      918, 2576, 922, 2574, 922, 2576, 922, 2576,
+      922, 826, 922, 2574, 922, 828, 920, 826,
+      922, 2574, 922, 2574, 922, 2576, 920, 2576,
+      918, 2578, 918, 830, 918, 2574, 922, 2574,
+      922, 830, 918, 830, 918, 830, 918, 826,
+      922, 2574, 922, 826, 922, 2576, 922, 2574,
+      922, 826, 922, 826, 922, 826, 922, 826,
+      3544, 3452,
+      918, 830, 918, 2574, 922, 830, 918, 830,
+      918, 2576, 922, 2576, 922, 2576, 918, 2580,
+      918, 830, 918, 2580, 918, 830, 918, 832,
+      916, 2576, 922, 2576, 922, 2576, 918, 2580,
+      918, 2580, 916, 832, 918, 2576, 922, 2574,
+      922, 826, 922, 826, 922, 826, 922, 826,
+      922, 2576, 916, 830, 918, 2580, 918, 2578,
+      918, 832, 920, 826, 922, 826, 922, 826,
+      3544, 3450,
+      922, 13946,
+      3542, 3450,
+      922, 826, 922, 826, 922, 2574, 922, 2574,
+      922, 2574, 922, 2574, 922, 2574, 922, 2574,
+      920, 830, 918, 830, 916, 2578, 918, 2580,
+      916, 2580, 916, 2580, 918, 2578, 922, 2574,
+      922, 826, 922, 2576, 922, 2574, 922, 826,
+      922, 2574, 922, 2574, 922, 826, 922, 826,
+      922, 830, 918, 2574, 922, 2574, 922, 830,
+      916, 2574, 922, 2574, 922, 830, 918, 830,
+      3542, 3450,
+      918, 830, 916, 830, 918, 2578, 922, 2574,
+      922, 2574, 922, 2574, 922, 2574, 922, 2574,
+      922, 830, 918, 830, 916, 2574, 922, 2574,
+      922, 2576, 920, 2574, 922, 2574, 922, 2576,
+      922, 830, 916, 2580, 916, 2580, 916, 830,
+      918, 2578, 916, 2580, 918, 830, 922, 826,
+      922, 826, 922, 2574, 922, 2574, 924, 824,
+      922, 2574, 922, 2574, 922, 826, 922, 826,
+      3542, 3452,
+      922};  // UNKNOWN AA94330B
+
+  irsend.sendRaw(rawData, 271, kPanasonicFreq);
+  irsend.makeDecodeResult();
+
+  ASSERT_TRUE(irrecv.decode(&irsend.capture));
+  ASSERT_EQ(PANASONIC_AC32, irsend.capture.decode_type);
+  EXPECT_EQ(kPanasonicAc32Bits, irsend.capture.bits);
+  EXPECT_EQ(0x0DF236FC, irsend.capture.value);
+  EXPECT_EQ(0, irsend.capture.address);
+  EXPECT_EQ(0, irsend.capture.command);
+  EXPECT_FALSE(irsend.capture.repeat);
+
+  EXPECT_EQ(
+      "Power Toggle: Off, Mode: 5 (UNKNOWN), Temp: 17C, Fan: 15 (Auto), "
+      "Swing(H): On, Swing(V): 7 (Auto)",
+      IRAcUtils::resultAcToString(&irsend.capture));
+  stdAc::state_t r, p;
+  ASSERT_TRUE(IRAcUtils::decodeToState(&irsend.capture, &r, &p));
+}
+
+// Decode a synthetic Panasonic AC 32 bit message
+TEST(TestDecodePanasonicAC32, SyntheticMessage) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+
+  irsend.sendPanasonicAC32(0x0DF236FC);
+  irsend.makeDecodeResult();
+
+  ASSERT_TRUE(irrecv.decode(&irsend.capture));
+  ASSERT_EQ(PANASONIC_AC32, irsend.capture.decode_type);
+  EXPECT_EQ(kPanasonicAc32Bits, irsend.capture.bits);
+  EXPECT_EQ(0x0DF236FC, irsend.capture.value);
+  EXPECT_EQ(0, irsend.capture.address);
+  EXPECT_EQ(0, irsend.capture.command);
+  EXPECT_FALSE(irsend.capture.repeat);
+
+  EXPECT_EQ(
+      "f36700d50"
+      "m3543s3450"
+      "m920s828m920s2575m920s828m920s828m920s2575m920s2575m920s2575m920s2575"
+      "m920s828m920s2575m920s828m920s828m920s2575m920s2575m920s2575m920s2575"
+      "m920s2575m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828"
+      "m920s2575m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828"
+      "m3543s3450"
+      "m920s828m920s2575m920s828m920s828m920s2575m920s2575m920s2575m920s2575"
+      "m920s828m920s2575m920s828m920s828m920s2575m920s2575m920s2575m920s2575"
+      "m920s2575m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828"
+      "m920s2575m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828"
+      "m3543s3450"
+      "m920s13946"
+      "m3543s3450"
+      "m920s828m920s828m920s2575m920s2575m920s2575m920s2575m920s2575m920s2575"
+      "m920s828m920s828m920s2575m920s2575m920s2575m920s2575m920s2575m920s2575"
+      "m920s828m920s2575m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m920s828m920s2575m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m3543s3450"
+      "m920s828m920s828m920s2575m920s2575m920s2575m920s2575m920s2575m920s2575"
+      "m920s828m920s828m920s2575m920s2575m920s2575m920s2575m920s2575m920s2575"
+      "m920s828m920s2575m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m920s828m920s2575m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m3543s3450"
+      "m920s13946",
+      irsend.outputStr());
+}
+
+// Decode a real *short* (16 bit) Panasonic AC 32 bit message
+TEST(TestDecodePanasonicAC32, RealShortMessage) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+  // https://github.com/crankyoldgit/IRremoteESP8266/issues/1307#issuecomment-719038870
+  // https://github.com/crankyoldgit/IRremoteESP8266/files/5461382/quiet-powerful.txt
+  const uint16_t rawData[201] = {
+      3548, 3448, 922, 826, 922, 2576, 922, 2574, 918, 832, 916, 830, 918, 830,
+      918, 830, 918, 2574, 924, 824, 922, 2576, 922, 2574, 922, 826, 922, 826,
+      922, 826, 922, 826, 922, 2574, 922, 2574, 918, 830, 918, 2574, 922, 832,
+      916, 2574, 922, 2574, 922, 830, 918, 830, 918, 2574, 922, 826, 922, 2576,
+      922, 826, 922, 2574, 922, 2574, 922, 826, 922, 826, 3542, 3452, 918, 830,
+      918, 2574, 922, 2574, 922, 830, 916, 830, 918, 830, 918, 830, 918, 2574,
+      922, 832, 916, 2574, 922, 2574, 922, 830, 918, 830, 916, 830, 918, 830,
+      918, 2576, 922, 2574, 922, 826, 922, 2574, 922, 826, 922, 2574, 922, 2574,
+      918, 830, 916, 830, 918, 2580, 918, 830, 918, 2578, 918, 830, 918, 2580,
+      918, 2574, 922, 830, 918, 830, 3544, 3446, 922, 832, 916, 2574, 922, 2574,
+      922, 826, 922, 826, 922, 826, 922, 826, 922, 2574, 918, 830, 918, 2580,
+      916, 2580, 918, 830, 918, 830, 918, 830, 916, 830, 918, 2580, 918, 2574,
+      922, 830, 918, 2574, 922, 830, 916, 2576, 922, 2574, 922, 830, 918, 830,
+      918, 2574, 922, 830, 916, 2576, 922, 830, 918, 2574, 922, 2576, 922, 830,
+      918, 830, 3538, 3450, 922};  // UNKNOWN A9E430DB
+
+  irsend.sendRaw(rawData, 201, kPanasonicFreq);
+  irsend.makeDecodeResult();
+
+  ASSERT_TRUE(irrecv.decode(&irsend.capture));
+  ASSERT_EQ(PANASONIC_AC32, irsend.capture.decode_type);
+  EXPECT_EQ(kPanasonicAc32Bits / 2, irsend.capture.bits);
+  EXPECT_EQ(0x3586, irsend.capture.value);
+  EXPECT_EQ(0, irsend.capture.address);
+  EXPECT_EQ(0, irsend.capture.command);
+  EXPECT_FALSE(irsend.capture.repeat);
+
+  EXPECT_EQ(
+      "", IRAcUtils::resultAcToString(&irsend.capture));
+  stdAc::state_t r, p;
+  ASSERT_FALSE(IRAcUtils::decodeToState(&irsend.capture, &r, &p));
+}
+
+// Decode a synthetic *short Panasonic AC 64 bit message
+TEST(TestDecodePanasonicAC32, SyntheticShortMessage) {
+  IRsendTest irsend(kGpioUnused);
+  IRrecv irrecv(kGpioUnused);
+  irsend.begin();
+
+  irsend.sendPanasonicAC32(0x3586, kPanasonicAc32Bits / 2);
+  irsend.makeDecodeResult();
+
+  ASSERT_TRUE(irrecv.decode(&irsend.capture));
+  ASSERT_EQ(PANASONIC_AC32, irsend.capture.decode_type);
+  EXPECT_EQ(kPanasonicAc32Bits / 2, irsend.capture.bits);
+  EXPECT_EQ(0x3586, irsend.capture.value);
+  EXPECT_EQ(0, irsend.capture.address);
+  EXPECT_EQ(0, irsend.capture.command);
+  EXPECT_FALSE(irsend.capture.repeat);
+
+  EXPECT_EQ(
+      "f36700d50"
+      "m3543s3450"
+      "m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828m920s2575"
+      "m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828m920s2575"
+      "m920s2575m920s828m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m920s2575m920s828m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m3543s3450"
+      "m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828m920s2575"
+      "m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828m920s2575"
+      "m920s2575m920s828m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m920s2575m920s828m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m3543s3450"
+      "m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828m920s2575"
+      "m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828m920s2575"
+      "m920s2575m920s828m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m920s2575m920s828m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+      "m3543s3450"
+      "m920s13946",
+      irsend.outputStr());
+}
+
+TEST(TestIRPanasonicAc32Class, SetAndGetPower) {
+  IRPanasonicAc32 ac(kGpioUnused);
+  ac.setPowerToggle(false);
+  EXPECT_FALSE(ac.getPowerToggle());
+  ac.setPowerToggle(true);
+  EXPECT_TRUE(ac.getPowerToggle());
+  ac.setPowerToggle(false);
+  EXPECT_FALSE(ac.getPowerToggle());
+  // Ref: https://github.com/crankyoldgit/IRremoteESP8266/issues/1364#issuecomment-750427966
+  ac.setRaw(0x04FF36A0);
+  EXPECT_TRUE(ac.getPowerToggle());
+}
+
+TEST(TestIRPanasonicAc32Class, SetAndGetFan) {
+  IRPanasonicAc32 ac(kGpioUnused);
+  ac.setFan(kPanasonicAc32FanAuto);
+  EXPECT_EQ(kPanasonicAc32FanAuto, ac.getFan());
+  ac.setFan(kPanasonicAc32FanMin);
+  EXPECT_EQ(kPanasonicAc32FanMin, ac.getFan());
+  ac.setFan(kPanasonicAc32FanMin - 1);
+  EXPECT_EQ(kPanasonicAc32FanAuto, ac.getFan());
+  ac.setFan(kPanasonicAc32FanMed);
+  EXPECT_EQ(kPanasonicAc32FanMed, ac.getFan());
+  ac.setFan(kPanasonicAc32FanMax);
+  EXPECT_EQ(kPanasonicAc32FanMax, ac.getFan());
+  ac.setFan(kPanasonicAc32FanMax + 1);
+  EXPECT_EQ(kPanasonicAc32FanAuto, ac.getFan());
+}
+
+TEST(TestIRPanasonicAc32Class, SetAndGetMode) {
+  IRPanasonicAc32 ac(kGpioUnused);
+  ac.setMode(kPanasonicAc32Cool);
+  EXPECT_EQ(kPanasonicAc32Cool, ac.getMode());
+  ac.setMode(kPanasonicAc32Heat);
+  EXPECT_EQ(kPanasonicAc32Heat, ac.getMode());
+  ac.setMode(kPanasonicAc32Auto);
+  EXPECT_EQ(kPanasonicAc32Auto, ac.getMode());
+  ac.setMode(kPanasonicAc32Dry);
+  EXPECT_EQ(kPanasonicAc32Dry, ac.getMode());
+  ac.setMode(kPanasonicAcFan);
+  EXPECT_EQ(kPanasonicAcFan, ac.getMode());
+  ac.setMode(255);
+  EXPECT_EQ(kPanasonicAc32Auto, ac.getMode());
+}
+
+TEST(TestIRPanasonicAc32Class, SetAndGetTemp) {
+  IRPanasonicAc ac(kGpioUnused);
+  ac.setTemp(25);
+  EXPECT_EQ(25, ac.getTemp());
+  ac.setTemp(kPanasonicAcMinTemp);
+  EXPECT_EQ(kPanasonicAcMinTemp, ac.getTemp());
+  ac.setTemp(kPanasonicAcMinTemp - 1);
+  EXPECT_EQ(kPanasonicAcMinTemp, ac.getTemp());
+  ac.setTemp(kPanasonicAcMaxTemp);
+  EXPECT_EQ(kPanasonicAcMaxTemp, ac.getTemp());
+  ac.setTemp(kPanasonicAcMaxTemp + 1);
+  EXPECT_EQ(kPanasonicAcMaxTemp, ac.getTemp());
+}
+
+TEST(TestIRPanasonicAc32Class, SetAndGetSwings) {
+  IRPanasonicAc32 ac(kGpioUnused);
+
+  // Horizontal
+  ac.setSwingHorizontal(true);
+  EXPECT_TRUE(ac.getSwingHorizontal());
+  ac.setSwingHorizontal(false);
+  EXPECT_FALSE(ac.getSwingHorizontal());
+  ac.setSwingHorizontal(true);
+  EXPECT_TRUE(ac.getSwingHorizontal());
+
+  // Vertical
+  ac.setSwingVertical(kPanasonicAc32SwingVAuto);
+  EXPECT_EQ(kPanasonicAc32SwingVAuto, ac.getSwingVertical());
+
+  ac.setSwingVertical(kPanasonicAcSwingVHighest);
+  EXPECT_EQ(kPanasonicAcSwingVHighest, ac.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVHighest - 1);
+  EXPECT_EQ(kPanasonicAcSwingVHighest, ac.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVHighest + 1);
+  EXPECT_EQ(kPanasonicAcSwingVHighest + 1, ac.getSwingVertical());
+
+  ac.setSwingVertical(kPanasonicAcSwingVLowest);
+  EXPECT_EQ(kPanasonicAcSwingVLowest, ac.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVLowest + 1);
+  EXPECT_EQ(kPanasonicAcSwingVLowest, ac.getSwingVertical());
+  ac.setSwingVertical(kPanasonicAcSwingVLowest - 1);
+  EXPECT_EQ(kPanasonicAcSwingVLowest - 1, ac.getSwingVertical());
+
+  ac.setSwingVertical(kPanasonicAc32SwingVAuto);
+  EXPECT_EQ(kPanasonicAc32SwingVAuto, ac.getSwingVertical());
+}
+
+TEST(TestIRPanasonicAc32Class, HumanReadable) {
+  IRPanasonicAc32 ac(kGpioUnused);
+
+  EXPECT_EQ(
+      "Power Toggle: Off, Mode: 2 (Cool), Temp: 16C, Fan: 15 (Auto), "
+      "Swing(H): On, Swing(V): 7 (Auto)",
+      ac.toString());
+
+  ac.setMode(kPanasonicAc32Heat);
+  ac.setTemp(24);
+  ac.setFan(kPanasonicAc32FanMed);
+  ac.setSwingHorizontal(false);
+  ac.setSwingVertical(kPanasonicAcSwingVLowest);
+  ac.setPowerToggle(true);
+  EXPECT_EQ(
+      "Power Toggle: On, Mode: 4 (Heat), Temp: 24C, Fan: 4 (Medium), "
+      "Swing(H): Off, Swing(V): 5 (Lowest)",
       ac.toString());
 }

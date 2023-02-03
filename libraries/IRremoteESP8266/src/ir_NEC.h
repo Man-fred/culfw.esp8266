@@ -1,7 +1,21 @@
 // Copyright 2009 Ken Shirriff
 // Copyright 2017, 2018 David Conran
 
-// NEC originally added from https://github.com/shirriff/Arduino-IRremote/
+/// @file
+/// @brief Support for NEC (Renesas) protocols.
+/// NEC originally added from https://github.com/shirriff/Arduino-IRremote/
+/// @see http://www.sbprojects.net/knowledge/ir/nec.php
+
+// Supports:
+//   Brand: Yamaha,   Model: RAV561 remote
+//   Brand: Yamaha,   Model: RXV585B A/V Receiver
+//   Brand: Aloka,    Model: SleepyLights LED Lamp
+//   Brand: Toshiba,  Model: 42TL838 LCD TV
+//   Brand: Duux,  Model: Blizzard Smart 10K / DXMA04 A/C
+//   Brand: Duux,  Model: YJ-A081 TR Remote
+//   Brand: Silan Microelectronics,  Model: SC6121-001 IC
+//   Brand: BBK,  Model: SP550S 5.1 sound system
+//   Brand: Tanix,  Model: TX3 mini Android TV Box
 
 #ifndef IR_NEC_H_
 #define IR_NEC_H_
@@ -9,15 +23,7 @@
 #include <stdint.h>
 #include "IRremoteESP8266.h"
 
-// Supports:
-//   Brand: Yamaha,   Model: RAV561 remote
-//   Brand: Yamaha,   Model: RXV585B A/V Receiver
-//   Brand: Aloka,    Model: SleepyLights LED Lamp
-//   Brand: Toshiba,  Model: 42TL838 LCD TV
-
 // Constants
-// Ref:
-//  http://www.sbprojects.com/knowledge/ir/nec.php
 const uint16_t kNecTick = 560;
 const uint16_t kNecHdrMarkTicks = 16;
 const uint16_t kNecHdrMark = kNecHdrMarkTicks * kNecTick;

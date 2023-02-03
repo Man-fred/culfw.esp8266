@@ -5,7 +5,8 @@
 #include <avr/pgmspace.h>
 
 #ifndef ESP8266
-#include <avr/boot.h>
+#include <avr
+/boot.h>
 #include <avr/power.h>
 #include <avr/eeprom.h>
 #include <avr/interrupt.h>

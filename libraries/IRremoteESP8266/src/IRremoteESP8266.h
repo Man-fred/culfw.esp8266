@@ -37,6 +37,7 @@
  * Vestel AC code by Erdem U. Altınyurt
  * Teco AC code by Fabien Valthier (hcoohb)
  * Mitsubishi 112 AC Code by kuchel77
+ * Kelon AC code by Davide Depau (Depau)
  *
  *  GPL license, all text above must be included in any redistribution
  ****************************************************/
@@ -51,8 +52,30 @@
 #include <string>
 #endif  // UNIT_TEST
 
-// Library Version
-#define _IRREMOTEESP8266_VERSION_ "2.7.6"
+// Library Version Information
+// Major version number (X.x.x)
+#define _IRREMOTEESP8266_VERSION_MAJOR 2
+// Minor version number (x.X.x)
+#define _IRREMOTEESP8266_VERSION_MINOR 8
+// Patch version number (x.x.X)
+#define _IRREMOTEESP8266_VERSION_PATCH 4
+// Macro to convert version info into an integer
+#define _IRREMOTEESP8266_VERSION_VAL(major, minor, patch) \
+                                    (((major) << 16) | ((minor) << 8) | (patch))
+// Macro to convert literal into a string
+#define MKSTR_HELPER(x) #x
+#define MKSTR(x) MKSTR_HELPER(x)
+// Integer version
+#define _IRREMOTEESP8266_VERSION _IRREMOTEESP8266_VERSION_VAL(\
+    _IRREMOTEESP8266_VERSION_MAJOR, \
+    _IRREMOTEESP8266_VERSION_MINOR, \
+    _IRREMOTEESP8266_VERSION_PATCH)
+// String version
+#define _IRREMOTEESP8266_VERSION_STR MKSTR(_IRREMOTEESP8266_VERSION_MAJOR) "." \
+                                     MKSTR(_IRREMOTEESP8266_VERSION_MINOR) "." \
+                                     MKSTR(_IRREMOTEESP8266_VERSION_PATCH)
+// String version (DEPRECATED)
+#define _IRREMOTEESP8266_VERSION_ _IRREMOTEESP8266_VERSION_STR
 
 // Set the language & locale for the library. See the `locale` dir for options.
 #ifndef _IR_LOCALE_
@@ -201,6 +224,27 @@
 #define SEND_SANYO             _IR_ENABLE_DEFAULT_
 #endif  // SEND_SANYO
 
+#ifndef DECODE_SANYO_AC
+#define DECODE_SANYO_AC        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_SANYO_AC
+#ifndef SEND_SANYO_AC
+#define SEND_SANYO_AC          _IR_ENABLE_DEFAULT_
+#endif  // SEND_SANYO_AC
+
+#ifndef DECODE_SANYO_AC88
+#define DECODE_SANYO_AC88      _IR_ENABLE_DEFAULT_
+#endif  // DECODE_SANYO_AC88
+#ifndef SEND_SANYO_AC88
+#define SEND_SANYO_AC88        _IR_ENABLE_DEFAULT_
+#endif  // SEND_SANYO_AC88
+
+#ifndef DECODE_SANYO_AC152
+#define DECODE_SANYO_AC152     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_SANYO_AC152
+#ifndef SEND_SANYO_AC152
+#define SEND_SANYO_AC152       _IR_ENABLE_DEFAULT_
+#endif  // SEND_SANYO_AC152
+
 #ifndef DECODE_MITSUBISHI
 #define DECODE_MITSUBISHI      _IR_ENABLE_DEFAULT_
 #endif  // DECODE_MITSUBISHI
@@ -299,6 +343,13 @@
 #define SEND_COOLIX            _IR_ENABLE_DEFAULT_
 #endif  // SEND_COOLIX
 
+#ifndef DECODE_COOLIX48
+#define DECODE_COOLIX48        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_COOLIX48
+#ifndef SEND_COOLIX48
+#define SEND_COOLIX48          _IR_ENABLE_DEFAULT_
+#endif  // SEND_COOLIX48
+
 #ifndef DECODE_GLOBALCACHE
 #define DECODE_GLOBALCACHE     false  // Not applicable.
 #endif  // DECODE_GLOBALCACHE
@@ -341,6 +392,13 @@
 #define SEND_TROTEC            _IR_ENABLE_DEFAULT_
 #endif  // SEND_TROTEC
 
+#ifndef DECODE_TROTEC_3550
+#define DECODE_TROTEC_3550     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TROTEC_3550
+#ifndef SEND_TROTEC_3550
+#define SEND_TROTEC_3550       _IR_ENABLE_DEFAULT_
+#endif  // SEND_TROTEC_3550
+
 #ifndef DECODE_NIKAI
 #define DECODE_NIKAI           _IR_ENABLE_DEFAULT_
 #endif  // DECODE_NIKAI
@@ -369,6 +427,13 @@
 #define SEND_MIDEA             _IR_ENABLE_DEFAULT_
 #endif  // SEND_MIDEA
 
+#ifndef DECODE_MIDEA24
+#define DECODE_MIDEA24         _IR_ENABLE_DEFAULT_
+#endif  // DECODE_MIDEA24
+#ifndef SEND_MIDEA24
+#define SEND_MIDEA24           _IR_ENABLE_DEFAULT_
+#endif  // SEND_MIDEA24
+
 #ifndef DECODE_LASERTAG
 #define DECODE_LASERTAG        _IR_ENABLE_DEFAULT_
 #endif  // DECODE_LASERTAG
@@ -382,6 +447,27 @@
 #ifndef SEND_CARRIER_AC
 #define SEND_CARRIER_AC        _IR_ENABLE_DEFAULT_
 #endif  // SEND_CARRIER_AC
+
+#ifndef DECODE_CARRIER_AC40
+#define DECODE_CARRIER_AC40    _IR_ENABLE_DEFAULT_
+#endif  // DECODE_CARRIER_AC40
+#ifndef SEND_CARRIER_AC40
+#define SEND_CARRIER_AC40      _IR_ENABLE_DEFAULT_
+#endif  // SEND_CARRIER_AC40
+
+#ifndef DECODE_CARRIER_AC64
+#define DECODE_CARRIER_AC64    _IR_ENABLE_DEFAULT_
+#endif  // DECODE_CARRIER_AC64
+#ifndef SEND_CARRIER_AC64
+#define SEND_CARRIER_AC64      _IR_ENABLE_DEFAULT_
+#endif  // SEND_CARRIER_AC64
+
+#ifndef DECODE_CARRIER_AC128
+#define DECODE_CARRIER_AC128   _IR_ENABLE_DEFAULT_
+#endif  // DECODE_CARRIER_AC128
+#ifndef SEND_CARRIER_AC128
+#define SEND_CARRIER_AC128     _IR_ENABLE_DEFAULT_
+#endif  // SEND_CARRIER_AC128
 
 #ifndef DECODE_HAIER_AC
 #define DECODE_HAIER_AC        _IR_ENABLE_DEFAULT_
@@ -412,11 +498,32 @@
 #endif  // SEND_HITACHI_AC2
 
 #ifndef DECODE_HITACHI_AC3
-#define DECODE_HITACHI_AC3   _IR_ENABLE_DEFAULT_
+#define DECODE_HITACHI_AC3     _IR_ENABLE_DEFAULT_
 #endif  // DECODE_HITACHI_AC3
 #ifndef SEND_HITACHI_AC3
-#define SEND_HITACHI_AC3     _IR_ENABLE_DEFAULT_
+#define SEND_HITACHI_AC3       _IR_ENABLE_DEFAULT_
 #endif  // SEND_HITACHI_AC3
+
+#ifndef DECODE_HITACHI_AC264
+#define DECODE_HITACHI_AC264   _IR_ENABLE_DEFAULT_
+#endif  // DECODE_HITACHI_AC264
+#ifndef SEND_HITACHI_AC264
+#define SEND_HITACHI_AC264     _IR_ENABLE_DEFAULT_
+#endif  // SEND_HITACHI_AC264
+
+#ifndef DECODE_HITACHI_AC296
+#define DECODE_HITACHI_AC296   _IR_ENABLE_DEFAULT_
+#endif  // DECODE_HITACHI_AC296
+#ifndef SEND_HITACHI_AC296
+#define SEND_HITACHI_AC296     _IR_ENABLE_DEFAULT_
+#endif  // SEND_HITACHI_AC296
+
+#ifndef DECODE_HITACHI_AC344
+#define DECODE_HITACHI_AC344   _IR_ENABLE_DEFAULT_
+#endif  // DECODE_HITACHI_AC344
+#ifndef SEND_HITACHI_AC344
+#define SEND_HITACHI_AC344     _IR_ENABLE_DEFAULT_
+#endif  // SEND_HITACHI_AC344
 
 #ifndef DECODE_HITACHI_AC424
 #define DECODE_HITACHI_AC424   _IR_ENABLE_DEFAULT_
@@ -467,6 +574,13 @@
 #define SEND_PANASONIC_AC      _IR_ENABLE_DEFAULT_
 #endif  // SEND_PANASONIC_AC
 
+#ifndef DECODE_PANASONIC_AC32
+#define DECODE_PANASONIC_AC32  _IR_ENABLE_DEFAULT_
+#endif  // DECODE_PANASONIC_AC32
+#ifndef SEND_PANASONIC_AC32
+#define SEND_PANASONIC_AC32    _IR_ENABLE_DEFAULT_
+#endif  // SEND_PANASONIC_AC32
+
 #ifndef DECODE_MWM
 #define DECODE_MWM             _IR_ENABLE_DEFAULT_
 #endif  // DECODE_MWM
@@ -501,6 +615,13 @@
 #ifndef SEND_TECO
 #define SEND_TECO              _IR_ENABLE_DEFAULT_
 #endif  // SEND_TECO
+
+#ifndef DECODE_TCL96AC
+#define DECODE_TCL96AC        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TCL96AC
+#ifndef SEND_TCL96AC
+#define SEND_TCL96AC          _IR_ENABLE_DEFAULT_
+#endif  // SEND_TCL96AC
 
 #ifndef DECODE_TCL112AC
 #define DECODE_TCL112AC        _IR_ENABLE_DEFAULT_
@@ -573,32 +694,235 @@
 #endif  // SEND_DAIKIN152
 
 #ifndef DECODE_EPSON
-#define DECODE_EPSON   _IR_ENABLE_DEFAULT_
+#define DECODE_EPSON           _IR_ENABLE_DEFAULT_
 #endif  // DECODE_EPSON
 #ifndef SEND_EPSON
-#define SEND_EPSON     _IR_ENABLE_DEFAULT_
+#define SEND_EPSON             _IR_ENABLE_DEFAULT_
 #endif  // SEND_EPSON
 
 #ifndef DECODE_SYMPHONY
-#define DECODE_SYMPHONY   _IR_ENABLE_DEFAULT_
+#define DECODE_SYMPHONY        _IR_ENABLE_DEFAULT_
 #endif  // DECODE_SYMPHONY
 #ifndef SEND_SYMPHONY
-#define SEND_SYMPHONY     _IR_ENABLE_DEFAULT_
+#define SEND_SYMPHONY          _IR_ENABLE_DEFAULT_
 #endif  // SEND_SYMPHONY
 
 #ifndef DECODE_DAIKIN64
-#define DECODE_DAIKIN64       _IR_ENABLE_DEFAULT_
+#define DECODE_DAIKIN64        _IR_ENABLE_DEFAULT_
 #endif  // DECODE_DAIKIN64
 #ifndef SEND_DAIKIN64
-#define SEND_DAIKIN64         _IR_ENABLE_DEFAULT_
+#define SEND_DAIKIN64          _IR_ENABLE_DEFAULT_
 #endif  // SEND_DAIKIN64
 
 #ifndef DECODE_AIRWELL
-#define DECODE_AIRWELL       _IR_ENABLE_DEFAULT_
+#define DECODE_AIRWELL         _IR_ENABLE_DEFAULT_
 #endif  // DECODE_AIRWELL
 #ifndef SEND_AIRWELL
-#define SEND_AIRWELL         _IR_ENABLE_DEFAULT_
+#define SEND_AIRWELL           _IR_ENABLE_DEFAULT_
 #endif  // SEND_AIRWELL
+
+#ifndef DECODE_DELONGHI_AC
+#define DECODE_DELONGHI_AC     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_DELONGHI_AC
+#ifndef SEND_DELONGHI_AC
+#define SEND_DELONGHI_AC       _IR_ENABLE_DEFAULT_
+#endif  // SEND_DELONGHI_AC
+
+#ifndef DECODE_DOSHISHA
+#define DECODE_DOSHISHA        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_DOSHISHA
+#ifndef SEND_DOSHISHA
+#define SEND_DOSHISHA          _IR_ENABLE_DEFAULT_
+#endif  // SEND_DOSHISHA
+
+#ifndef DECODE_MULTIBRACKETS
+#define DECODE_MULTIBRACKETS   _IR_ENABLE_DEFAULT_
+#endif  // DECODE_MULTIBRACKETS
+#ifndef SEND_MULTIBRACKETS
+#define SEND_MULTIBRACKETS     _IR_ENABLE_DEFAULT_
+#endif  // SEND_MULTIBRACKETS
+
+#ifndef DECODE_TECHNIBEL_AC
+#define DECODE_TECHNIBEL_AC     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TECHNIBEL_AC
+#ifndef SEND_TECHNIBEL_AC
+#define SEND_TECHNIBEL_AC       _IR_ENABLE_DEFAULT_
+#endif  // SEND_TECHNIBEL_AC
+
+#ifndef DECODE_CORONA_AC
+#define DECODE_CORONA_AC       _IR_ENABLE_DEFAULT_
+#endif  // DECODE_CORONA_AC
+#ifndef SEND_CORONA_AC
+#define SEND_CORONA_AC         _IR_ENABLE_DEFAULT_
+#endif  // SEND_CORONA_AC
+
+#ifndef DECODE_ZEPEAL
+#define DECODE_ZEPEAL          _IR_ENABLE_DEFAULT_
+#endif  // DECODE_ZEPEAL
+#ifndef SEND_ZEPEAL
+#define SEND_ZEPEAL            _IR_ENABLE_DEFAULT_
+#endif  // SEND_ZEPEAL
+
+#ifndef DECODE_VOLTAS
+#define DECODE_VOLTAS          _IR_ENABLE_DEFAULT_
+#endif  // DECODE_VOLTAS
+#ifndef SEND_VOLTAS
+#define SEND_VOLTAS            _IR_ENABLE_DEFAULT_
+#endif  // SEND_VOLTAS
+
+#ifndef DECODE_METZ
+#define DECODE_METZ            _IR_ENABLE_DEFAULT_
+#endif  // DECODE_METZ
+#ifndef SEND_METZ
+#define SEND_METZ              _IR_ENABLE_DEFAULT_
+#endif  // SEND_METZ
+
+#ifndef DECODE_TRANSCOLD
+#define DECODE_TRANSCOLD       _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TRANSCOLD
+#ifndef SEND_TRANSCOLD
+#define SEND_TRANSCOLD         _IR_ENABLE_DEFAULT_
+#endif  // SEND_TRANSCOLD
+
+#ifndef DECODE_MIRAGE
+#define DECODE_MIRAGE          _IR_ENABLE_DEFAULT_
+#endif  // DECODE_MIRAGE
+#ifndef SEND_MIRAGE
+#define SEND_MIRAGE            _IR_ENABLE_DEFAULT_
+#endif  // SEND_MIRAGE
+
+#ifndef DECODE_ELITESCREENS
+#define DECODE_ELITESCREENS    _IR_ENABLE_DEFAULT_
+#endif  // DECODE_ELITESCREENS
+#ifndef SEND_ELITESCREENS
+#define SEND_ELITESCREENS      _IR_ENABLE_DEFAULT_
+#endif  // SEND_ELITESCREENS
+
+#ifndef DECODE_MILESTAG2
+#define DECODE_MILESTAG2    _IR_ENABLE_DEFAULT_
+#endif  // DECODE_MILESTAG2
+#ifndef SEND_MILESTAG2
+#define SEND_MILESTAG2      _IR_ENABLE_DEFAULT_
+#endif  // SEND_MILESTAG2
+
+#ifndef DECODE_ECOCLIM
+#define DECODE_ECOCLIM      _IR_ENABLE_DEFAULT_
+#endif  // DECODE_ECOCLIM
+#ifndef SEND_ECOCLIM
+#define SEND_ECOCLIM        _IR_ENABLE_DEFAULT_
+#endif  // SEND_ECOCLIM
+
+#ifndef DECODE_XMP
+#define DECODE_XMP          _IR_ENABLE_DEFAULT_
+#endif  // DECODE_XMP
+#ifndef SEND_XMP
+#define SEND_XMP            _IR_ENABLE_DEFAULT_
+#endif  // SEND_XMP
+
+#ifndef DECODE_TRUMA
+#define DECODE_TRUMA        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TRUMA
+#ifndef SEND_TRUMA
+#define SEND_TRUMA          _IR_ENABLE_DEFAULT_
+#endif  // SEND_TRUMA
+
+#ifndef DECODE_HAIER_AC176
+#define DECODE_HAIER_AC176  _IR_ENABLE_DEFAULT_
+#endif  // DECODE_HAIER_AC176
+#ifndef SEND_HAIER_AC176
+#define SEND_HAIER_AC176    _IR_ENABLE_DEFAULT_
+#endif  // SEND_HAIER_AC176
+
+#ifndef DECODE_TEKNOPOINT
+#define DECODE_TEKNOPOINT  _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TEKNOPOINT
+#ifndef SEND_TEKNOPOINT
+#define SEND_TEKNOPOINT    _IR_ENABLE_DEFAULT_
+#endif  // SEND_TEKNOPOINT
+
+#ifndef DECODE_KELON
+#define DECODE_KELON        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_KELON
+#ifndef SEND_KELON
+#define SEND_KELON          _IR_ENABLE_DEFAULT_
+#endif  // SEND_KELON
+
+#ifndef DECODE_BOSE
+#define DECODE_BOSE         _IR_ENABLE_DEFAULT_
+#endif  // DECODE_BOSE
+#ifndef SEND_BOSE
+#define SEND_BOSE           _IR_ENABLE_DEFAULT_
+#endif  // SEND_BOSE
+
+#ifndef DECODE_ARRIS
+#define DECODE_ARRIS        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_ARRIS
+#ifndef SEND_ARRIS
+#define SEND_ARRIS          _IR_ENABLE_DEFAULT_
+#endif  // SEND_ARRIS
+
+#ifndef DECODE_RHOSS
+#define DECODE_RHOSS        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_RHOSS
+#ifndef SEND_RHOSS
+#define SEND_RHOSS          _IR_ENABLE_DEFAULT_
+#endif  // SEND_RHOSS
+
+#ifndef DECODE_AIRTON
+#define DECODE_AIRTON       _IR_ENABLE_DEFAULT_
+#endif  // DECODE_AIRTON
+#ifndef SEND_AIRTON
+#define SEND_AIRTON         _IR_ENABLE_DEFAULT_
+#endif  // SEND_AIRTON
+
+#ifndef DECODE_KELON168
+#define DECODE_KELON168     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_KELON168
+#ifndef SEND_KELON168
+#define SEND_KELON168       _IR_ENABLE_DEFAULT_
+#endif  // SEND_KELON168
+
+#ifndef DECODE_DAIKIN200
+#define DECODE_DAIKIN200    _IR_ENABLE_DEFAULT_
+#endif  // DECODE_DAIKIN200
+#ifndef SEND_DAIKIN200
+#define SEND_DAIKIN200      _IR_ENABLE_DEFAULT_
+#endif  // SEND_DAIKIN200
+
+#ifndef DECODE_HAIER_AC160
+#define DECODE_HAIER_AC160  _IR_ENABLE_DEFAULT_
+#endif  // DECODE_HAIER_AC160
+#ifndef SEND_HAIER_AC160
+#define SEND_HAIER_AC160    _IR_ENABLE_DEFAULT_
+#endif  // SEND_HAIER_AC160
+
+#ifndef DECODE_TOTO
+#define DECODE_TOTO         _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TOTO
+#ifndef SEND_TOTO
+#define SEND_TOTO           _IR_ENABLE_DEFAULT_
+#endif  // SEND_TOTO
+
+#ifndef DECODE_CLIMABUTLER
+#define DECODE_CLIMABUTLER  _IR_ENABLE_DEFAULT_
+#endif  // DECODE_CLIMABUTLER
+#ifndef SEND_CLIMABUTLER
+#define SEND_CLIMABUTLER    _IR_ENABLE_DEFAULT_
+#endif  // SEND_CLIMABUTLER
+
+#ifndef DECODE_BOSCH144
+#define DECODE_BOSCH144     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_BOSCH144
+#ifndef SEND_BOSCH144
+#define SEND_BOSCH144       _IR_ENABLE_DEFAULT_
+#endif  // SEND_BOSCH144
+
+#ifndef DECODE_DAIKIN312
+#define DECODE_DAIKIN312    _IR_ENABLE_DEFAULT_
+#endif  // DECODE_DAIKIN312
+#ifndef SEND_DAIKIN312
+#define SEND_DAIKIN312      _IR_ENABLE_DEFAULT_
+#endif  // SEND_DAIKIN312
 
 #if (DECODE_ARGO || DECODE_DAIKIN || DECODE_FUJITSU_AC || DECODE_GREE || \
      DECODE_KELVINATOR || DECODE_MITSUBISHI_AC || DECODE_TOSHIBA_AC || \
@@ -610,7 +934,17 @@
      DECODE_DAIKIN216 || DECODE_SHARP_AC || DECODE_DAIKIN160 || \
      DECODE_NEOCLIMA || DECODE_DAIKIN176 || DECODE_DAIKIN128 || \
      DECODE_AMCOR || DECODE_DAIKIN152 || DECODE_MITSUBISHI136 || \
-     DECODE_MITSUBISHI112 || DECODE_HITACHI_AC424 || DECODE_HITACHI_AC3)
+     DECODE_MITSUBISHI112 || DECODE_HITACHI_AC424 || DECODE_HITACHI_AC3 || \
+     DECODE_HITACHI_AC344 || DECODE_CORONA_AC || DECODE_SANYO_AC || \
+     DECODE_VOLTAS || DECODE_MIRAGE || DECODE_HAIER_AC176 || \
+     DECODE_TEKNOPOINT || DECODE_KELON || DECODE_TROTEC_3550 || \
+     DECODE_SANYO_AC88 || DECODE_RHOSS || DECODE_HITACHI_AC264 || \
+     DECODE_KELON168 || DECODE_HITACHI_AC296 || DECODE_CARRIER_AC128 || \
+     DECODE_DAIKIN200 || DECODE_HAIER_AC160 || DECODE_TCL96AC || \
+     DECODE_BOSCH144 || DECODE_SANYO_AC152 || DECODE_DAIKIN312 || \
+     false)
+  // Add any DECODE to the above if it uses result->state (see kStateSizeMax)
+  // you might also want to add the protocol to hasACState function
 #define DECODE_AC true  // We need some common infrastructure for decoding A/Cs.
 #else
 #define DECODE_AC false   // We don't need that infrastructure.
@@ -640,11 +974,11 @@
 #ifndef ENABLE_NOISE_FILTER_OPTION
 #define ENABLE_NOISE_FILTER_OPTION true
 #endif  // ENABLE_NOISE_FILTER_OPTION
-/*
- * Always add to the end of the list and should never remove entries
- * or change order. Projects may save the type number for later usage
- * so numbering should always stay the same.
- */
+
+/// Enumerator for defining and numbering of supported IR protocol.
+/// @note Always add to the end of the list and should never remove entries
+///  or change order. Projects may save the type number for later usage
+///  so numbering should always stay the same.
 enum decode_type_t {
   UNKNOWN = -1,
   UNUSED = 0,
@@ -727,15 +1061,60 @@ enum decode_type_t {
   HITACHI_AC3,
   DAIKIN64,
   AIRWELL,
+  DELONGHI_AC,  // 80
+  DOSHISHA,
+  MULTIBRACKETS,
+  CARRIER_AC40,
+  CARRIER_AC64,
+  HITACHI_AC344,  // 85
+  CORONA_AC,
+  MIDEA24,
+  ZEPEAL,
+  SANYO_AC,
+  VOLTAS,  // 90
+  METZ,
+  TRANSCOLD,
+  TECHNIBEL_AC,
+  MIRAGE,
+  ELITESCREENS,  // 95
+  PANASONIC_AC32,
+  MILESTAG2,
+  ECOCLIM,
+  XMP,
+  TRUMA,  // 100
+  HAIER_AC176,
+  TEKNOPOINT,
+  KELON,
+  TROTEC_3550,
+  SANYO_AC88,  // 105
+  BOSE,
+  ARRIS,
+  RHOSS,
+  AIRTON,
+  COOLIX48,  // 110
+  HITACHI_AC264,
+  KELON168,
+  HITACHI_AC296,
+  DAIKIN200,
+  HAIER_AC160,  // 115
+  CARRIER_AC128,
+  TOTO,
+  CLIMABUTLER,
+  TCL96AC,
+  BOSCH144,  // 120
+  SANYO_AC152,
+  DAIKIN312,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = AIRWELL,
+  kLastDecodeType = DAIKIN312,
 };
 
 // Message lengths & required repeat values
 const uint16_t kNoRepeat = 0;
 const uint16_t kSingleRepeat = 1;
 
-const uint16_t kAirwellBits = 32;
+const uint16_t kAirtonBits = 56;
+const uint16_t kAirtonDefaultRepeat = kNoRepeat;
+const uint16_t kAirwellBits = 34;
 const uint16_t kAirwellMinRepeats = 2;
 const uint16_t kAiwaRcT501Bits = 15;
 const uint16_t kAiwaRcT501MinRepeats = kSingleRepeat;
@@ -746,10 +1125,25 @@ const uint16_t kAmcorDefaultRepeat = kSingleRepeat;
 const uint16_t kArgoStateLength = 12;
 const uint16_t kArgoBits = kArgoStateLength * 8;
 const uint16_t kArgoDefaultRepeat = kNoRepeat;
+const uint16_t kArrisBits = 32;
+const uint16_t kBosch144StateLength = 18;
+const uint16_t kBosch144Bits = kBosch144StateLength * 8;
 const uint16_t kCoolixBits = 24;
+const uint16_t kCoolix48Bits = kCoolixBits * 2;
 const uint16_t kCoolixDefaultRepeat = kSingleRepeat;
 const uint16_t kCarrierAcBits = 32;
 const uint16_t kCarrierAcMinRepeat = kNoRepeat;
+const uint16_t kCarrierAc40Bits = 40;
+const uint16_t kCarrierAc40MinRepeat = 2;
+const uint16_t kCarrierAc64Bits = 64;
+const uint16_t kCarrierAc64MinRepeat = kNoRepeat;
+const uint16_t kCarrierAc128StateLength = 16;
+const uint16_t kCarrierAc128Bits = kCarrierAc128StateLength * 8;
+const uint16_t kCarrierAc128MinRepeat = kNoRepeat;
+const uint16_t kCoronaAcStateLengthShort = 7;
+const uint16_t kCoronaAcStateLength = kCoronaAcStateLengthShort * 3;
+const uint16_t kCoronaAcBitsShort = kCoronaAcStateLengthShort * 8;
+const uint16_t kCoronaAcBits = kCoronaAcStateLength * 8;
 const uint16_t kDaikinStateLength = 35;
 const uint16_t kDaikinBits = kDaikinStateLength * 8;
 const uint16_t kDaikinStateLengthShort = kDaikinStateLength - 8;
@@ -772,19 +1166,34 @@ const uint16_t kDaikin152DefaultRepeat = kNoRepeat;
 const uint16_t kDaikin176StateLength = 22;
 const uint16_t kDaikin176Bits = kDaikin176StateLength * 8;
 const uint16_t kDaikin176DefaultRepeat = kNoRepeat;
+const uint16_t kDaikin200StateLength = 25;
+const uint16_t kDaikin200Bits = kDaikin200StateLength * 8;
+const uint16_t kDaikin200DefaultRepeat = kNoRepeat;
 const uint16_t kDaikin216StateLength = 27;
 const uint16_t kDaikin216Bits = kDaikin216StateLength * 8;
 const uint16_t kDaikin216DefaultRepeat = kNoRepeat;
+const uint16_t kDaikin312StateLength = 39;
+const uint16_t kDaikin312Bits = kDaikin312StateLength * 8;
+const uint16_t kDaikin312DefaultRepeat = kNoRepeat;
+const uint16_t kDelonghiAcBits = 64;
+const uint16_t kDelonghiAcDefaultRepeat = kNoRepeat;
+const uint16_t kTechnibelAcBits = 56;
+const uint16_t kTechnibelAcDefaultRepeat = kNoRepeat;
 const uint16_t kDenonBits = 15;
 const uint16_t kDenon48Bits = 48;
 const uint16_t kDenonLegacyBits = 14;
 const uint16_t kDishBits = 16;
 const uint16_t kDishMinRepeat = 3;
+const uint16_t kDoshishaBits = 40;
+const uint16_t kEcoclimBits = 56;
+const uint16_t kEcoclimShortBits = 15;
 const uint16_t kEpsonBits = 32;
 const uint16_t kEpsonMinRepeat = 2;
 const uint16_t kElectraAcStateLength = 13;
 const uint16_t kElectraAcBits = kElectraAcStateLength * 8;
 const uint16_t kElectraAcMinRepeat = kNoRepeat;
+const uint16_t kEliteScreensBits = 32;
+const uint16_t kEliteScreensDefaultRepeat = kSingleRepeat;
 const uint16_t kFujitsuAcMinRepeat = kNoRepeat;
 const uint16_t kFujitsuAcStateLength = 16;
 const uint16_t kFujitsuAcStateLengthShort = 7;
@@ -803,6 +1212,12 @@ const uint16_t kHaierAcDefaultRepeat = kNoRepeat;
 const uint16_t kHaierACYRW02StateLength = 14;
 const uint16_t kHaierACYRW02Bits = kHaierACYRW02StateLength * 8;
 const uint16_t kHaierAcYrw02DefaultRepeat = kNoRepeat;
+const uint16_t kHaierAC160StateLength = 20;
+const uint16_t kHaierAC160Bits = kHaierAC160StateLength * 8;
+const uint16_t kHaierAc160DefaultRepeat = kNoRepeat;
+const uint16_t kHaierAC176StateLength = 22;
+const uint16_t kHaierAC176Bits = kHaierAC176StateLength * 8;
+const uint16_t kHaierAc176DefaultRepeat = kNoRepeat;
 const uint16_t kHitachiAcStateLength = 28;
 const uint16_t kHitachiAcBits = kHitachiAcStateLength * 8;
 const uint16_t kHitachiAcDefaultRepeat = kNoRepeat;
@@ -814,11 +1229,20 @@ const uint16_t kHitachiAc3StateLength = 27;
 const uint16_t kHitachiAc3Bits = kHitachiAc3StateLength * 8;
 const uint16_t kHitachiAc3MinStateLength = 15;
 const uint16_t kHitachiAc3MinBits = kHitachiAc3MinStateLength * 8;
+const uint16_t kHitachiAc264StateLength = 33;
+const uint16_t kHitachiAc264Bits = kHitachiAc264StateLength * 8;
+const uint16_t kHitachiAc296StateLength = 37;
+const uint16_t kHitachiAc296Bits = kHitachiAc296StateLength * 8;
+const uint16_t kHitachiAc344StateLength = 43;
+const uint16_t kHitachiAc344Bits = kHitachiAc344StateLength * 8;
 const uint16_t kHitachiAc424StateLength = 53;
 const uint16_t kHitachiAc424Bits = kHitachiAc424StateLength * 8;
 const uint16_t kInaxBits = 24;
 const uint16_t kInaxMinRepeat = kSingleRepeat;
 const uint16_t kJvcBits = 16;
+const uint16_t kKelonBits = 48;
+const uint16_t kKelon168StateLength = 21;
+const uint16_t kKelon168Bits = kKelon168StateLength * 8;
 const uint16_t kKelvinatorStateLength = 16;
 const uint16_t kKelvinatorBits = kKelvinatorStateLength * 8;
 const uint16_t kKelvinatorDefaultRepeat = kNoRepeat;
@@ -831,8 +1255,15 @@ const uint16_t kLg32Bits = 32;
 const uint16_t kLgDefaultRepeat = kNoRepeat;
 const uint16_t kLutronBits = 35;
 const uint16_t kMagiquestBits = 56;
+const uint16_t kMetzBits = 19;
+const uint16_t kMetzMinRepeat = kNoRepeat;
 const uint16_t kMideaBits = 48;
 const uint16_t kMideaMinRepeat = kNoRepeat;
+const uint16_t kMidea24Bits = 24;
+const uint16_t kMidea24MinRepeat = kSingleRepeat;
+const uint16_t kMirageStateLength = 15;
+const uint16_t kMirageBits = kMirageStateLength * 8;
+const uint16_t kMirageMinRepeat = kNoRepeat;
 const uint16_t kMitsubishiBits = 16;
 // TODO(anyone): Verify that the Mitsubishi repeat is really needed.
 //               Based on marcosamarinho's code.
@@ -852,6 +1283,8 @@ const uint16_t kMitsubishiHeavy88MinRepeat = kNoRepeat;
 const uint16_t kMitsubishiHeavy152StateLength = 19;
 const uint16_t kMitsubishiHeavy152Bits = kMitsubishiHeavy152StateLength * 8;
 const uint16_t kMitsubishiHeavy152MinRepeat = kNoRepeat;
+const uint16_t kMultibracketsBits = 8;
+const uint16_t kMultibracketsDefaultRepeat = kSingleRepeat;
 const uint16_t kNikaiBits = 24;
 const uint16_t kNECBits = 32;
 const uint16_t kNeoclimaStateLength = 12;
@@ -864,6 +1297,7 @@ const uint16_t kPanasonicAcStateShortLength = 16;
 const uint16_t kPanasonicAcBits = kPanasonicAcStateLength * 8;
 const uint16_t kPanasonicAcShortBits = kPanasonicAcStateShortLength * 8;
 const uint16_t kPanasonicAcDefaultRepeat = kNoRepeat;
+const uint16_t kPanasonicAc32Bits = 32;
 const uint16_t kPioneerBits = 64;
 const uint16_t kProntoMinLength = 6;
 const uint16_t kRC5RawBits = 14;
@@ -879,6 +1313,14 @@ const uint16_t kSamsungAcBits = kSamsungAcStateLength * 8;
 const uint16_t kSamsungAcExtendedStateLength = 21;
 const uint16_t kSamsungAcExtendedBits = kSamsungAcExtendedStateLength * 8;
 const uint16_t kSamsungAcDefaultRepeat = kNoRepeat;
+const uint16_t kSanyoAcStateLength = 9;
+const uint16_t kSanyoAcBits = kSanyoAcStateLength * 8;
+const uint16_t kSanyoAc88StateLength = 11;
+const uint16_t kSanyoAc88Bits = kSanyoAc88StateLength * 8;
+const uint16_t kSanyoAc88MinRepeat = 2;
+const uint16_t kSanyoAc152StateLength = 19;
+const uint16_t kSanyoAc152Bits = kSanyoAc152StateLength * 8;
+const uint16_t kSanyoAc152MinRepeat = kNoRepeat;
 const uint16_t kSanyoSA8650BBits = 12;
 const uint16_t kSanyoLC7461AddressBits = 13;
 const uint16_t kSanyoLC7461CommandBits = 8;
@@ -897,24 +1339,53 @@ const uint16_t kSony15Bits = 15;
 const uint16_t kSony20Bits = 20;
 const uint16_t kSonyMinBits = 12;
 const uint16_t kSonyMinRepeat = 2;
-const uint16_t kSymphonyBits = 11;
-const uint16_t kSymphonyDefaultRepeat = kSingleRepeat;
+const uint16_t kSymphonyBits = 12;
+const uint16_t kSymphonyDefaultRepeat = 3;
+const uint16_t kTcl96AcStateLength = 12;
+const uint16_t kTcl96AcBits = kTcl96AcStateLength * 8;
+const uint16_t kTcl96AcDefaultRepeat = kNoRepeat;
 const uint16_t kTcl112AcStateLength = 14;
 const uint16_t kTcl112AcBits = kTcl112AcStateLength * 8;
 const uint16_t kTcl112AcDefaultRepeat = kNoRepeat;
 const uint16_t kTecoBits = 35;
 const uint16_t kTecoDefaultRepeat = kNoRepeat;
+const uint16_t kTeknopointStateLength = 14;
+const uint16_t kTeknopointBits = kTeknopointStateLength * 8;
 const uint16_t kToshibaACStateLength = 9;
 const uint16_t kToshibaACBits = kToshibaACStateLength * 8;
 const uint16_t kToshibaACMinRepeat = kSingleRepeat;
+const uint16_t kToshibaACStateLengthShort = kToshibaACStateLength - 2;
+const uint16_t kToshibaACBitsShort = kToshibaACStateLengthShort * 8;
+const uint16_t kToshibaACStateLengthLong = kToshibaACStateLength + 1;
+const uint16_t kToshibaACBitsLong = kToshibaACStateLengthLong * 8;
+const uint16_t kTotoBits = 24;
+const uint16_t kTotoShortBits = kTotoBits;
+const uint16_t kTotoLongBits = kTotoShortBits * 2;
+const uint16_t kTotoDefaultRepeat = kSingleRepeat;
+const uint16_t kTranscoldBits = 24;
+const uint16_t kTranscoldDefaultRepeat = kNoRepeat;
 const uint16_t kTrotecStateLength = 9;
 const uint16_t kTrotecBits = kTrotecStateLength * 8;
 const uint16_t kTrotecDefaultRepeat = kNoRepeat;
+const uint16_t kTrumaBits = 56;
 const uint16_t kWhirlpoolAcStateLength = 21;
 const uint16_t kWhirlpoolAcBits = kWhirlpoolAcStateLength * 8;
 const uint16_t kWhirlpoolAcDefaultRepeat = kNoRepeat;
 const uint16_t kWhynterBits = 32;
 const uint8_t  kVestelAcBits = 56;
+const uint16_t kXmpBits = 64;
+const uint16_t kZepealBits = 16;
+const uint16_t kZepealMinRepeat = 4;
+const uint16_t kVoltasBits = 80;
+const uint16_t kVoltasStateLength = 10;
+const uint16_t kMilesTag2ShotBits = 14;
+const uint16_t kMilesTag2MsgBits = 24;
+const uint16_t kMilesMinRepeat = 0;
+const uint16_t kBoseBits = 16;
+const uint16_t kRhossStateLength = 12;
+const uint16_t kRhossBits = kRhossStateLength * 8;
+const uint16_t kRhossDefaultRepeat = 0;
+const uint16_t kClimaButlerBits = 52;
 
 
 // Legacy defines. (Deprecated)
@@ -942,6 +1413,8 @@ const uint8_t  kVestelAcBits = 56;
 #define HITACHI_AC1_BITS              kHitachiAc1Bits
 #define HITACHI_AC2_STATE_LENGTH      kHitachiAc2StateLength
 #define HITACHI_AC2_BITS              kHitachiAc2Bits
+#define HITACHI_AC296_STATE_LENGTH    kHitachiAc296StateLength
+#define HITACHI_AC296_BITS            kHitachiAc296Bits
 #define JVC_BITS                      kJvcBits
 #define KELVINATOR_STATE_LENGTH       kKelvinatorStateLength
 #define LASERTAG_BITS                 kLasertagBits
