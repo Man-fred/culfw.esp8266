@@ -197,7 +197,8 @@ static void send_somfy_rts_frame(somfy_rts_frame_t *frame, int8_t hwPulses) {
 	// send inter-frame gap
 	// if last bit = 0, silence is 1/2 symbol longer
 	CC1100_OUT_PORT &= ~_BV(CC1100_OUT_PIN);// Low
-	my_delay_us(30415 + ((frame[6] >> 7) & 1) ? 0 : somfy_rts_interval_half);
+        my_delay_us(30415 + (((frame[6] >> 7) & 1) ? 0 : somfy_rts_interval_half)); # 129341
+
 }
 
 static uint8_t somfy_rts_calc_checksum(somfy_rts_frame_t *frame) {
