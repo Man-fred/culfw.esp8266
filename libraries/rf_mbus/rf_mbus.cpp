@@ -12,6 +12,7 @@
 #include "delay.h"
 #include "rf_receive.h"
 #include "display.h"
+#include "stringfunc.h"
 
 #include "rf_mbus.h"
 #include "mbus_defs.h"
@@ -426,13 +427,13 @@ uint16 RfMbusClass::txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {
   // Check TX Status
   txStatus = halRfGetTxStatus();
   if ( (txStatus & CC1100_STATUS_STATE_BM) != CC1100_STATE_IDLE ) {
-    ccStrobe(CC1100_SIDLE);
+    CC1100.ccStrobe(CC1100_SIDLE);
     return TX_STATE_ERROR;
   }
 
   // Flush TX FIFO
   // Ensure that FIFO is empty before transmit is started
-  ccStrobe(CC1100_SFTX);
+  CC1100.ccStrobe(CC1100_SFTX);
 
   // Initialize the TXinfo struct.
   TXinfo.pByteIndex   = pBytes;
@@ -465,7 +466,7 @@ uint16 RfMbusClass::txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {
     TXinfo.complete = TRUE;
 
   // Strobe TX
-  ccStrobe(CC1100_STX);
+  CC1100.ccStrobe(CC1100_STX);
 
   // Critical code section
   // Interrupts must be disabled between checking for completion
@@ -498,7 +499,7 @@ uint16 RfMbusClass::txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {
       // Check TX Status
       txStatus = halRfGetTxStatus();
       if ( (txStatus & CC1100_STATUS_STATE_BM) == CC1100_STATE_TX_UNDERFLOW ) {
-	ccStrobe(CC1100_SFTX);
+	CC1100.ccStrobe(CC1100_SFTX);
 	return TX_STATE_ERROR;
       }
 
@@ -506,7 +507,7 @@ uint16 RfMbusClass::txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {
 
   }
 
-  while((cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_IDLE));
+  while((CC1100.cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_IDLE));
 
   // re-enable RX if ...
   if (lastMode != WMBUS_NONE)
@@ -557,7 +558,7 @@ void RfMbusClass::func(char *in) {
 
     uint8_t i = 0;
     while (in[2*i+3] && in [2*i+4]) {
-      fromhex(in+3+(2*i), &MBpacket[i], 1);
+      STRINGFUNC.fromhex(in+3+(2*i), &MBpacket[i], 1);
       i++;
     }
 

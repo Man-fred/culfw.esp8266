@@ -14,12 +14,12 @@
 #include "display.h"
 
 #include "rf_mbus.h"
-#include "mbus_defs.h"
-#include "mbus_smode_rf_settings.h"
-#include "mbus_tmode_rf_settings.h"
-#include "mbus_packet.h"
-#include "manchester.h"
-#include "3outof6.h"
+#include "mbus/mbus_defs.h"
+#include "mbus/smode_rf_settings.h"
+#include "mbus/tmode_rf_settings.h"
+#include "mbus/mbus_packet.h"
+#include "mbus/manchester.h"
+#include "mbus/3outof6.h"
 
 // Buffers
 uint8 MBpacket[291];
