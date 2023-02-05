@@ -131,7 +131,7 @@ const t_fntab fntab[] = {
   // 'a' CUR battery
   { 'B', lambda(FNcol, prepare_boot) },
   #ifdef HAS_MBUS
-    { 'b', rf_mbus_func },
+    { 'b', lambda(RfMbus, func) },
   #endif
   { 'C', lambda(CC1100, ccreg) },
   #ifdef HAS_NTP
@@ -512,7 +512,7 @@ void loop() {
     kopp_fc_task();
   #endif
   #ifdef HAS_MBUS
-    rf_mbus_task();
+    RfMbus.task();
   #endif
   #ifdef HAS_ZWAVE
     rf_zwave_task();

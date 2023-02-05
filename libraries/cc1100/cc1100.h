@@ -36,7 +36,7 @@ public:
 private:
     void cc_set_pa(uint8_t idx);
 
-	};
+};
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_CC1100)
 extern CC1100Class CC1100;

@@ -104,7 +104,7 @@ void RfReceiveClass::tx_init(void)
 void RfReceiveClass::set_txrestore()
 {
 #ifdef HAS_MBUS	
-  if(mbus_mode != WMBUS_NONE) {
+  if(RfMbus.mbus_mode != WMBUS_NONE) {
     // rf_mbus.c handles cc1101 configuration on its own.
     // if mbus is activated the configuration must not be
     // changed here, that leads to a crash!

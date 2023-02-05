@@ -70,7 +70,7 @@
 
 #if defined(CUL_V3)
 #  define TTY_BUFSIZE          128      // RAM: TTY_BUFSIZE*4
-#  undef HAS_MBUS                       // PROGMEM: 4255
+#  define HAS_MBUS                       // PROGMEM: 4255
 #  if defined(HAS_MBUS)
 #    define MBUS_NO_TX                       // PROGMEM:  962
 #  endif
@@ -259,7 +259,7 @@ extern unsigned char OCIE1A;
 #  define CC1100_EICR           EICRA
 #  define LED_DDR               DDRE
 #  define LED_PORT              PORTE
-#  define LED_PIN               BUILTIN_LED //BUD3 //6
+#  define LED_PIN               LED_BUILTIN // BUILTIN_LED //BUD3 //6
 #endif
 
 #if defined(ESP8266)
@@ -285,6 +285,7 @@ extern unsigned char OCIE1A;
   #define lambda(obj, func) [&](char *data) { obj . func (data); }
 #else
   #define lambda(obj, func) [& obj](char *data) { obj . func (data); }
+  //#define lambda(obj, func) [](char *data) { obj . func (data); }
 #endif
 
 #endif // __BOARD_H__

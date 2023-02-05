@@ -17,47 +17,31 @@
 #include "mbus_defs.h"
 #include "mbus_smode_rf_settings.h"
 #include "mbus_tmode_rf_settings.h"
-#include "mbus_packet.h"
-#include "manchester.h"
-#include "3outof6.h"
 
-// Buffers
-uint8 MBpacket[291];
-uint8 MBbytes[584];
-
-// Radio Mode
-#define RADIO_MODE_NONE  0
-#define RADIO_MODE_TX    1
-#define RADIO_MODE_RX    2
-
-uint8   radio_mode = RADIO_MODE_NONE;
-uint8_t  mbus_mode = WMBUS_NONE;
-RXinfoDescr RXinfo;
-TXinfoDescr TXinfo;
-
-static void halRfReadFifo(uint8* data, uint8 length, uint8 *rssi, uint8 *lqi) {
+//static 
+void RfMbusClass::halRfReadFifo(uint8* data, uint8 length, uint8 *rssi, uint8 *lqi) {
   CC1100_ASSERT;
 
-  cc1100_sendbyte( CC1100_RXFIFO|CC1100_READ_BURST );
+  CC1100.cc1100_sendbyte( CC1100_RXFIFO|CC1100_READ_BURST );
   for (uint8_t i = 0; i < length; i++)
-    data[i] = cc1100_sendbyte( 0 );
+    data[i] = CC1100.cc1100_sendbyte( 0 );
 
   if (rssi) {
-    *rssi = cc1100_sendbyte( 0 );
+    *rssi = CC1100.cc1100_sendbyte( 0 );
     if (lqi) {
-      *lqi =  cc1100_sendbyte( 0 );
+      *lqi =  CC1100.cc1100_sendbyte( 0 );
     }
   }
   CC1100_DEASSERT;
 }
 
-uint8_t halRfWriteFifo(const uint8* data, uint8 length) {
+uint8_t RfMbusClass::halRfWriteFifo(const uint8* data, uint8 length) {
 
     CC1100_ASSERT;
 
-    cc1100_sendbyte( CC1100_TXFIFO|CC1100_WRITE_BURST );
+    CC1100.cc1100_sendbyte( CC1100_TXFIFO|CC1100_WRITE_BURST );
     for (uint8_t i = 0; i < length; i++)
-      cc1100_sendbyte( data[i] );
+      CC1100.cc1100_sendbyte( data[i] );
 
     CC1100_DEASSERT;
 
@@ -65,27 +49,29 @@ uint8_t halRfWriteFifo(const uint8* data, uint8 length) {
 }
 
 
-static void halRfWriteReg( uint8_t reg, uint8_t value ) {
-  cc1100_writeReg( reg, value );
+//static 
+void RfMbusClass::halRfWriteReg( uint8_t reg, uint8_t value ) {
+  CC1100.cc1100_writeReg( reg, value );
 }
 
-uint8_t halRfGetTxStatus(void) {
-  return(ccStrobe(CC1100_SNOP));
+uint8_t RfMbusClass::halRfGetTxStatus(void) {
+  return(CC1100.ccStrobe(CC1100_SNOP));
 }
 
-static uint8_t rf_mbus_on(uint8_t force) {
+//static 
+uint8_t RfMbusClass::on(uint8_t force) {
 
   // already in RX?
-  if (!force && (cc1100_readReg( CC1100_MARCSTATE ) == MARCSTATE_RX))
+  if (!force && (CC1100.cc1100_readReg( CC1100_MARCSTATE ) == MARCSTATE_RX))
     return 0;
 
   // init RX here, each time we're idle
   RXinfo.state = 0;
 
-  ccStrobe( CC1100_SIDLE );
-  while((cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_IDLE));
-  ccStrobe( CC1100_SFTX  );
-  ccStrobe( CC1100_SFRX  );
+  CC1100.ccStrobe( CC1100_SIDLE );
+  while((CC1100.cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_IDLE));
+  CC1100.ccStrobe( CC1100_SFTX  );
+  CC1100.ccStrobe( CC1100_SFRX  );
 
   // Initialize RX info variable
   RXinfo.lengthField = 0;           // Length Field in the wireless MBUS packet
@@ -104,15 +90,16 @@ static uint8_t rf_mbus_on(uint8_t force) {
   // Set infinite length
   halRfWriteReg(CC1100_PKTCTRL0, INFINITE_PACKET_LENGTH);
 
-  ccStrobe( CC1100_SRX   );
-  while((cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_RX));
+  CC1100.ccStrobe( CC1100_SRX   );
+  while((CC1100.cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_RX));
 
   RXinfo.state = 1;
 
   return 1; // this will indicate we just have re-started RX
 }
 
-static void rf_mbus_init(uint8_t mmode, uint8_t rmode) {
+//static 
+void RfMbusClass::init(uint8_t mmode, uint8_t rmode) {
 
   CLEAR_BIT( GDO0_DDR, GDO0_BIT );
   CLEAR_BIT( GDO2_DDR, GDO2_BIT );
@@ -124,14 +111,14 @@ static void rf_mbus_init(uint8_t mmode, uint8_t rmode) {
   SET_BIT( CC1100_CS_DDR, CC1100_CS_PIN );   // CS as output
 
   CC1100_DEASSERT;                           // Toggle chip select signal
-  my_delay_us(30);
+  MYDELAY.my_delay_us(30);
   CC1100_ASSERT;
-  my_delay_us(30);
+  MYDELAY.my_delay_us(30);
   CC1100_DEASSERT;
-  my_delay_us(45);
+  MYDELAY.my_delay_us(45);
 
-  ccStrobe( CC1100_SRES );                   // Send SRES command
-  my_delay_us(100);
+  CC1100.ccStrobe( CC1100_SRES );                   // Send SRES command
+  MYDELAY.my_delay_us(100);
 
   // load configuration
   switch (mmode) {
@@ -139,7 +126,7 @@ static void rf_mbus_init(uint8_t mmode, uint8_t rmode) {
       for (uint8_t i = 0; i<200; i += 2) {
         if (sCFG(i)>0x40)
           break;
-        cc1100_writeReg( sCFG(i), sCFG(i+1) );
+        CC1100.cc1100_writeReg( sCFG(i), sCFG(i+1) );
       }
       break;
     case WMBUS_TMODE:
@@ -149,7 +136,7 @@ static void rf_mbus_init(uint8_t mmode, uint8_t rmode) {
       for (uint8_t i = 0; i<200; i += 2) {
         if (tCFG(i)>0x40)
           break;
-        cc1100_writeReg( tCFG(i), tCFG(i+1) );
+        CC1100.cc1100_writeReg( tCFG(i), tCFG(i+1) );
       }
       break;
     default:
@@ -192,15 +179,15 @@ static void rf_mbus_init(uint8_t mmode, uint8_t rmode) {
   mbus_mode  = mmode;
   radio_mode = rmode;
 
-  ccStrobe( CC1100_SCAL );
+  CC1100.ccStrobe( CC1100_SCAL );
 
   memset( &RXinfo, 0, sizeof( RXinfo ));
   memset( &TXinfo, 0, sizeof( TXinfo ));
 
-  my_delay_ms(4);
+  MYDELAY.my_delay_ms(4);
 }
 
-void rf_mbus_task(void) {
+void RfMbusClass::task(void) {
   uint8 bytesDecoded[2];
   uint8 fixedLength;
 
@@ -212,7 +199,7 @@ void rf_mbus_task(void) {
 
   switch (RXinfo.state) {
     case 0:
-      rf_mbus_on( TRUE );
+      on( TRUE );
       return;
 
      // RX active, awaiting SYNC
@@ -233,12 +220,12 @@ void rf_mbus_task(void) {
           // S-Mode
           // Possible improvment: Check the return value from the deocding function,
           // and abort RX if coding error.
-          if (manchDecode(RXinfo.pByteIndex, bytesDecoded) != MAN_DECODING_OK) {
+          if (MbusManch.manchDecode(RXinfo.pByteIndex, bytesDecoded) != MAN_DECODING_OK) {
             RXinfo.state = 0;
             return;
           }
           RXinfo.lengthField = bytesDecoded[0];
-          RXinfo.length = byteSize(1, 0, (packetSize(RXinfo.lengthField)));
+          RXinfo.length = MbusPacket.byteSize(1, 0, (MbusPacket.packetSize(RXinfo.lengthField)));
         } else {
           // In C-mode we allow receiving T-mode because they are similar. To not break any applications using T-mode,
           // we do not include results from C-mode in T-mode.
@@ -282,14 +269,14 @@ void rf_mbus_task(void) {
           // T-Mode
           // Possible improvment: Check the return value from the deocding function,
           // and abort RX if coding error.
-          } else if (decode3outof6(RXinfo.pByteIndex, bytesDecoded, 0) != DECODING_3OUTOF6_OK) {
+          } else if (Mbus3outof6.decode3outof6(RXinfo.pByteIndex, bytesDecoded, 0) != DECODING_3OUTOF6_OK) {
             RXinfo.state = 0;
             return;
           } else {
             RXinfo.framemode = WMBUS_TMODE;
             RXinfo.frametype = WMBUS_FRAMEA;
             RXinfo.lengthField = bytesDecoded[0];
-            RXinfo.length = byteSize(0, 0, (packetSize(RXinfo.lengthField)));
+            RXinfo.length = MbusPacket.byteSize(0, 0, (MbusPacket.packetSize(RXinfo.lengthField)));
           }
         }
 
@@ -358,18 +345,18 @@ void rf_mbus_task(void) {
     uint16_t rxLength;
 
     if (RXinfo.mode == WMBUS_SMODE) {
-      rxStatus = decodeRXBytesSmode(MBbytes, MBpacket, packetSize(RXinfo.lengthField));
-      rxLength = packetSize(MBpacket[0]);
+      rxStatus = MbusPacket.decodeRXBytesSmode(MBbytes, MBpacket, MbusPacket.packetSize(RXinfo.lengthField));
+      rxLength = MbusPacket.packetSize(MBpacket[0]);
     } else if (RXinfo.framemode == WMBUS_TMODE) {
-      rxStatus = decodeRXBytesTmode(MBbytes, MBpacket, packetSize(RXinfo.lengthField));
-      rxLength = packetSize(MBpacket[0]);
+      rxStatus = MbusPacket.decodeRXBytesTmode(MBbytes, MBpacket, MbusPacket.packetSize(RXinfo.lengthField));
+      rxLength = MbusPacket.packetSize(MBpacket[0]);
     } else if (RXinfo.framemode == WMBUS_CMODE) {
       if (RXinfo.frametype == WMBUS_FRAMEA) {
         rxLength = RXinfo.lengthField + 2 * (2 + (RXinfo.lengthField - 10)/16) + 1;
-        rxStatus = verifyCrcBytesCmodeA(MBbytes + 2, MBpacket, rxLength);
+        rxStatus = MbusPacket.verifyCrcBytesCmodeA(MBbytes + 2, MBpacket, rxLength);
       } else if (RXinfo.frametype == WMBUS_FRAMEB) {
         rxLength = RXinfo.lengthField + 1;
-        rxStatus = verifyCrcBytesCmodeB(MBbytes + 2, MBpacket, rxLength);
+        rxStatus = MbusPacket.verifyCrcBytesCmodeB(MBbytes + 2, MBpacket, rxLength);
       }
     }
 
@@ -398,12 +385,12 @@ void rf_mbus_task(void) {
     return;
   }
 
-  rf_mbus_on( FALSE );
+  on( FALSE );
 }
 
 #ifndef MBUS_NO_TX
 
-uint16 txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {
+uint16 RfMbusClass::txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {
   uint16  bytesToWrite;
   uint16  fixedLength;
   uint8   txStatus;
@@ -411,7 +398,7 @@ uint16 txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {
   uint16  packetLength;
 
   // Calculate total number of bytes in the wireless MBUS packet
-  packetLength = packetSize(pPacket[0]);
+  packetLength = MbusPacket.packetSize(pPacket[0]);
 
   // Check for valid length
   if ((packetLength == 0) || (packetLength > 290))
@@ -421,19 +408,19 @@ uint16 txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {
   if (radio_mode == RADIO_MODE_RX)
     lastMode = mbus_mode;
 
-  rf_mbus_init( mode, RADIO_MODE_TX);
+  init( mode, RADIO_MODE_TX);
 
   // - Data encode packet and calculate number of bytes to transmit
   // S-mode
   if (mode == WMBUS_SMODE) {
-    encodeTXBytesSmode(pBytes, pPacket, packetLength);
-    TXinfo.bytesLeft = byteSize(1, 1, packetLength);
+    MbusPacket.encodeTXBytesSmode(pBytes, pPacket, packetLength);
+    TXinfo.bytesLeft = MbusPacket.byteSize(1, 1, packetLength);
   }
 
   // T-mode
   else {
-    encodeTXBytesTmode(pBytes, pPacket, packetLength);
-    TXinfo.bytesLeft = byteSize(0, 1, packetLength);
+    MbusPacket.encodeTXBytesTmode(pBytes, pPacket, packetLength);
+    TXinfo.bytesLeft = MbusPacket.byteSize(0, 1, packetLength);
   }
 
   // Check TX Status
@@ -523,14 +510,15 @@ uint16 txSendPacket(uint8* pPacket, uint8* pBytes, uint8 mode) {
 
   // re-enable RX if ...
   if (lastMode != WMBUS_NONE)
-    rf_mbus_init( lastMode, RADIO_MODE_RX);
+    init( lastMode, RADIO_MODE_RX);
 
   return (TX_OK);
 }
 #endif
 
 
-static void mbus_status(void) {
+//static 
+void RfMbusClass::mbus_status(void) {
   if (radio_mode == RADIO_MODE_RX ) {
     switch (mbus_mode) {
     case WMBUS_SMODE:
@@ -551,16 +539,16 @@ static void mbus_status(void) {
   DNL();
 }
 
-void rf_mbus_func(char *in) {
+void RfMbusClass::func(char *in) {
   if((in[1] == 'r') && in[2]) {     // Reception on
     if(in[2] == 's') {
-      rf_mbus_init(WMBUS_SMODE,RADIO_MODE_RX);
+      init(WMBUS_SMODE,RADIO_MODE_RX);
     } else if(in[2] == 't') {
-      rf_mbus_init(WMBUS_TMODE,RADIO_MODE_RX);
+      init(WMBUS_TMODE,RADIO_MODE_RX);
     } else if(in[2] == 'c') {
-      rf_mbus_init(WMBUS_CMODE,RADIO_MODE_RX);
+      init(WMBUS_CMODE,RADIO_MODE_RX);
     } else {                        // Off
-      rf_mbus_init(WMBUS_NONE,RADIO_MODE_NONE);
+      init(WMBUS_NONE,RADIO_MODE_NONE);
     }
 
   } else if(in[1] == 's') {         // Send
@@ -596,6 +584,10 @@ void rf_mbus_func(char *in) {
 
   mbus_status();
 }
+
+#if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_RFMBUS)
+RfMbusClass RfMbus;
+#endif
 
 #endif
 
