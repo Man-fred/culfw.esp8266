@@ -8,6 +8,8 @@
 #ifdef HAS_MBUS
 #include <string.h>
 #include <avr/pgmspace.h>
+#include <Arduino.h>
+
 #include "cc1100.h"
 #include "delay.h"
 #include "rf_receive.h"
@@ -71,6 +73,8 @@ uint8_t RfMbusClass::on(uint8_t force) {
 
   CC1100.ccStrobe( CC1100_SIDLE );
   while((CC1100.cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_IDLE));
+  //  delay(1);
+
   CC1100.ccStrobe( CC1100_SFTX  );
   CC1100.ccStrobe( CC1100_SFRX  );
 
@@ -93,6 +97,7 @@ uint8_t RfMbusClass::on(uint8_t force) {
 
   CC1100.ccStrobe( CC1100_SRX   );
   while((CC1100.cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_RX));
+  //  delay(1);
 
   RXinfo.state = 1;
 
@@ -523,20 +528,25 @@ void RfMbusClass::mbus_status(void) {
   if (radio_mode == RADIO_MODE_RX ) {
     switch (mbus_mode) {
     case WMBUS_SMODE:
-      DS_P(PSTR("SMODE"));
+      //DS_P(PSTR("SMODE"));
+	  DS("SMODE");
       break;
     case WMBUS_TMODE:
-      DS_P(PSTR("TMODE"));
+      //DS_P(PSTR("TMODE"));
+	  DS("TMODE");
       break;
     case WMBUS_CMODE:
-      DS_P(PSTR("CMODE"));
+      //DS_P(PSTR("CMODE"));
+	  DS("CMODE");
       break;
     default:
-      DS_P(PSTR("OFF"));
+      //DS_P(PSTR("OFF"));
+	  DS("OFF");
     }
   }
   else
-    DS_P(PSTR("OFF"));
+    //DS_P(PSTR("OFF"));
+    DS("OFF");
   DNL();
 }
 
@@ -578,6 +588,7 @@ void RfMbusClass::func(char *in) {
 
 #else
     DS_P(PSTR("not compiled in\r\n"));
+    DS("not compiled in\r\n");
 #endif
 
     return;

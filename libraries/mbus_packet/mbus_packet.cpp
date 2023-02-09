@@ -1,6 +1,7 @@
 /******************************************************************************
     Filename: mbus_packet.cpp
 ******************************************************************************/
+#include <Arduino.h>
 
 #include "mbus_defs.h"
 #include "mbus_packet.h"
@@ -461,7 +462,7 @@ uint16 MbusPacketClass::decodeRXBytesSmode(uint8* pByte, uint8* pPacket, uint16 
     bytesEncoded++;      
     pByte += 2;
     pPacket++;
-
+    //delay(1);
   }
   return (PACKET_OK);
 }
@@ -573,6 +574,7 @@ uint16 MbusPacketClass::decodeRXBytesTmode(uint8* pByte, uint8* pPacket, uint16 
       pPacket += 2;
       
     }
+    //delay(1);
   }
   
   return (PACKET_OK);
@@ -618,6 +620,7 @@ uint16 MbusPacketClass::verifyCrcBytesCmodeA(uint8* pByte, uint8* pPacket, uint1
     crc = 0;
 
     --cycles;
+    //delay(1);
   }
 
   if (i == packetSize) {
@@ -651,6 +654,7 @@ uint16 MbusPacketClass::verifyCrcBytesCmodeB(uint8* pByte, uint8* pPacket, uint1
       crc = MbusCrc.crcCalc(crc, pByte[i]);
       pPacket[i] = pByte[i];
       ++i;
+      //delay(1);
     }
 
     if ((~crc) != (pByte[i] << 8 | pByte[i + 1])) {
@@ -668,6 +672,7 @@ uint16 MbusPacketClass::verifyCrcBytesCmodeB(uint8* pByte, uint8* pPacket, uint1
     crc = MbusCrc.crcCalc(crc, pByte[i]);
     pPacket[i] = pByte[i];
     ++i;
+    //delay(1);
   }
 
   if ((~crc) != (pByte[packetSize - 2] << 8 | pByte[packetSize - 1])) {
