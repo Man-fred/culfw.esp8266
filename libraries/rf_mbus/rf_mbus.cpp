@@ -72,8 +72,8 @@ uint8_t RfMbusClass::on(uint8_t force) {
   RXinfo.state = 0;
 
   CC1100.ccStrobe( CC1100_SIDLE );
-  while((CC1100.cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_IDLE));
-  //  delay(1);
+  while((CC1100.cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_IDLE))
+    delay(1);
 
   CC1100.ccStrobe( CC1100_SFTX  );
   CC1100.ccStrobe( CC1100_SFRX  );
@@ -96,8 +96,8 @@ uint8_t RfMbusClass::on(uint8_t force) {
   halRfWriteReg(CC1100_PKTCTRL0, INFINITE_PACKET_LENGTH);
 
   CC1100.ccStrobe( CC1100_SRX   );
-  while((CC1100.cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_RX));
-  //  delay(1);
+  while((CC1100.cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_RX))
+    delay(1);
 
   RXinfo.state = 1;
 
