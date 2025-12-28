@@ -2,12 +2,13 @@
    Released under the GPL Licence, Version 2
    Inpired by the MyUSB USBtoSerial demo, Copyright (C) Dean Camera, 2008.
 */
-#include <Arduino.h>
+#ifdef ESP8266
+#  include <Arduino.h>
+#endif
 #include <avr/pgmspace.h>
 
 #ifndef ESP8266
-#include <avr
-/boot.h>
+#include <avr/boot.h>
 #include <avr/power.h>
 #include <avr/eeprom.h>
 #include <avr/interrupt.h>
@@ -160,7 +161,7 @@ const t_fntab fntab[] = {
     { 'I', lambda(IR, func) },
   #endif
   #ifdef HAS_INTERTECHNO
-    { 'i', lambda(it, func) },
+    { 'i', lambda(Intertechno, func) },
   #endif
   #ifdef HAS_RAWSEND
     { 'K', lambda(RfSend, ks_send) },
@@ -175,7 +176,7 @@ const t_fntab fntab[] = {
   #ifdef HAS_RAWSEND
     { 'M', lambda(RfSend, em_send) },
   #endif
-  #ifdef HAS_MEMFNx
+  #ifdef HAS_MEMFN
     { 'm', lambda(Memory, getfreemem) },
   #endif
   #ifdef HAS_RFNATIVE

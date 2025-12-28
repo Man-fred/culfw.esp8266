@@ -33,6 +33,9 @@
 #ifdef HAS_ASKSIN
 #  include "rf_asksin.h"
 #endif
+#ifdef HAS_TOOM
+#  include "intertechno.h"
+#endif
 #ifdef HAS_MBUS
 #  include "rf_mbus.h"
 #endif
@@ -47,6 +50,7 @@
 //  FHT:    362/368  730    565/586 1151
 //  FS20:   376/357  733    592/578 1170
 //  Revolt:  96/208  304    224/208  432
+//  IT:     500/1000 1500   1000/500 1500
 
 
 #define TSCALE(x)  (x/16)      // Scaling time to enable 8bit arithmetic
@@ -81,7 +85,10 @@
 #define STATE_IT      7
 #define STATE_TCM97001 8
 #define STATE_ITV3     9
+// no more used
 #define STATE_FAZ     10
+// same protocol?
+#define STATE_TOOM   11
 #define STATE_TOOM   11
 
 uint8_t tx_report;              // global verbose / output-filter
@@ -281,7 +288,7 @@ uint8_t RfReceiveClass::analyze_hms(bucket_t *b)
 }
 
 #ifdef HAS_FAZ
-uint8_t RfReceiveClass::analyze_faz(bucket_t *b)
+uint8_t RfReceiveClass::analyze_ftz(bucket_t *b)
 {
   input_t in;
   in.byte = 0;
@@ -434,10 +441,15 @@ uint8_t RfReceiveClass::analyze_TX3(bucket_t *b)
 #ifdef HAS_IT
 uint8_t RfReceiveClass::analyze_it(bucket_t *b)
 {
-  if ((b->state != STATE_IT || b->byteidx != 3 || b->bitidx != 7) 
-    && (b->state != STATE_ITV3 || b->byteidx != 8 || b->bitidx != 7)) {
+  // Intertechno && was || ??
+  if ((b->state != STATE_IT || (b->byteidx != 3 && b->bitidx != 7)) 
+    && (b->state != STATE_ITV3 || (b->byteidx != 8 && b->byteidx != 16 && b->bitidx != 7))) {
         return 0;
-    }
+  }
+  // V3 sender with one repeat, without pause
+	if (b->state == STATE_ITV3 && b->byteidx == 16)
+		b->byteidx = 8;
+
   for (oby=0;oby<b->byteidx;oby++)
       obuf[oby]=b->data[oby];
   return 1;
@@ -470,7 +482,7 @@ uint8_t RfReceiveClass::analyze_toom(bucket_t *b)
 		}
 	}
 	if (repeat[15] > 2 && repeat[16] > 2 && repeat[17] > 2) {
-        InterTechno.FlamingoDecrypt(obuf);
+        Intertechno.FlamingoDecrypt(obuf);
 		oby = 5;
 		return 1;
 	}
@@ -1247,11 +1259,11 @@ retry_sync:
     b->bitidx  = 7;
     b->data[0] = 0;
     return;
-  } else
+  }
 #endif
-    if(hightime > TSCALE(1600) || lowtime > TSCALE(1600))
+    if(hightime > TSCALE(1600) || lowtime > TSCALE(1600)) {
       return;
-  
+    }
     b->zero.hightime = hightime;
     b->zero.lowtime = lowtime;
     b->sync  = 1;

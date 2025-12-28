@@ -5,7 +5,7 @@
 // Ports for esp8266 see
 // esp8266_peri.h - Peripheral registers exposed in more AVR style for esp8266
 #ifndef ESP8266
-#  define ESP8266
+//#  define ESP8266
 #else
 #  include <Esp.h>
 #endif
@@ -26,7 +26,7 @@
 
 //2025-12 #define HAS_USB                  1
 #define USB_BUFSIZE             64      // Must be a supported USB endpoint size
-#define USB_MAX_POWER	         100
+#define USB_MAX_POWER	       100
 #define HAS_FHT_80b                     // PROGMEM: 1374b, RAM: 90b
 #define HAS_RF_ROUTER                   // PROGMEM: 1248b  RAM: 44b
 //1.67 #define RFR_FILTER                      // PROGMEM:   90b  RAM:  4b
@@ -55,7 +55,11 @@
 #  define HAS_MORITZ                    // PROGMEM: 1696
 //#  define HAS_ESA                       // PROGMEM:  286
 #  define HAS_TX3                       // PROGMEM:  168
-//#  define HAS_INTERTECHNO               // PROGMEM: 1352
+/* Intertechno Senden einschalten */
+#  define HAS_INTERTECHNO
+/* Intertechno Empfang einschalten */
+#  define HAS_IT
+#  define HAS_TOOM
 //#  define HAS_TCM97001                  // PROGMEM:  264
 //#  define HAS_UNIROLL                   // PROGMEM:   92
 #  define HAS_MEMFN                     // PROGMEM:  168
@@ -70,7 +74,8 @@
 
 #if defined(CUL_V3)
 #  define TTY_BUFSIZE          128      // RAM: TTY_BUFSIZE*4
-#  define HAS_MBUS                       // PROGMEM: 4255
+//#  define HAS_MBUS                       // PROGMEM: 4255
+#  undef HAS_MBUS                       // branch CUL_V3_compatibility, Intertechno V3 send and receive
 #  if defined(HAS_MBUS)
 //#    define MBUS_NO_TX                       // PROGMEM:  962
 #  endif
@@ -129,12 +134,14 @@
 #endif
 
 // Ergaenzung wegen WLAN
-#define BUSWARE_CUNO2
-#define HAS_ETHERNET            1   
-#define HAS_ETHERNET_KEEPALIVE  1
-#define ETHERNET_KEEPALIVE_TIME 30
+#ifdef ESP8266
+#  define BUSWARE_CUNO2
+#  define HAS_ETHERNET            1   
+#  define HAS_ETHERNET_KEEPALIVE  1
+#  define ETHERNET_KEEPALIVE_TIME 30
 // not ready #define HAS_MQTT 
-//#define HAS_NTP                 1   
+// #define HAS_NTP                 1   
+#endif
 // WLAN */
 
 /*/ Ergaenzung wegen IR
@@ -150,10 +157,23 @@
 // ONEWIRE */
 
 // No features to define below
+#ifndef ESP8266
+#  include <avr/io.h>
+#  include <avr/power.h>
+
+#  if !defined(clock_prescale_set) && __AVR_LIBC_VERSION__  < 10701UL
+#    warning "avr/power.h needs patching for prescaler functions to work."
+#    warning "for the m32u4 add __AVR_ATmega32U4__ for cpu types on prescale block"
+#    warning "for the m32u2 add __AVR_ATmega32U2__ for cpu types on prescale block"
+#  endif
+#endif
+
 #ifdef ARDUINO_ESP8266_NODEMCU
 #  define VERSION_BOARD ".culfw-esp8266.ino.nodemcu" 
 #elif ARDUINO_ESP8266_WEMOS_D1MINI
 #  define VERSION_BOARD ".culfw-esp8266.ino.d1_mini"
+#else
+#  define VERSION_BOARD ".culfw-esp8266.ino.arduino"
 #endif
 
 #ifndef ESP8266
@@ -289,6 +309,8 @@ extern unsigned char OCIE1A;
 #else
   //#define lambda(obj, func) [& obj](char *data) { obj . func (data); }
   #define lambda(obj, func) [](char *data) { obj . func (data); }
+  #define DIGITAL_HIGH(port, pin) digitalWrite(pin,1);
+  #define DIGITAL_LOW(port, pin) digitalWrite(pin,0);
 #endif
 
 #endif // __BOARD_H__

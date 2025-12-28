@@ -5,7 +5,9 @@
 #include "board.h"
 #include <stdint.h>
 #endif
-// #include <avr/interrupt.h>
+#ifndef ESP8266 
+  #include <avr/interrupt.h>
+#endif
 
 class RingbufferClass {
 public:

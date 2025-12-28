@@ -5,8 +5,7 @@
 #include <avr/pgmspace.h>
 
 #ifndef ESP8266
-#include <avr
-/boot.h>
+#include <avr/boot.h>
 #include <avr/power.h>
 #include <avr/eeprom.h>
 #include <avr/interrupt.h>
@@ -174,7 +173,7 @@ const t_fntab fntab[] = {
   #ifdef HAS_RAWSEND
     { 'M', lambda(RfSend, em_send) },
   #endif
-  #ifdef HAS_MEMFNx
+  #ifdef HAS_MEMFN
     { 'm', lambda(Memory, getfreemem) },
   #endif
   #ifdef HAS_RFNATIVE

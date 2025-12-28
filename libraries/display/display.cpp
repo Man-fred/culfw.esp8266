@@ -5,13 +5,17 @@
 #include "rf_router.h"
 #ifndef ESP8266
 	#ifdef HAS_USB
-	//#include "cdc.h"
+	  #ifdef HAS_CDC
+	    #include "cdc.h"
+		#endif
 	#else
 		#include "serial.h"
 	#endif
 	#include "led.h"
 	#include "delay.h"
-	#include "pcf8833.h"
+	#ifdef HAS_LCD
+	  #include "pcf8833.h"
+	#endif
 	#include "ttydata.h"            // callfn
 	#include "fht.h"                // fht_hc
 	#include "rf_router.h"

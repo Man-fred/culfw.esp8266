@@ -59,7 +59,9 @@ public:
 	DisplayClass();
 	void chr(char s);
 	void string(char *s);
-	void string_P(const __FlashStringHelper *s);
+	#ifdef ESP8266
+	  void string_P(const __FlashStringHelper *s);
+	#endif
 	void string_P(const char *s);
 	void udec(uint16_t d, int8_t pad, uint8_t padc);
 	void hex(uint16_t h, int8_t pad, uint8_t padc);

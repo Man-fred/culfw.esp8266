@@ -1,7 +1,11 @@
 #ifndef _TTYDATA_H_
 #define _TTYDATA_H_
 
-#include <pgmspace.h>
+#ifndef ESP8266
+  #include <avr/pgmspace.h>
+#else
+  #include <pgmspace.h>
+#endif
 
 #include "ringbuffer.h"
 

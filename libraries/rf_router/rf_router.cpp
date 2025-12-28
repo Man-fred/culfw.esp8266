@@ -1,7 +1,11 @@
 #include "board.h"
 #ifdef HAS_RF_ROUTER
 #include <string.h>
-#include <pgmspace.h>
+#ifndef ESP8266
+  #include <avr/pgmspace.h>
+#else
+  #include <pgmspace.h>
+#endif
 #include "rf_router.h"
 #include "cc1100.h"
 #include "delay.h"
