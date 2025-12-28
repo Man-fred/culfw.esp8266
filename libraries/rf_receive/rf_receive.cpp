@@ -89,7 +89,6 @@
 #define STATE_FAZ     10
 // same protocol?
 #define STATE_TOOM   11
-#define STATE_TOOM   11
 
 uint8_t tx_report;              // global verbose / output-filter
 

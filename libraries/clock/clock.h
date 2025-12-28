@@ -15,11 +15,31 @@
 #endif
 
 class CLOCKClass {
+	#ifndef ESP8266 // https://www.mikrocontroller.net/articles/AVR_Interrupt_Routinen_mit_C%2B%2B
+		class ClassInterrupt {
+			static CLOCKClass *owner;
+			static void serviceRoutine() __asm__("__vector_14") __attribute__((__signal__, __used__, __externally_visible__));
+
+			public:
+				static void record(CLOCKClass *owner);
+		};
+		friend ClassInterrupt;
+	#endif
 public:
 	void gettime(char*);
 	//public?
 	void get_timestamp(uint32_t *ts);
-	void IsrHandler();
+	#ifdef ESP8266
+	  void IsrHandler();
+  	//volatile uint32_t ticks; // 1/125 sec resolution
+	  //volatile uint8_t  clock_hsec;
+	#else
+	  CLOCKClass();
+    static void IsrHandler();
+	#endif
+	//static volatile uint32_t ticks; // 1/125 sec resolution
+	//static volatile uint8_t  clock_hsec;
+	//void IsrHandler();
 	void Minute_Task(void);
 
 	volatile uint32_t ticks; // 1/125 sec resolution

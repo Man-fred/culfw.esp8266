@@ -14,9 +14,9 @@
   extern char * const __brkval;
 #else
 // https://github.com/esp8266/esp8266-wiki/wiki/Memory-Map
-  #define RAMSTART  0x3FFE8000
-  #define RAMSIZE   0x18000
-  #define RAMEND    RAMSTART + RAMSIZE - 1
+  #define RAMSTART  (uint16_t)0x3FFE8000
+  #define RAMSIZE   (uint16_t)0x18000
+  #define RAMEND    (uint16_t)(RAMSTART + RAMSIZE - (uint16_t)1)
 
   #define __brkval            ESP.getSketchSize()
   #define __malloc_heap_start RAMSTART
@@ -63,8 +63,7 @@ void MemoryClass::testmem(char *unused) {
 
 	DS_P( PSTR(" bytes of RAM - ") );
 
-	buf = NULL;
-	malloc( size );
+	buf = (char*)malloc( size );
 
 	if (buf != NULL) {
 

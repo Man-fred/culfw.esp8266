@@ -1,5 +1,14 @@
 #include "led.h"
 #include "ringbuffer.h"
+/* Includes: */
+#include "Descriptors.h"
+#ifndef ESP8266
+  #include <avr/io.h>
+  #include <avr/interrupt.h>
+	#ifdef USB_IsConnected
+    #include <Drivers/USB/USB.h>     // USB Functionality
+  #endif
+#endif
 #include "cdc.h"
 
 /* Globals: */
@@ -60,8 +69,7 @@ HANDLES_EVENT(USB_UnhandledControlPacket)
 
 ////////////////////
 // Fill data from USB to the RingBuffer and vice-versa
-void
-CDC_Task(void)
+void CDCClass::Task(void)
 {
   static char inCDC_TASK = 0;
 
@@ -97,8 +105,7 @@ CDC_Task(void)
   }
 }
 
-void
-cdc_flush()
+void CDCClass::flush()
 {
   Endpoint_SelectEndpoint(CDC_TX_EPNUM);
   Endpoint_ClearCurrentBank();

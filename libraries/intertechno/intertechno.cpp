@@ -14,9 +14,6 @@
 #include <parity.h> //flamingo?
 #include <string.h>
 
-
-//#ifdef HAS_INTERTECHNO
-
 #include "delay.h"
 #include "rf_send.h"
 #include "rf_receive.h"

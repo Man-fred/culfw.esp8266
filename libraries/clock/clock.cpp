@@ -1,4 +1,12 @@
 #include "clock.h"
+
+#include <stdint.h>
+#ifndef ESP8266
+  #include <avr/io.h>
+  #include <avr/wdt.h>
+  #include <avr/interrupt.h>
+#endif
+
 #include "led.h"
 #ifdef XLED
 #  include "xled.h"
@@ -19,9 +27,11 @@
 #ifdef HAS_SLEEP
 #  include "mysleep.h"
 #endif
-////////////////#include "pcf8833.h"
-#ifdef HAS_USB
-//#  include "cdc.h"
+#ifdef HAS_LCD
+  #include "pcf8833.h"
+#endif
+#ifdef HAS_CDC
+  #include "cdc.h"
 #endif
 #include "rf_router.h"                  // rf_router_flush();
 #ifdef HAS_NTP
@@ -37,10 +47,39 @@
 #  include "ir.h"
 #endif
 
+#ifndef ESP8266
+CLOCKClass *CLOCKClass::ClassInterrupt::owner = 0;
+
+void CLOCKClass::ClassInterrupt::record(CLOCKClass *t) {
+	owner = t;
+}
+
+void CLOCKClass::ClassInterrupt::serviceRoutine() {
+	if(owner != 0)
+		CLOCKClass::IsrHandler();
+}
+CLOCKClass::CLOCKClass() {
+	ClassInterrupt::record(this);
+        TCCR2A |= (1 << CS20) | (1 << CS21) | (1 << CS22);
+        TIMSK0 |= 1 << TOIE2;
+	sei();
+}
+
+#endif
+
+/* static class variables
+volatile uint32_t CLOCKClass::ticks;
+volatile uint8_t  CLOCKClass::clock_hsec;
+*/
 // count & compute in the interrupt, else long runnning tasks would block
 // a "minute" task too long
+//ISR(TIMER0_COMPA_vect, ISR_BLOCK)
+#ifndef ESP8266
+  void CLOCKClass::IsrHandler()
+#else
 //esp8266 ISR(TIMER0_COMPA_vect, ISR_BLOCK)
-void ICACHE_RAM_ATTR CLOCKClass::IsrHandler()
+  void ICACHE_RAM_ATTR CLOCKClass::IsrHandler()
+#endif
 {
 	#ifndef ESP8266
 		#ifdef HAS_IRTX     //IS IRTX defined ?
