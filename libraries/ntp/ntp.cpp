@@ -1,8 +1,10 @@
 #include <string.h>
 #include "board.h"
+/*
 #include "uip.h"
 #include "uip_arp.h"            // uip_arp_out;
 #include "drivers/interfaces/network.h"            // network_send
+*/
 #include "display.h"
 #include "ntp.h"
 #include "clock.h"
@@ -94,7 +96,7 @@ NtpClass::bcd2dec(uint8_t in)
 
 
 void
-NtpClass::sec2tm(time_t sec, tm_t *t)
+NtpClass::sec2tm(time_t sec, tm *t)
 {
   uint8_t m, y;
   sec += (ntp_gmtoff*3600);
@@ -125,7 +127,7 @@ NtpClass::sec2tm(time_t sec, tm_t *t)
 }
 
 time_t
-NtpClass::tm2sec(tm_t *t)
+NtpClass::tm2sec(tm *t)
 {
   uint8_t m, y;
   uint16_t day = 39812;
@@ -179,7 +181,7 @@ NtpClass::func(char *in)
     DNL();
 
   } else if(t == 6) {
-    tm_t t;
+    tm t;
     t.tm_year = bcd2dec(hb[0]);
     t.tm_mon  = bcd2dec(hb[1]);
     t.tm_mday = bcd2dec(hb[2]);
@@ -194,7 +196,7 @@ NtpClass::func(char *in)
 void
 NtpClass::get(uint8_t data[6])                // for the log function
 {
-  tm_t t;
+  tm t;
   sec2tm(ntp_sec, &t);
   data[0] = dec2bcd(t.tm_year);
   data[1] = dec2bcd(t.tm_mon);

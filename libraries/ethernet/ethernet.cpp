@@ -24,7 +24,7 @@
 
 uint8_t eth_debug = 0;
 
-static uint8_t dhcp_state;
+//unused static uint8_t dhcp_state;
 
 EthernetClass::EthernetClass() {
 	ReplyPos = 0;
@@ -81,7 +81,7 @@ void EthernetClass::init(void)
 	//Serial.println(FNcol.ers(EE_NAME));
   char sta_name[EE_STR_LEN];
 	uint8_t i = 0;
-	char test = 1;
+	// unused char test = 1;
   for(i = 0; i < EE_STR_LEN; i++) {
 		char test = FNcol.erb(EE_NAME + i);
     if ((test >= '0' && test <= '9') || (test >= 'A' && test <= 'Z') || (test >= 'a' && test <= 'z') || test=='-'){
@@ -130,7 +130,7 @@ void EthernetClass::init(void)
 		WiFi.macAddress(uip_ethaddr.addr);
 		Serial.printf("\nUDP %d, TCP %d on %s:%d\n", eth_initialized, tcp_initialized, WiFi.localIP().toString().c_str(), tcplink_port);
   } else {
-		Serial.println('\nNo WLan');
+		Serial.println("\nNo WLan");
 	}
 #endif
 }
@@ -210,15 +210,18 @@ void EthernetClass::putChar(char data)
 			IPAddress ip(192, 168, 178, 59);
 			//Serial.print("put2 ");
 			if (Udp.beginPacket(ip, 2323)) {
-			int n = Udp.write(ReplyBuffer);
+			//int n = 
+      Udp.write(ReplyBuffer);
 			//Serial.print(n);
-			n = Udp.endPacket();
+			//n = 
+      Udp.endPacket();
 			//Serial.println(n);
 			}
 		}
 		if (ip_active >= 0 && ip_active < tcp_initialized) 
 		{
-			int n = Tcp[ip_active].print(ReplyBuffer);
+			//int n = 
+      Tcp[ip_active].print(ReplyBuffer);
 		}
 		//Serial.printf("\nsend to client %d %s:%d\n", ip_active, Tcp[ip_active].remoteIP().toString().c_str(), Tcp[ip_active].remotePort());
 
@@ -331,8 +334,8 @@ void EthernetClass::dumppkt(void)
 }
 
 void EthernetClass::Task(void) {
-     int i;
 #ifndef ESP8266
+     int i;
      ethernet_process();
      
      if(timer_expired(&periodic_timer)) {
@@ -383,7 +386,7 @@ void EthernetClass::Task(void) {
   }
   // tcp-data
   if (tcp_initialized < TCP_MAX){
-	  Tcp[tcp_initialized] = server.available();
+	  Tcp[tcp_initialized] = server.accept();
 	  if (Tcp[tcp_initialized]) {
       Serial.printf("\nUDP %d, TCP %d to %s:%d\n", eth_initialized, tcp_initialized, Tcp[tcp_initialized].remoteIP().toString().c_str(), Tcp[tcp_initialized].remotePort());
 		  tcp_initialized++;

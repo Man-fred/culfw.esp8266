@@ -1,19 +1,26 @@
 #ifndef __ETHERNET_H_
 #define __ETHERNET_H_
 
+#ifdef ESP8266
+#   include "ESP8266WiFi.h"
+#   include <WiFiUdp.h>
+#endif
+
 #include "board.h"
 
 #ifdef ESP8266
-#   include <WiFiUdp.h>
-#   include <ESP8266WiFi.h>
 #   define TCP_MAX 5
 	// von http://marcotuliogm.github.io/mult-UIP/docs/html/group__uip.html
-	typedef struct uip_eth_addr {
+	//  warning: 'typedef' was ignored in this declaration
+	// typedef 
+	struct uip_eth_addr {
 		uint8_t addr[6];
 	};
 	typedef uint16_t 	uip_ip4addr_t [2];
 	typedef uip_ip4addr_t 	uip_ipaddr_t;
-	typedef struct dhcpc_state {
+	//  warning: 'typedef' was ignored in this declaration
+	// typedef 
+	struct dhcpc_state {
 	};
   class WiFiServerExt : public WiFiServer {
     public:
@@ -36,7 +43,7 @@ public:
 	extern uint8_t eth_initialized;
     struct timer periodic_timer, arp_timer;
 #else
-  void putChar(char data); //von tcp_link.h uebernommen
+    void putChar(char data); //von tcp_link.h uebernommen
 	uip_ipaddr_t 	uip_hostaddr;
 	struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
 	uint8_t eth_debug;

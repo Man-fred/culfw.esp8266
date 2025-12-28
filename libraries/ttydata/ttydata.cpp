@@ -25,7 +25,7 @@ uint8_t TTYdataClass::callfn(char *buf){
 void TTYdataClass::analyze_ttydata(uint8_t channel)
 {
   static char cmdbuf[TTY_BUFSIZE+1];
-  static int cmdlen;
+  static unsigned int cmdlen;
   uint8_t ucCommand;
   uint8_t odc;
   

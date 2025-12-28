@@ -42,18 +42,18 @@ extern FNCOLLECTIONClass FNcol;
 
 #define EE_MAGIC_OFFSET      (uint8_t)0                       // 2 bytes
 
-#define EE_CC1100_CFG        (EE_MAGIC_OFFSET+2)                // Offset:  2
-#define EE_CC1100_CFG_SIZE   0x29                               // 41
-#define EE_CC1100_PA         (EE_CC1100_CFG+EE_CC1100_CFG_SIZE) // Offset 43/2B
-#define EE_CC1100_PA_SIZE    8
+#define EE_CC1100_CFG        (uint8_t)2    //(EE_MAGIC_OFFSET+2)                // Offset:  2
+#define EE_CC1100_CFG_SIZE   (uint8_t)0x29 // 41
+#define EE_CC1100_PA         (uint8_t)43   //(EE_CC1100_CFG+EE_CC1100_CFG_SIZE) // Offset 43/2B
+#define EE_CC1100_PA_SIZE    (uint8_t)8
 
-#define EE_REQBL             (EE_CC1100_PA+EE_CC1100_PA_SIZE)
-#define EE_LED               (EE_REQBL+1)
-#define EE_FHTID             (EE_LED+1)
+#define EE_REQBL             (uint8_t)51   //(EE_CC1100_PA+EE_CC1100_PA_SIZE)
+#define EE_LED               (uint8_t)52   //(EE_REQBL+1)
+#define EE_FHTID             (uint8_t)53   //(EE_LED+1)
 
-#define EE_FASTRF_CFG        (EE_FHTID+2)                       // Offset: 55:37
-#define EE_RF_ROUTER_ID      (EE_FASTRF_CFG+EE_CC1100_CFG_SIZE)
-#define EE_RF_ROUTER_ROUTER  (EE_RF_ROUTER_ID+1) 
+#define EE_FASTRF_CFG        (uint8_t)55   //(EE_FHTID+2)                       // Offset: 55:37
+#define EE_RF_ROUTER_ID      (uint8_t)96   //(EE_FASTRF_CFG+EE_CC1100_CFG_SIZE)
+#define EE_RF_ROUTER_ROUTER  (uint8_t)97   //(EE_RF_ROUTER_ID+1) 
 
 #ifdef HAS_DUDETTE
 // if device is equipped with Dudette bootloader (i.e. newer CUNO/COC/CCD/CSM) 
@@ -64,31 +64,31 @@ extern FNCOLLECTIONClass FNcol;
 #endif
 
 #ifdef HAS_ETHERNET
-# define EE_MAC_ADDR         (EE_RF_ROUTER_ROUTER+1)
-# define EE_USE_DHCP         (EE_MAC_ADDR+6)                    // Offset x62
-# define EE_IP4_ADDR         (EE_USE_DHCP+1)
-# define EE_IP4_NETMASK      (EE_IP4_ADDR+4)
-# define EE_IP4_GATEWAY      (EE_IP4_NETMASK+4)                 // Offset x71
-# define EE_IP4_NTPSERVER    (EE_IP4_GATEWAY+4)                      
-# define EE_IP4_TCPLINK_PORT (EE_IP4_NTPSERVER+4)               // Offset x79
-# define EE_IP4_NTPOFFSET    (EE_IP4_TCPLINK_PORT+2)
+# define EE_MAC_ADDR         (uint8_t)98  //(EE_RF_ROUTER_ROUTER+1)
+# define EE_USE_DHCP         (uint8_t)104 //(EE_MAC_ADDR+6)                    // Offset x62
+# define EE_IP4_ADDR         (uint8_t)105 //(EE_USE_DHCP+1)
+# define EE_IP4_NETMASK      (uint8_t)109 //(EE_IP4_ADDR+4)
+# define EE_IP4_GATEWAY      (uint8_t)113 //(EE_IP4_NETMASK+4)                 // Offset x71
+# define EE_IP4_NTPSERVER    (uint8_t)117 //(EE_IP4_GATEWAY+4)                      
+# define EE_IP4_TCPLINK_PORT (uint8_t)121 //(EE_IP4_NTPSERVER+4)               // Offset x79
+# define EE_IP4_NTPOFFSET    (uint8_t)123 //(EE_IP4_TCPLINK_PORT+2)
 # define EE_STR_LEN        40
 # define EE_STR_MQTT       21
 # define EE_WPA_SSID_MAX   33
 # define EE_WPA_KEY_MAX    64
 # ifdef ESP8266
 #   define EE_MAX_ENTRY_LEN  64
-#   define EE_WPA_SSID       (EE_IP4_NTPOFFSET+1)
-#   define EE_WPA_KEY        (EE_WPA_SSID+EE_WPA_SSID_MAX)
-#   define EE_NAME           (EE_WPA_KEY+EE_WPA_KEY_MAX)
-#   define EE_OTA_SERVER     (EE_NAME+EE_STR_LEN)
-#   define EE_ETH_LAST       (EE_OTA_SERVER+4)
+#   define EE_WPA_SSID       (uint8_t)124 //(EE_IP4_NTPOFFSET+1)
+#   define EE_WPA_KEY        (uint8_t)157 //(EE_WPA_SSID+EE_WPA_SSID_MAX)
+#   define EE_NAME           (uint8_t)221 //(EE_WPA_KEY+EE_WPA_KEY_MAX)
+#   define EE_OTA_SERVER     (uint8_t)261 //(EE_NAME+EE_STR_LEN)
+#   define EE_ETH_LAST       (uint8_t)265 //(EE_OTA_SERVER+4)
 # else
 #   define EE_MAX_ENTRY_LEN   EE_STR_LEN
-#   define EE_ETH_LAST       (EE_IP4_NTPOFFSET+1)
+#   define EE_ETH_LAST       (uint8_t)(EE_IP4_NTPOFFSET+1)
 # endif
 #else
-# define EE_ETH_LAST         (EE_RF_ROUTER_ROUTER+1)
+# define EE_ETH_LAST         (uint8_t)(EE_RF_ROUTER_ROUTER+1)
 #endif
 
 #ifdef HAS_LCD

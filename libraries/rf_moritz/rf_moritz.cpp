@@ -15,6 +15,7 @@
 #include "rf_send.h" //credit_10ms
 
 #include "rf_moritz.h"
+#include <fncollection.h>
 
 
 /*
@@ -94,7 +95,8 @@ RfMoritzClass::RfMoritzClass(){
 
 uint8_t RfMoritzClass::on(uint8_t onNew){
 	if (onNew == 3){
-		DC('Zi');DH2(onNew);DNL();
+		//DC('Zi');
+    DC('Z');DC('i');DH2(onNew);DNL();
 		onState = 0;
 	} else if (onNew < 2){
 	  if (onNew != onState){
@@ -179,7 +181,8 @@ void RfMoritzClass::handleAutoAck(uint8_t* enc)
 void RfMoritzClass::task(void)
 {
   uint8_t enc[MAX_MORITZ_MSG];
-  uint8_t rssi, LQI;
+  uint8_t rssi;
+  //uint8_t LQI;
 
   if(!onState)
     return;
@@ -202,7 +205,7 @@ void RfMoritzClass::task(void)
     rssi = CC1100.cc1100_sendbyte( 0 );
 
     // And Link quality indicator, too
-    LQI = CC1100.cc1100_sendbyte( 0 );
+    // unused: LQI = CC1100.cc1100_sendbyte( 0 );
 
     CC1100_DEASSERT;
 
@@ -255,7 +258,7 @@ void RfMoritzClass::sendraw(uint8_t *dec, int longPreamble)
 {
 	uint8_t in_moritz = 1;
   uint8_t hblen = dec[0]+1;
-	uint8_t tst[MAX_MORITZ_MSG+1];
+//	uint8_t tst[MAX_MORITZ_MSG+1];
 	uint8_t res[MAX_MORITZ_MSG+1];
 	uint8_t mst[MAX_MORITZ_MSG+1];
   //10kb/s = 10 bit/ms. we send 1 sec preamble + hblen*8 bits
@@ -338,11 +341,11 @@ void RfMoritzClass::sendraw(uint8_t *dec, int longPreamble)
 		if (res[j+1] != res[j] || mst[j+1] != mst[j])
 			j++;
 	}
-	tst[hblen] = CC1100.cc1100_sendbyte(0x7F);//CC1100_WRITE_BURST | CC1100_TXFIFO);
+	//unused: tst[hblen] = CC1100.cc1100_sendbyte(0x7F);//CC1100_WRITE_BURST | CC1100_TXFIFO);
   for(i = 0; i < hblen; i++) {
 		//tst[i] = CC1100.cc1100_sendbyte( CC1100_TXFIFO|CC1100_WRITE_SINGLE );
 		MYDELAY.my_delay_us(50);
-    tst[i] = CC1100.cc1100_sendbyte(dec[i]);
+    //unused: tst[i] = CC1100.cc1100_sendbyte(dec[i]);
   }
 	MYDELAY.my_delay_us(50);
   CC1100_DEASSERT;

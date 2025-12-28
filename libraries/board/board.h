@@ -24,7 +24,7 @@
 #define BOARD_ID_STR433         "CUL433"
 #define BOARD_ID_USTR433        L"CUL433"
 
-#define HAS_USB                  1
+//2025-12 #define HAS_USB                  1
 #define USB_BUFSIZE             64      // Must be a supported USB endpoint size
 #define USB_MAX_POWER	         100
 #define HAS_FHT_80b                     // PROGMEM: 1374b, RAM: 90b
@@ -218,6 +218,9 @@ extern unsigned char OCIE1A;
 #  define bit_is_set(sfr, bit) (_SFR_BYTE(sfr) & _BV(bit))
 #else
 #  define bit_is_set(sfr, bit) digitalRead(bit)
+// Use IRAM_ATTR in place of ICACHE_RAM_ATTR to move functions into IRAM [-Wdeprecated-declarations]
+#  undef ICACHE_RAM_ATTR
+#  define ICACHE_RAM_ATTR IRAM_ATTR
 #endif
 #define USB_IsConnected 1
 #define __LPM(a) pgm_read_byte(a)
@@ -284,8 +287,8 @@ extern unsigned char OCIE1A;
 #ifndef ESP8266
   #define lambda(obj, func) [&](char *data) { obj . func (data); }
 #else
-  #define lambda(obj, func) [& obj](char *data) { obj . func (data); }
-  //#define lambda(obj, func) [](char *data) { obj . func (data); }
+  //#define lambda(obj, func) [& obj](char *data) { obj . func (data); }
+  #define lambda(obj, func) [](char *data) { obj . func (data); }
 #endif
 
 #endif // __BOARD_H__

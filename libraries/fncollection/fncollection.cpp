@@ -24,6 +24,7 @@
 #include "rf_router.h"
 #ifdef HAS_ETHERNET
 #  include "ethernet.h"
+//#  include "ethernetENC.h"
 #endif
 
 uint8_t led_mode = 2;   // Start blinking

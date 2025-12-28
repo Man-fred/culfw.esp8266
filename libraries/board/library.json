@@ -1,0 +1,6 @@
+{
+    "name": "board",
+    "version": "1.0",
+    "architectures": "*",
+    "includes": "board.h"
+}

@@ -5,7 +5,7 @@
 #include <string.h>
 //esp8266 #include <avr/pgmspace.h>
 //esp8266 #include <avr/eeprom.h>
-#include <SPI.h>
+//in cc1100.h #include <SPI.h>
 
 #include "delay.h"
 #include "display.h"

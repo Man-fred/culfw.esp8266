@@ -1,0 +1,6 @@
+{
+    "name": "manchester",
+    "version": "1.0.0",
+    "architectures": "*",
+    "includes": "manchester.h"
+}

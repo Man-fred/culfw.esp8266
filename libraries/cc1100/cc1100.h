@@ -7,7 +7,7 @@
 #ifndef __CC1100_H
 #define __CC1100_H
 
-#include <SPI.h>
+#include "SPI.h"
 // #include <avr/io.h>
 #include "board.h"
 #include "led.h"

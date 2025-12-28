@@ -123,7 +123,8 @@ void RfSendClass::sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bit
   // 12*800+1200+nbyte*(8*1000)+(bits*1000)+800+10000 
   // message len is < (nbyte+2)*repeat in 10ms units.
   int8_t i, j, sum = (nbyte+2)*repeat + addH + addL;
-  int8_t prebit, bit;
+  // int8_t prebit;
+  int8_t bit;
   if (credit_10ms < sum) {
     DS_P(PSTR("LOVF\r\n"));
     return;
@@ -141,7 +142,8 @@ void RfSendClass::sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bit
   if(Moritz.on()) {
     restore_moritz = 1;
     Moritz.on(0);
-    RfReceive.set_txreport("21");
+    char arr[] = "21";
+    RfReceive.set_txreport(arr);
   }
 #endif
   if(tx_report & REP_BITS) {
@@ -185,13 +187,13 @@ void RfSendClass::sendraw(uint8_t *msg, uint8_t sync, uint8_t nbyte, uint8_t bit
       for(i = 7; i >= 0; i--) {
 		bit = msg[j] & _BV(i);
         send_bit(msg[j] & _BV(i), edge);
-		prebit = bit;
+		// prebit = bit;
 	  }
     }
     for(i = 7; i > bitoff; i--)  {               // broken bytes
       bit = msg[nbyte] & _BV(i);
       send_bit(msg[nbyte] & _BV(i), edge);
-	  prebit = bit;
+	  // prebit = bit;
 	}
 
     MYDELAY.my_delay_ms(pause);                         // pause

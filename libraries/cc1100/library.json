@@ -1,0 +1,6 @@
+{
+    "name": "cc1100",
+    "version": "1.0",
+    "architectures": "*",
+    "includes": "cc1100.h"
+}

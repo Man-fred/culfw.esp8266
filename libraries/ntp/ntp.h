@@ -1,7 +1,7 @@
 #ifndef __NTP_H
 #define __NTP_H
-
-typedef uint32_t time_t;
+#include "board.h"
+//typedef uint32_t time_t;
 
 typedef union {
   uint32_t u32;
@@ -28,7 +28,7 @@ typedef struct {
   ts_64_t    rcv_ts;
   ts_64_t    tx_ts;
 } ntp_packet_t;
-
+/* redefinition
 typedef struct tm {
   uint8_t    tm_year;
   uint8_t    tm_mon;
@@ -37,7 +37,7 @@ typedef struct tm {
   uint8_t    tm_min;
   uint8_t    tm_sec;
 } tm_t;
-
+*/
 #define NTP_PORT 123
 #define NTP_INTERVAL 8            // Max interval is 9 (512sec)
 #define NTP_INTERVAL_MASK 0xff    // 264sec = 4.5min
@@ -49,8 +49,8 @@ public:
 	void digestpacket(void);
 	void func(char *in);
 	void get(uint8_t now[6]);
-	void sec2tm(time_t sec, tm_t *t);
-	time_t tm2sec(tm_t *t);
+	void sec2tm(time_t sec, tm *t);
+	time_t tm2sec(tm *t);
 
 private:
 	// Time of last sync.
@@ -61,6 +61,8 @@ private:
 	
 	void fill_packet(ntp_packet_t *p);
 	void sendpacket(void);
+  uint8_t dec2bcd(uint8_t in);
+  uint8_t bcd2dec(uint8_t in);
 };
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_FASTRF)
